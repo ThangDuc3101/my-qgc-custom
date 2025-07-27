@@ -129,12 +129,12 @@ Item {
             id:          savePlanButton
             text:        qsTr("Save Plan")
             // Tạm thời để enabled, sau này có thể thêm logic
-            enabled:     !_controllerSyncInProgress
+            enabled:     rue
 
             onClicked:
             {
-                // Tạm thời in ra console để kiểm tra
                 console.log("Save Plan button clicked!")
+                _planMasterController.saveMissionWaypointsAsJson()
             }
         }
 

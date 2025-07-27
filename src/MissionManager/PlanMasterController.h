@@ -86,6 +86,10 @@ public:
     Q_INVOKABLE void removeAll(void);                       ///< Removes all from controller only, synce required to remove from vehicle
     Q_INVOKABLE void removeAllFromVehicle(void);            ///< Removes all from vehicle and controller
 
+    //---------- KHAI BÁO CHO HÀM CỦA NÚT SAVE ----------
+    Q_INVOKABLE void saveMissionWaypointsAsJson();
+    //--------------- KẾT THÚC KHAI BÁO -----------------
+
     MissionController*      missionController(void)     { return &_missionController; }
     GeoFenceController*     geoFenceController(void)    { return &_geoFenceController; }
     RallyPointController*   rallyPointController(void)  { return &_rallyPointController; }
