@@ -122,6 +122,37 @@ Item {
                 duration:       2000
             }
         }
+        //---------- THÊM NÚT SAVE VÀ NÚT SEND ----------
+
+        QGCButton
+        {
+            id:          savePlanButton
+            text:        qsTr("Save Plan")
+            // Tạm thời để enabled, sau này có thể thêm logic
+            enabled:     !_controllerSyncInProgress
+
+            onClicked:
+            {
+                // Tạm thời in ra console để kiểm tra
+                console.log("Save Plan button clicked!")
+            }
+        }
+
+        QGCButton
+        {
+            id:          sendPlanButton
+            text:        qsTr("Send Plan")
+
+            enabled:     !_controllerSyncInProgress
+
+            onClicked:
+            {
+            // Tạm thời in ra console để kiểm tra
+                console.log("Send Plan button clicked!")
+            }
+        }
+
+        //----------------------------------------------
 
         GridLayout {
             columns:                8
