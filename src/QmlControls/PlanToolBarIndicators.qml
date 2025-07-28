@@ -129,7 +129,7 @@ Item {
             id:          savePlanButton
             text:        qsTr("Save Plan")
             // Tạm thời để enabled, sau này có thể thêm logic
-            enabled:     rue
+            enabled:     true
 
             onClicked:
             {
@@ -143,7 +143,7 @@ Item {
             id:          sendPlanButton
             text:        qsTr("Send Plan")
 
-            enabled:     !_controllerSyncInProgress
+            enabled:     true
 
             onClicked:
             {
