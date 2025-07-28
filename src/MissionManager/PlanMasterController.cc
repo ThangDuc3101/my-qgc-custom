@@ -623,7 +623,8 @@ void PlanMasterController::sendSavedPlanToServer()
     file.close();
 
             // 3. Chuẩn bị yêu cầu mạng (Network Request)
-    QUrl url("http://127.0.0.1:5000/submit_plan");
+    // QUrl url("http://127.0.0.1:5000/submit_plan");
+    QUrl url("http://192.168.144.30:5000/submit_plan");
     QNetworkRequest request(url);
 
     // Đặt header quan trọng
