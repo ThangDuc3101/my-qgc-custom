@@ -90,6 +90,10 @@ public:
     Q_INVOKABLE void saveMissionWaypointsAsJson();
     //--------------- KẾT THÚC KHAI BÁO -----------------
 
+    //---------- KHAI BÁO CHO HÀM CỦA NÚT SEND ----------
+    Q_INVOKABLE void sendSavedPlanToServer();
+    //---------------- KẾT THÚC KHAI BÁO ----------------
+
     MissionController*      missionController(void)     { return &_missionController; }
     GeoFenceController*     geoFenceController(void)    { return &_geoFenceController; }
     RallyPointController*   rallyPointController(void)  { return &_rallyPointController; }

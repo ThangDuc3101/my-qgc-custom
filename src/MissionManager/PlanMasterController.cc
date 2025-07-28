@@ -36,7 +36,14 @@
 #include <QtCore/QTextStream>
 #include "MissionItem.h"
 #include "VisualMissionItem.h"
-#include "MissionManager/SimpleMissionItem.h" // <<< THÊM DÒNG NÀY
+#include "MissionManager/SimpleMissionItem.h"
+//----------------------------------------------------
+
+//---------- BỔ SUNG THƯ VIỆN CHO NÚT SEND ----------
+#include <QtNetwork/QNetworkAccessManager>
+#include <QtNetwork/QNetworkRequest>
+#include <QtNetwork/QNetworkReply>
+#include <QtCore/QUrl>
 //----------------------------------------------------
 
 QGC_LOGGING_CATEGORY(PlanMasterControllerLog, "PlanMasterControllerLog")
@@ -590,6 +597,78 @@ void PlanMasterController::saveMissionWaypointsAsJson()
     qgcApp()->showAppMessage(tr("Simple coordinate data saved to %1").arg(jsonFile));
 }
 //------------ KẾT THÚC MÃ ------------
+
+//==================== BẮT ĐẦU MÃ NGUỒN HÀM SEND ====================
+void PlanMasterController::sendSavedPlanToServer()
+{
+    // 1. Mở hộp thoại để người dùng chọn file JSON
+    QString jsonFile = QFileDialog::getOpenFileName(
+        nullptr,
+        tr("Select Plan JSON File to Send"),
+        SettingsManager::instance()->appSettings()->missionSavePath(),
+        tr("Simple Plan JSON file (*.json)"));
+
+    if (jsonFile.isEmpty()) {
+        // Người dùng đã nhấn Cancel
+        return;
+    }
+
+            // 2. Đọc nội dung của file đã chọn
+    QFile file(jsonFile);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        qgcApp()->showAppMessage(tr("Failed to open file for reading: %1").arg(file.errorString()));
+        return;
+    }
+    QByteArray jsonData = file.readAll();
+    file.close();
+
+            // 3. Chuẩn bị yêu cầu mạng (Network Request)
+    QUrl url("http://127.0.0.1:5000/submit_plan");
+    QNetworkRequest request(url);
+
+    // Đặt header quan trọng
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+            // 4. Gửi yêu cầu POST và xử lý phản hồi
+            // Chúng ta cần một QNetworkAccessManager để thực hiện việc này.
+            // Tạo một manager mới cho mỗi lần gửi để đảm bảo an toàn luồng (thread-safe).
+    QNetworkAccessManager* manager = new QNetworkAccessManager(this);
+
+            // Kết nối tín hiệu 'finished' của reply với một hàm lambda để xử lý khi có phản hồi
+    connect(manager, &QNetworkAccessManager::finished, this,
+            [=](QNetworkReply* reply)
+            {
+                // Kiểm tra lỗi mạng
+                if (reply->error() != QNetworkReply::NoError)
+                {
+                    QString errorMessage = tr("Network Error: %1").arg(reply->errorString());
+                    qgcApp()->showAppMessage(errorMessage);
+                    qCDebug(PlanMasterControllerLog) << errorMessage;
+                }
+                else
+                {
+                    // Đọc phản hồi từ server
+                    QByteArray responseData = reply->readAll();
+                    QJsonDocument jsonResponse = QJsonDocument::fromJson(responseData);
+
+                    if (!jsonResponse.isObject()) {
+                        qgcApp()->showAppMessage(tr("Server response is not valid JSON."));
+                    } else {
+                        QString message = jsonResponse.object()["message"].toString();
+                        qgcApp()->showAppMessage(tr("Server Response: %1").arg(message));
+                    }
+                }
+
+                // Dọn dẹp
+                reply->deleteLater();
+                manager->deleteLater();
+            });
+
+    qgcApp()->showAppMessage(tr("Sending plan to server..."));
+    manager->post(request, jsonData);
+}
+
+//==================== KẾT THÚC MÃ NGUỒN HÀM SEND ====================
 
 void PlanMasterController::removeAll(void)
 {

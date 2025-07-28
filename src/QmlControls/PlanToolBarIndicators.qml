@@ -147,8 +147,8 @@ Item {
 
             onClicked:
             {
-            // Tạm thời in ra console để kiểm tra
                 console.log("Send Plan button clicked!")
+                _planMasterController.sendSavedPlanToServer()
             }
         }
 
