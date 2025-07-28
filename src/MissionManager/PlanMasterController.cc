@@ -36,6 +36,7 @@
 #include <QtCore/QTextStream>
 #include "MissionItem.h"
 #include "VisualMissionItem.h"
+#include "MissionManager/SimpleMissionItem.h" // <<< THÊM DÒNG NÀY
 //----------------------------------------------------
 
 QGC_LOGGING_CATEGORY(PlanMasterControllerLog, "PlanMasterControllerLog")
@@ -507,45 +508,59 @@ void PlanMasterController::saveToKml(const QString& filename)
 }
 
 //---------- MÃ CHO NÚT SAVE ----------
-//==================== MÃ NGUỒN ĐỂ QUAY LẠI ====================
-
+//---------- MÃ ĐÃ BỔ SUNG TRƯỜNG "is_target" ----------
 void PlanMasterController::saveMissionWaypointsAsJson()
 {
-    // BƯỚC 1: KIỂM TRA ĐIỀU KIỆN SẴN SÀNG
-    if (_missionController.readyForSaveState() != VisualMissionItem::ReadyForSave) {
-        if (_missionController.readyForSaveState() == VisualMissionItem::NotReadyForSaveData) {
-            qgcApp()->showAppMessage(tr("Plan has incomplete items. Complete all items and save again."));
-        } else if (_missionController.readyForSaveState() == VisualMissionItem::NotReadyForSaveTerrain) {
-            qgcApp()->showAppMessage(tr("Plan is waiting on terrain data from server for correct altitude values."));
-        } else {
-            qgcApp()->showAppMessage(tr("No mission items to save."));
-        }
-        return;
-    }
-
-            // BƯỚC 2: LẤY DANH SÁCH ITEM
+    // BƯỚC 1: LẤY DANH SÁCH ITEM (Giữ nguyên)
     QmlObjectListModel* visualItems = _missionController.visualItems();
-    if (!visualItems) {
+    if (!visualItems || visualItems->count() <= 1) {
+        qgcApp()->showAppMessage(tr("No mission items to save."));
         return;
     }
 
-            // BƯỚC 3: TẠO MẢNG JSON
+            // BƯỚC MỚI: TÌM CHỈ SỐ CỦA ĐIỂM BAY CUỐI CÙNG
+    int lastWaypointIndex = -1; // Khởi tạo là -1 (không tìm thấy)
+    for (int i = visualItems->count() - 1; i >= 1; i--) {
+        // Duyệt ngược từ cuối lên để tìm item hợp lệ đầu tiên
+        SimpleMissionItem* simpleItem = qobject_cast<SimpleMissionItem*>(visualItems->get(i));
+        if (simpleItem) {
+            // Chúng ta chỉ coi một điểm WAYPOINT (command 16) là mục tiêu hợp lệ.
+            // Điều này giúp bỏ qua các lệnh như RTL (command 20) ở cuối.
+            if (simpleItem->missionItem().command() == 16) { // 16 là MAV_CMD_NAV_WAYPOINT
+                lastWaypointIndex = i;
+                break; // Đã tìm thấy, thoát khỏi vòng lặp
+            }
+        }
+    }
+
+            // BƯỚC 2: TẠO MẢNG JSON
     QJsonArray waypointsArray;
 
-            // BƯỚC 4: LẶP QUA DANH SÁCH VÀ GỌI HÀM SAVE() CỦA MỖI ITEM
+            // BƯỚC 3: LẶP QUA, LẤY DỮ LIỆU VÀ ĐẶT TRƯỜNG "is_target"
     for (int i = 1; i < visualItems->count(); i++) {
-        VisualMissionItem* vItem = qobject_cast<VisualMissionItem*>(visualItems->get(i));
+        SimpleMissionItem* simpleItem = qobject_cast<SimpleMissionItem*>(visualItems->get(i));
 
-                // Chỉ xử lý những item có tọa độ để tránh các lệnh không liên quan
-        if (vItem && vItem->specifiesCoordinate()) {
-            // Hàm save() của VisualMissionItem sẽ tự thêm (các) đối tượng JSON của nó vào mảng waypointsArray
-            vItem->save(waypointsArray);
+                // Chỉ xử lý các SimpleMissionItem, vì chúng ta đang trích xuất dữ liệu waypoint.
+                // Có thể thêm điều kiện command == 16 ở đây nếu chỉ muốn các điểm bay.
+        if (simpleItem) {
+            MissionItem& missionItem = simpleItem->missionItem();
+
+            QJsonObject waypointObject;
+            waypointObject["latitude"]  = missionItem.param5();
+            waypointObject["longitude"] = missionItem.param6();
+            waypointObject["altitude"]  = missionItem.param7();
+
+                    // So sánh chỉ số hiện tại với chỉ số mục tiêu đã tìm
+            bool isTarget = (i == lastWaypointIndex);
+            waypointObject["is_target"] = isTarget;
+
+            waypointsArray.append(waypointObject);
         }
     }
 
-            // BƯỚC 5: TẠO VÀ LƯU FILE JSON
+            // BƯỚC 4: TẠO VÀ LƯU FILE JSON (Giữ nguyên)
     QJsonObject rootObject;
-    rootObject["fileType"]  = "FullWaypointDataDump";
+    rootObject["fileType"]  = "SimpleCoordinatesWithTarget"; // Cập nhật tên cho rõ ràng
     rootObject["version"]   = 2.0;
     rootObject["waypoints"] = waypointsArray;
 
@@ -553,9 +568,9 @@ void PlanMasterController::saveMissionWaypointsAsJson()
 
     QString jsonFile = QFileDialog::getSaveFileName(
         nullptr,
-        tr("Save Full Waypoint Data"),
+        tr("Save Simple Coordinates"),
         SettingsManager::instance()->appSettings()->missionSavePath(),
-        tr("Full Plan JSON file (*.json)"));
+        tr("Simple Coordinates JSON file (*.json)"));
 
     if (jsonFile.isEmpty()) {
         return;
@@ -570,10 +585,8 @@ void PlanMasterController::saveMissionWaypointsAsJson()
     file.write(jsonDocument.toJson(QJsonDocument::Indented));
     file.close();
 
-    qgcApp()->showAppMessage(tr("Full waypoint data saved to %1").arg(jsonFile));
+    qgcApp()->showAppMessage(tr("Simple coordinate data saved to %1").arg(jsonFile));
 }
-
-//==================== KẾT THÚC MÃ NGUỒN ĐỂ QUAY LẠI ====================
 //------------ KẾT THÚC MÃ ------------
 
 void PlanMasterController::removeAll(void)
