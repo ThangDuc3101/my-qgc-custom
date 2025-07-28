@@ -570,7 +570,7 @@ void PlanMasterController::saveMissionWaypointsAsJson()
         }
     }
 
-    // BƯỚC 5: TẠO VÀ LƯU FILE JSON (Giữ nguyên)
+    // BƯỚC 5: TẠO VÀ LƯU FILE JSON
     QJsonObject rootObject;
     rootObject["fileType"]  = "SimpleCoordinatesWithTarget";
     rootObject["version"]   = 3.0;
