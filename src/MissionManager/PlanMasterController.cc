@@ -507,9 +507,11 @@ void PlanMasterController::saveToKml(const QString& filename)
 }
 
 //---------- MÃ CHO NÚT SAVE ----------
+//==================== MÃ NGUỒN ĐỂ QUAY LẠI ====================
+
 void PlanMasterController::saveMissionWaypointsAsJson()
 {
-    // 1. Kiểm tra xem kế hoạch đã sẵn sàng để lưu chưa
+    // BƯỚC 1: KIỂM TRA ĐIỀU KIỆN SẴN SÀNG
     if (_missionController.readyForSaveState() != VisualMissionItem::ReadyForSave) {
         if (_missionController.readyForSaveState() == VisualMissionItem::NotReadyForSaveData) {
             qgcApp()->showAppMessage(tr("Plan has incomplete items. Complete all items and save again."));
@@ -521,67 +523,44 @@ void PlanMasterController::saveMissionWaypointsAsJson()
         return;
     }
 
-            // 2. Lấy danh sách các visual item
+            // BƯỚC 2: LẤY DANH SÁCH ITEM
     QmlObjectListModel* visualItems = _missionController.visualItems();
     if (!visualItems) {
         return;
     }
 
-            // 3. Tạo một QJsonArray để chứa các waypoint
+            // BƯỚC 3: TẠO MẢNG JSON
     QJsonArray waypointsArray;
 
-    qCDebug(PlanMasterControllerLog) << "--- Saving Waypoints to JSON (Simplified) ---";
-
-            // 4. Lặp qua danh sách item và xây dựng mảng JSON
+            // BƯỚC 4: LẶP QUA DANH SÁCH VÀ GỌI HÀM SAVE() CỦA MỖI ITEM
     for (int i = 1; i < visualItems->count(); i++) {
         VisualMissionItem* vItem = qobject_cast<VisualMissionItem*>(visualItems->get(i));
+
+                // Chỉ xử lý những item có tọa độ để tránh các lệnh không liên quan
         if (vItem && vItem->specifiesCoordinate()) {
-
-            QJsonObject waypointObject;
-
-            // Lấy tọa độ từ QGeoCoordinate
-            QGeoCoordinate coordinate = vItem->coordinate();
-            waypointObject["latitude"]  = coordinate.latitude();
-            waypointObject["longitude"] = coordinate.longitude();
-            waypointObject["altitude"]  = coordinate.altitude();
-
-                    // Lấy tốc độ bay - Cần cast thành MissionItem để truy cập
-            double flightSpeed = NAN; // Giá trị mặc định nếu không lấy được
-            MissionItem* missionItem = qobject_cast<MissionItem*>(vItem);
-            if (missionItem) {
-                // Sử dụng thuộc tính specifiedFlightSpeed của MissionItem
-                flightSpeed = missionItem->specifiedFlightSpeed();
-            }
-            waypointObject["flightSpeed"] = flightSpeed;
-
-                    // Thêm đối tượng đã được tinh gọn vào mảng
-            waypointsArray.append(waypointObject);
+            // Hàm save() của VisualMissionItem sẽ tự thêm (các) đối tượng JSON của nó vào mảng waypointsArray
+            vItem->save(waypointsArray);
         }
     }
 
-    qCDebug(PlanMasterControllerLog) << "Total waypoints saved:" << waypointsArray.count();
-    qCDebug(PlanMasterControllerLog) << "--- End Save Operation ---";
-
-            // 5. Tạo đối tượng JSON gốc và tài liệu JSON
+            // BƯỚC 5: TẠO VÀ LƯU FILE JSON
     QJsonObject rootObject;
-    rootObject["fileType"]  = "SimplePlan"; // Đổi tên để phân biệt
-    rootObject["version"]   = 1.1;
+    rootObject["fileType"]  = "FullWaypointDataDump";
+    rootObject["version"]   = 2.0;
     rootObject["waypoints"] = waypointsArray;
 
     QJsonDocument jsonDocument(rootObject);
 
-            // 6. Mở hộp thoại "Save As..."
     QString jsonFile = QFileDialog::getSaveFileName(
         nullptr,
-        tr("Save Simplified Waypoints"),
+        tr("Save Full Waypoint Data"),
         SettingsManager::instance()->appSettings()->missionSavePath(),
-        tr("Simple Plan JSON file (*.json)"));
+        tr("Full Plan JSON file (*.json)"));
 
     if (jsonFile.isEmpty()) {
         return;
     }
 
-            // 7. Lưu tài liệu JSON vào file đã chọn
     QFile file(jsonFile);
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
         qgcApp()->showAppMessage(tr("Failed to open file for writing: %1").arg(file.errorString()));
@@ -591,9 +570,10 @@ void PlanMasterController::saveMissionWaypointsAsJson()
     file.write(jsonDocument.toJson(QJsonDocument::Indented));
     file.close();
 
-    qgcApp()->showAppMessage(tr("Waypoints saved to %1").arg(jsonFile));
+    qgcApp()->showAppMessage(tr("Full waypoint data saved to %1").arg(jsonFile));
 }
 
+//==================== KẾT THÚC MÃ NGUỒN ĐỂ QUAY LẠI ====================
 //------------ KẾT THÚC MÃ ------------
 
 void PlanMasterController::removeAll(void)
