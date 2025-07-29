@@ -520,6 +520,11 @@ void PlanMasterController::saveToKml(const QString& filename)
 }
 
 //---------- MÃ CHO NÚT SAVE ----------
+<<<<<<< HEAD
+=======
+//==================== MÃ HOÀN CHỈNH (ĐÃ THÊM LẠI is_target) ====================
+
+>>>>>>> flightspeed
 void PlanMasterController::saveMissionWaypointsAsJson()
 {
     QmlObjectListModel* visualItems = _missionController.visualItems();
