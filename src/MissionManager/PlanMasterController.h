@@ -17,6 +17,11 @@
 #include "GeoFenceController.h"
 #include "RallyPointController.h"
 
+//---------- THÊM THƯ VIỆN SERIAL PORT ----------
+#include <QtSerialPort/QSerialPort>
+#include <QtSerialPort/QSerialPortInfo>
+//----------------------------------------------
+
 Q_DECLARE_LOGGING_CATEGORY(PlanMasterControllerLog)
 
 class QmlObjectListModel;
@@ -94,6 +99,14 @@ public:
     Q_INVOKABLE void sendSavedPlanToServer();
     //---------------- KẾT THÚC KHAI BÁO ----------------
 
+    //-------------- KHAI BÁO CHO SERIAL --------------
+    Q_PROPERTY(bool isSerialActive READ isSerialActive NOTIFY isSerialActiveChanged)
+
+    Q_INVOKABLE QStringList getAvailableSerialPorts();
+    Q_INVOKABLE bool startSerialListener(const QString& portName, int baudRate);
+    Q_INVOKABLE void stopSerialListener();
+    //-------------------------------------------------
+
     MissionController*      missionController(void)     { return &_missionController; }
     GeoFenceController*     geoFenceController(void)    { return &_geoFenceController; }
     RallyPointController*   rallyPointController(void)  { return &_rallyPointController; }
@@ -133,6 +146,10 @@ signals:
     void managerVehicleChanged              (Vehicle* managerVehicle);
     void promptForPlanUsageOnVehicleChange  (void);
 
+    //---------- TÍN HIỆU CHO SERIAL ----------
+    void isSerialActiveChanged();
+    //-----------------------------------------
+
 private slots:
     void _activeVehicleChanged      (Vehicle* activeVehicle);
     void _loadMissionComplete       (void);
@@ -143,6 +160,10 @@ private slots:
     void _sendRallyPointsComplete   (void);
     void _updateOverallDirty        (void);
     void _updatePlanCreatorsList    (void);
+
+    //---------- SLOT CHO SERIAL ----------
+    void _onSerialDataReady();
+    //-------------------------------------
 
 private:
     void _commonInit                (void);
@@ -164,4 +185,13 @@ private:
     bool                    _deleteWhenSendCompleted =  false;
     bool                    _previousOverallDirty =     false;
     QmlObjectListModel*     _planCreators =             nullptr;
+
+    //---------- THÀNH VIÊN CHO SERIAL ----------
+    QSerialPort*            _serialPort =               nullptr;
+    QByteArray              _serialBuffer;
+    QNetworkAccessManager*  _networkManager =           nullptr;
+
+    bool isSerialActive() const;
+    //-------------------------------------------
+
 };
