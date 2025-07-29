@@ -520,70 +520,75 @@ void PlanMasterController::saveToKml(const QString& filename)
 }
 
 //---------- MÃ CHO NÚT SAVE ----------
-//==================== MÃ HOÀN CHỈNH VỚI LOGIC TỐC ĐỘ ĐÚNG ====================
-
 void PlanMasterController::saveMissionWaypointsAsJson()
 {
     QmlObjectListModel* visualItems = _missionController.visualItems();
-    if (!visualItems || visualItems->count() <= 1) {
-        qgcApp()->showAppMessage(tr("No mission items to save."));
-        return;
-    }
+    if (!visualItems) return;
 
-            // TÌM CHỈ SỐ CỦA ĐIỂM BAY CUỐI CÙNG
-    int lastWaypointIndex = -1;
-    for (int i = visualItems->count() - 1; i >= 1; i--) {
-        SimpleMissionItem* simpleItem = qobject_cast<SimpleMissionItem*>(visualItems->get(i));
-        if (simpleItem && simpleItem->missionItem().command() == 16) { // MAV_CMD_NAV_WAYPOINT
-            lastWaypointIndex = i;
-            break;
+            // BƯỚC 1: DUMP TOÀN BỘ KẾ HOẠCH RA MỘT MẢNG JSON TẠM
+    QJsonArray fullDataArray;
+    for (int i = 0; i < visualItems->count(); i++) {
+        VisualMissionItem* vItem = qobject_cast<VisualMissionItem*>(visualItems->get(i));
+        if (vItem) {
+            vItem->save(fullDataArray);
         }
     }
 
-            // TẠO MẢNG JSON VÀ BIẾN TRẠNG THÁI TỐC ĐỘ
+            // BƯỚC 2: XỬ LÝ MẢNG JSON TẠM
     QJsonArray waypointsArray;
-    // BẮT ĐẦU VỚI GIÁ TRỊ NULL. TỐC ĐỘ SẼ CHỈ ĐƯỢC CẬP NHẬT KHI GẶP LỆNH CHANGE_SPEED.
-    QJsonValue currentSpeedValue = QJsonValue::Null;
+    double missionSpeed = _controllerVehicle ? _controllerVehicle->defaultCruiseSpeed() : -1.0;
 
-            // LẶP QUA, CẬP NHẬT TRẠNG THÁI VÀ LẤY DỮ LIỆU
-    for (int i = 1; i < visualItems->count(); i++) {
-        SimpleMissionItem* simpleItem = qobject_cast<SimpleMissionItem*>(visualItems->get(i));
+    for (int i = 0; i < fullDataArray.count(); i++) {
+        QJsonObject itemObject = fullDataArray[i].toObject();
+        int command = itemObject["command"].toInt();
 
-        if (simpleItem) {
-            MissionItem& missionItem = simpleItem->missionItem();
-            int command = missionItem.command();
+                // Chỉ xử lý các item là WAYPOINT
+        if (command == 16) { // MAV_CMD_NAV_WAYPOINT
+            QJsonObject waypointObject;
+            QJsonArray params = itemObject["params"].toArray();
 
-                    // 1. Nếu là lệnh thay đổi tốc độ (DO_CHANGE_SPEED)
-            if (command == 178) {
-                // Cập nhật biến trạng thái tốc độ. Tốc độ (m/s) nằm ở param2.
-                currentSpeedValue = missionItem.param2();
+            waypointObject["latitude"]  = params[4];
+            waypointObject["longitude"] = params[5];
+            waypointObject["altitude"]  = params[6];
+
+            // LOGIC LẤY TỐC ĐỘ: Nhìn về phía trước
+            double flightSpeed = missionSpeed;
+
+            if (i + 1 < fullDataArray.count()) {
+                QJsonObject nextItemObject = fullDataArray[i + 1].toObject();
+                if (nextItemObject["command"].toInt() == 178) {
+                    flightSpeed = nextItemObject["params"].toArray()[1].toDouble(missionSpeed);
+                }
             }
-            // 2. Nếu là một điểm bay (WAYPOINT) hoặc cất cánh (TAKEOFF)
-            else if (command == 16 || command == 22) {
-                QJsonObject waypointObject;
-                waypointObject["latitude"]  = missionItem.param5();
-                waypointObject["longitude"] = missionItem.param6();
-                waypointObject["altitude"]  = missionItem.param7();
+            waypointObject["flight_speed"] = flightSpeed > 0 ? flightSpeed : QJsonValue::Null;
 
-                bool isTarget = (i == lastWaypointIndex);
-                waypointObject["is_target"] = isTarget;
+            // TẠM THỜI ĐẶT is_target LÀ FALSE CHO TẤT CẢ
+            waypointObject["is_target"] = false;
 
-                        // Gán giá trị tốc độ từ biến trạng thái
-                waypointObject["flight_speed"] = currentSpeedValue;
-
-                waypointsArray.append(waypointObject);
-            }
+            waypointsArray.append(waypointObject);
         }
     }
 
-            // TẠO VÀ LƯU FILE JSON
+    // BƯỚC 3: GÁN is_target=true CHO WAYPOINT CUỐI CÙNG
+    if (!waypointsArray.isEmpty()) {
+        // Lấy ra bản sao của đối tượng cuối cùng
+        QJsonObject lastWaypoint = waypointsArray.last().toObject();
+        // Sửa đổi bản sao
+        lastWaypoint["is_target"] = true;
+        // Xóa đối tượng cũ khỏi mảng
+        waypointsArray.removeLast();
+        // Thêm bản sao đã được sửa đổi vào lại mảng
+        waypointsArray.append(lastWaypoint);
+    }
+
+            // BƯỚC 4: TẠO VÀ LƯU FILE
     QJsonObject rootObject;
-    rootObject["fileType"]  = "SimpleCoordinatesWithTarget";
-    rootObject["version"]   = 4.1; // Tăng version
+    rootObject["fileType"]  = "FinalPlanWithTarget";
+    rootObject["version"]   = 12.0;
     rootObject["waypoints"] = waypointsArray;
     QJsonDocument jsonDocument(rootObject);
 
-    QString jsonFile = QFileDialog::getSaveFileName(nullptr, tr("Save Simple Coordinates"), SettingsManager::instance()->appSettings()->missionSavePath(), tr("Simple Coordinates JSON file (*.json)"));
+    QString jsonFile = QFileDialog::getSaveFileName(nullptr, tr("Save Corrected Plan"), SettingsManager::instance()->appSettings()->missionSavePath(), tr("Plan JSON file (*.json)"));
     if (jsonFile.isEmpty()) return;
 
     QFile file(jsonFile);
@@ -594,10 +599,8 @@ void PlanMasterController::saveMissionWaypointsAsJson()
 
     file.write(jsonDocument.toJson(QJsonDocument::Indented));
     file.close();
-    qgcApp()->showAppMessage(tr("Simple coordinate data saved to %1").arg(jsonFile));
+    qgcApp()->showAppMessage(tr("Plan saved to %1").arg(jsonFile));
 }
-
-//===================================================================================
 //------------ KẾT THÚC MÃ ------------
 
 //==================== BẮT ĐẦU MÃ NGUỒN HÀM SEND ====================
