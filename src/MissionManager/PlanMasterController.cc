@@ -91,6 +91,11 @@ void PlanMasterController::_commonInit(void)
 
     // Offline vehicle can change firmware/vehicle type
     connect(_controllerVehicle,     &Vehicle::vehicleTypeChanged,                   this, &PlanMasterController::_updatePlanCreatorsList);
+
+    //---------- THÊM KHỞI TẠO CHO SERIAL ----------
+    _serialPort = new QSerialPort(this);
+    _networkManager = new QNetworkAccessManager(this);
+    //-----------------------------------------------
 }
 
 
@@ -641,6 +646,95 @@ void PlanMasterController::sendSavedPlanToServer()
 }
 
 //==================== KẾT THÚC MÃ NGUỒN HÀM SEND ====================
+
+//==================== BẮT ĐẦU MÃ NGUỒN CHO SERIAL PORT (TASK 3) ====================
+
+bool PlanMasterController::isSerialActive() const
+{
+    return _serialPort && _serialPort->isOpen();
+}
+
+QStringList PlanMasterController::getAvailableSerialPorts()
+{
+    QStringList portList;
+    const auto portInfos = QSerialPortInfo::availablePorts();
+
+    for (const QSerialPortInfo &info : portInfos) {
+        portList.append(info.portName());
+    }
+
+    return portList;
+}
+
+bool PlanMasterController::startSerialListener(const QString& portName, int baudRate)
+{
+    if (!_serialPort) {
+        qCWarning(PlanMasterControllerLog) << "Serial port object is null.";
+        return false;
+    }
+
+    if (_serialPort->isOpen()) {
+        qCWarning(PlanMasterControllerLog) << "Serial port is already open.";
+        return true;
+    }
+
+    _serialPort->setPortName(portName);
+    _serialPort->setBaudRate(baudRate);
+    // Các cài đặt khác có thể giữ mặc định (Data8, NoParity, OneStop)
+
+    if (_serialPort->open(QIODevice::ReadOnly)) {
+        connect(_serialPort, &QSerialPort::readyRead, this, &PlanMasterController::_onSerialDataReady);
+        qCDebug(PlanMasterControllerLog) << "Successfully opened serial port" << portName << "at" << baudRate << "baud.";
+        emit isSerialActiveChanged();
+        return true;
+    } else {
+        qCWarning(PlanMasterControllerLog) << "Failed to open serial port" << portName << ":" << _serialPort->errorString();
+        qgcApp()->showAppMessage(tr("Failed to open serial port %1: %2").arg(portName).arg(_serialPort->errorString()));
+        return false;
+    }
+}
+
+void PlanMasterController::stopSerialListener()
+{
+    if (_serialPort && _serialPort->isOpen()) {
+        _serialPort->close();
+        qCDebug(PlanMasterControllerLog) << "Serial port closed.";
+        emit isSerialActiveChanged();
+    }
+}
+
+void PlanMasterController::_onSerialDataReady()
+{
+    // Đọc tất cả dữ liệu có sẵn và nối vào buffer
+    _serialBuffer.append(_serialPort->readAll());
+
+            // Xử lý buffer để tìm các gói tin hoàn chỉnh (kết thúc bằng '\n')
+    while (_serialBuffer.contains('\n')) {
+        int newlineIndex = _serialBuffer.indexOf('\n');
+        // Lấy ra gói tin (không bao gồm ký tự '\n')
+        QByteArray packet = _serialBuffer.left(newlineIndex);
+        // Xóa gói tin đã xử lý và ký tự '\n' khỏi buffer
+        _serialBuffer.remove(0, newlineIndex + 1);
+
+                // Chỉ xử lý nếu gói tin có đúng 10 ký tự
+        if (packet.length() == 10) {
+            QString rawData = QString::fromLatin1(packet);
+            qCDebug(PlanMasterControllerLog) << "Serial packet received:" << rawData;
+
+            // Gửi dữ liệu thô lên server
+            QUrl url("http://192.168.144.30:5000/submit_button_states"); // Sử dụng endpoint mới
+            QNetworkRequest request(url);
+            request.setHeader(QNetworkRequest::ContentTypeHeader, "text/plain");
+
+                    // Gửi và quên đi, không cần xử lý phản hồi phức tạp cho mỗi gói tin
+            _networkManager->post(request, rawData.toUtf8());
+
+        } else {
+            qCWarning(PlanMasterControllerLog) << "Received malformed serial packet, length:" << packet.length() << "Content:" << QString::fromLatin1(packet);
+        }
+    }
+}
+//==================== KẾT THÚC MÃ NGUỒN CHO SERIAL PORT ====================
 
 void PlanMasterController::removeAll(void)
 {

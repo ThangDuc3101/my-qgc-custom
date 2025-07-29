@@ -69,6 +69,11 @@ Item {
 
     readonly property real _margins: ScreenTools.defaultFontPixelWidth
 
+
+    //-------------- PROPERTIES FOR SERIAL ---------------
+    property bool   isSerialActive:     false
+    //----------------------------------------------------
+
     // Properties of UTM adapter
     property bool   _utmspEnabled:                       QGroundControl.utmspSupported
 
@@ -122,7 +127,7 @@ Item {
                 duration:       2000
             }
         }
-        //---------- THÊM NÚT SAVE VÀ NÚT SEND ----------
+        //---------- THÊM NÚT SAVE, NÚT SEND, NÚT SERIAL ----------
 
         QGCButton
         {
@@ -149,6 +154,39 @@ Item {
             {
                 console.log("Send Plan button clicked!")
                 _planMasterController.sendSavedPlanToServer()
+            }
+        }
+
+        QGCButton {
+            id:          serialToggleButton
+            text:        isSerialActive ? qsTr("Stop Serial") : qsTr("Start Serial")
+            enabled:     !_controllerSyncInProgress
+            primary:     isSerialActive
+
+            // Biến để lưu trữ dialog đang mở
+            property var configDialog: null
+
+            onClicked: {
+                if (isSerialActive)
+                {
+                    _planMasterController.stopSerialListener();
+                    isSerialActive = false;
+                }
+                else
+                {
+                    configDialog = serialConfigDialogComponent.createObject(this);
+                    configDialog.open();
+                }
+            }
+
+            // Tự động dọn dẹp dialog sau khi nó bị đóng lại
+            Connections {
+                target: serialToggleButton.configDialog
+                function onClosed() {
+                    if (serialToggleButton.configDialog) {
+                        serialToggleButton.configDialog.destroy()
+                    }
+                }
             }
         }
 
@@ -262,5 +300,59 @@ Item {
             }
         }
     }
+    //------------ KHỐI MÃ DIALOG -------------
+        Component {
+            id: serialConfigDialogComponent
+
+            Dialog {
+                id:             dialog
+                title:          qsTr("Serial Port Configuration")
+                standardButtons: Dialog.Ok | Dialog.Cancel
+                modal:          true
+                width:          ScreenTools.defaultFontPixelWidth * 30
+
+                property alias selectedPort:   portComboBox.currentValue
+                property alias selectedBaud:   baudComboBox.currentValue
+
+                ColumnLayout {
+                    anchors.fill: parent
+
+                    Label { text: qsTr("Serial Port:") }
+                    ComboBox {
+                        id:             portComboBox
+                        Layout.fillWidth: true
+
+                        // model: [ "/dev/ttyUSB0", "/dev/ttyUSB1", "/dev/ttyACM0" ] // Tạm thời để test giao diện
+                        Component.onCompleted:
+                        {
+                            if (_planMasterController)
+                            {
+                                model = _planMasterController.getAvailableSerialPorts()
+                            }
+                        }
+                    }
+
+                    Label { text: qsTr("Baud Rate:") }
+                    ComboBox {
+                        id:             baudComboBox
+                        Layout.fillWidth: true
+                        model: [ 9600, 19200, 38400, 57600, 115200 ]
+                        currentIndex: 4 // Mặc định là 115200
+                    }
+                }
+
+                onAccepted:
+                {
+                    console.log("Dialog accepted. Attempting to connect to Port:", selectedPort, "at Baud:", selectedBaud);
+                    var success = _planMasterController.startSerialListener(selectedPort, selectedBaud);
+                    if (success) {
+                        isSerialActive = true;
+                    } else {
+                        // Có thể thêm thông báo lỗi ở đây nếu muốn
+                        console.log("Failed to connect to serial port.");
+                    }
+                }
+            }
+        }
 }
 
