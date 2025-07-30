@@ -676,7 +676,7 @@ void PlanMasterController::sendSavedPlanToServer()
 
 //==================== KẾT THÚC MÃ NGUỒN HÀM SEND ====================
 
-//==================== BẮT ĐẦU MÃ NGUỒN CHO SERIAL PORT (TASK 3) ====================
+//==================== BẮT ĐẦU MÃ NGUỒN CHO SERIAL PORT ====================
 
 bool PlanMasterController::isSerialActive() const
 {
@@ -688,8 +688,22 @@ QStringList PlanMasterController::getAvailableSerialPorts()
     QStringList portList;
     const auto portInfos = QSerialPortInfo::availablePorts();
 
+    qCDebug(PlanMasterControllerLog) << "Scanning for available serial ports...";
+
     for (const QSerialPortInfo &info : portInfos) {
-        portList.append(info.portName());
+        QString name = info.portName();
+
+        // Chỉ thêm vào danh sách nếu tên cổng bắt đầu bằng "ttyUSB" hoặc "ttyACM"
+        if (name.startsWith("ttyUSB") || name.startsWith("ttyACM")) {
+            portList.append(name);
+            qCDebug(PlanMasterControllerLog) << "  > Found relevant port:" << name;
+        } else {
+            qCDebug(PlanMasterControllerLog) << "  > Skipping irrelevant port:" << name;
+        }
+    }
+
+    if (portList.isEmpty()) {
+        qCDebug(PlanMasterControllerLog) << "No relevant serial ports (ttyUSB*, ttyACM*) found.";
     }
 
     return portList;
