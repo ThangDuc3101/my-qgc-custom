@@ -55,7 +55,7 @@ Rectangle {
         }
 
         QGCLabel {
-            text:           qsTr("Exit Plan")
+            text:           qsTr("Quay về")
             font.pointSize: ScreenTools.largeFontPointSize
         }
     }

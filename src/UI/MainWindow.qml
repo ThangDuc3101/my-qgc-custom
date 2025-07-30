@@ -332,24 +332,11 @@ ApplicationWindow {
                         Layout.margins: toolSelectDialog._margins
                         spacing:        ScreenTools.defaultFontPixelWidth
 
-                        SubMenuButton {
-                            height:             toolSelectDialog._toolButtonHeight
-                            Layout.fillWidth:   true
-                            text:               qsTr("Plan Flight")
-                            imageResource:      "/qmlimages/Plan.svg"
-                            onClicked: {
-                                if (mainWindow.allowViewSwitch()) {
-                                    mainWindow.closeIndicatorDrawer()
-                                    mainWindow.showPlanView()
-                                }
-                            }
-                        }
-
-                        SubMenuButton {
+                         SubMenuButton {
                             id:                 analyzeButton
                             height:             toolSelectDialog._toolButtonHeight
                             Layout.fillWidth:   true
-                            text:               qsTr("Analyze Tools")
+                            text:               qsTr("Các công cụ phân tích")
                             imageResource:      "/qmlimages/Analyze.svg"
                             visible:            QGroundControl.corePlugin.showAdvancedUI
                             onClicked: {
@@ -364,7 +351,7 @@ ApplicationWindow {
                             id:                 setupButton
                             height:             toolSelectDialog._toolButtonHeight
                             Layout.fillWidth:   true
-                            text:               qsTr("Vehicle Configuration")
+                            text:               qsTr("Thiết lập máy bay")
                             imageResource:      "/qmlimages/Gears.svg"
                             onClicked: {
                                 if (mainWindow.allowViewSwitch()) {
@@ -378,7 +365,7 @@ ApplicationWindow {
                             id:                 settingsButton
                             height:             toolSelectDialog._toolButtonHeight
                             Layout.fillWidth:   true
-                            text:               qsTr("Application Settings")
+                            text:               qsTr("Cài đặt thêm")
                             imageResource:      "/res/QGCLogoFull.svg"
                             imageColor:         "transparent"
                             visible:            !QGroundControl.corePlugin.options.combineSettingsAndSetup

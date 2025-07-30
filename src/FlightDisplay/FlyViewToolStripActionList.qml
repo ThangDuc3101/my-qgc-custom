@@ -37,7 +37,7 @@ ToolStripActionList {
             on_Is3DViewOpenChanged: {
                 if(_is3DViewOpen === true){
                     view3DIcon.iconSource =     "/qmlimages/PaperPlane.svg"
-                    text=           qsTr("Fly")
+                    text=           qsTr("Bay")
                 }else{
                     iconSource =     "/qml/QGroundControl/Viewer3D/City3DMapIcon.svg"
                     text =           qsTr("3D View")

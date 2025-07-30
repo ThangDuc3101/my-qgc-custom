@@ -47,7 +47,7 @@ Rectangle {
 
     Rectangle {
         anchors.fill: viewButtonRow
-        
+
         gradient: Gradient {
             orientation: Gradient.Horizontal
             GradientStop { position: 0;                                     color: _mainStatusBGColor }
@@ -77,9 +77,24 @@ Rectangle {
             Layout.preferredHeight: viewButtonRow.height
         }
 
+        //---------- NÚT LẬP KẾ HOẠCH BAY MỚI ----------
+                QGCButton {
+                    id:                 planFlightButton
+                    Layout.fillHeight:  true
+                    text:               "Lập Kế hoạch Bay"
+                    visible:            _activeVehicle !== null // Chỉ hiện khi đã kết nối
+
+                    onClicked: {
+                        if (mainWindow.allowViewSwitch()) {
+                            mainWindow.showPlanView()
+                        }
+                    }
+                }
+        //------------------------------------------
+
         QGCButton {
             id:                 disconnectButton
-            text:               qsTr("Disconnect")
+            text:               "Ngắt kết nối"
             onClicked:          _activeVehicle.closeVehicle()
             visible:            _activeVehicle && _communicationLost
         }
@@ -191,7 +206,7 @@ Rectangle {
 
         QGCLabel {
             anchors.centerIn:   parent
-            text:               qsTr("Downloading")
+            text:               "Đang tải xuống"
             font.pointSize:     ScreenTools.largeFontPointSize
         }
 
@@ -199,7 +214,7 @@ Rectangle {
             anchors.margins:    _margin
             anchors.right:      parent.right
             anchors.bottom:     parent.bottom
-            text:               qsTr("Click anywhere to hide")
+            text:               "Nhấn vào đâu đó để ẩn"
 
             property real _margin: ScreenTools.defaultFontPixelWidth / 2
         }
