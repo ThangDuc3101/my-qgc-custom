@@ -64,7 +64,7 @@ Rectangle {
         spacing:            _margin
 
         QGCLabel {
-            text:           qsTr("All Altitudes")
+            text:           qsTr("Tất cả thuộc tính")
             font.pointSize: ScreenTools.smallFontPointSize
         }
         MouseArea {
@@ -111,7 +111,7 @@ Rectangle {
         }
 
         QGCLabel {
-            text:           qsTr("Initial Waypoint Alt")
+            text:           qsTr("Độ cao điểm tham chiếu")
             font.pointSize: ScreenTools.smallFontPointSize
         }
         FactTextField {
@@ -127,7 +127,7 @@ Rectangle {
 
             QGCCheckBox {
                 id:         flightSpeedCheckBox
-                text:       qsTr("Flight speed")
+                text:       qsTr("Tốc độ bay")
                 visible:    _showFlightSpeed
                 checked:    missionItem.speedSection.specifyFlightSpeed
                 onClicked:   missionItem.speedSection.specifyFlightSpeed = checked
@@ -154,7 +154,7 @@ Rectangle {
             QGCLabel {
                 anchors.left:           parent.left
                 anchors.right:          parent.right
-                text:                   qsTr("Above camera commands will take affect immediately upon mission start.")
+                text:                   qsTr("Các lệnh trên của camera sẽ có hiệu lực ngay khi nhiệm vụ bắt đầu.")
                 wrapMode:               Text.WordWrap
                 horizontalAlignment:    Text.AlignHCenter
                 font.pointSize:         ScreenTools.smallFontPointSize
@@ -165,7 +165,7 @@ Rectangle {
                 id:             vehicleInfoSectionHeader
                 anchors.left:   parent.left
                 anchors.right:  parent.right
-                text:           qsTr("Vehicle Info")
+                text:           qsTr("Thông tin máy bay")
                 visible:        !_waypointsOnlyMode
                 checked:        false
             }
@@ -216,12 +216,12 @@ Rectangle {
                     Layout.fillWidth:       true
                     wrapMode:               Text.WordWrap
                     font.pointSize:         ScreenTools.smallFontPointSize
-                    text:                   qsTr("The following speed values are used to calculate total mission time. They do not affect the flight speed for the mission.")
+                    text:                   qsTr("Các giá trị tốc độ sau đây được sử dụng để tính toán tổng thời gian thực hiện nhiệm vụ. Chúng không ảnh hưởng đến tốc độ bay của nhiệm vụn.")
                     visible:                _showCruiseSpeed || _showHoverSpeed
                 }
 
                 QGCLabel {
-                    text:               qsTr("Cruise speed")
+                    text:               qsTr("Tốc độ hành trình")
                     visible:            _showCruiseSpeed
                     Layout.fillWidth:   true
                 }
@@ -266,7 +266,7 @@ Rectangle {
                     columns:        2
 
                     QGCLabel {
-                        text: qsTr("Altitude")
+                        text: qsTr("Độ cao")
                     }
                     FactTextField {
                         fact:               missionItem.plannedHomePositionAltitude
@@ -278,12 +278,12 @@ Rectangle {
                     width:                  parent.width
                     wrapMode:               Text.WordWrap
                     font.pointSize:         ScreenTools.smallFontPointSize
-                    text:                   qsTr("Actual position set by vehicle at flight time.")
+                    text:                   qsTr("Vị trí thực tế do máy bay thiết lập tại thời điểm bay.")
                     horizontalAlignment:    Text.AlignHCenter
                 }
 
                 QGCButton {
-                    text:                       qsTr("Set To Map Center")
+                    text:                       qsTr("Đặt thành trung tâm bản đồ")
                     onClicked:                  missionItem.coordinate = map.center
                     anchors.horizontalCenter:   parent.horizontalCenter
                 }

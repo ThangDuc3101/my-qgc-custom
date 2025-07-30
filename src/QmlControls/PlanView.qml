@@ -573,7 +573,7 @@ Item {
                 id: toolStripActionList
                 model: [
                     ToolStripAction {
-                        text:                   qsTr("File")
+                        text:                   qsTr("Tệp")
                         enabled:                !_planMasterController.syncInProgress
                         visible:                true
                         showAlternateIcon:      _planMasterController.dirty
@@ -582,7 +582,7 @@ Item {
                         dropPanelComponent:     syncDropPanel
                     },
                     ToolStripAction {
-                        text:       qsTr("Takeoff")
+                        text:       qsTr("Cất cánh")
                         iconSource: "/res/takeoff.svg"
                         enabled:    _missionController.isInsertTakeoffValid
                         visible:    (toolStrip._isMissionLayer || toolStrip._isUtmspLayer) && !_planMasterController.controllerVehicle.rover
@@ -594,14 +594,14 @@ Item {
                     },
                     ToolStripAction {
                         id:                 addWaypointRallyPointAction
-                        text:               _editingLayer == _layerRallyPoints ? qsTr("Rally Point") : qsTr("Waypoint")
+                        text:               _editingLayer == _layerRallyPoints ? qsTr("Rally Point") : qsTr("Waypoints")
                         iconSource:         "/qmlimages/MapAddMission.svg"
                         enabled:            toolStrip._isRallyLayer ? true : _missionController.flyThroughCommandsAllowed
                         visible:            toolStrip._isRallyLayer || toolStrip._isMissionLayer || toolStrip._isUtmspLayer
                         checkable:          true
                     },
                     ToolStripAction {
-                        text:               _missionController.isROIActive ? qsTr("Cancel ROI") : qsTr("ROI")
+                        text:               _missionController.isROIActive ? qsTr("Hủy ROI") : qsTr("ROI")
                         iconSource:         "/qmlimages/MapAddMission.svg"
                         enabled:            !_missionController.onlyInsertTakeoffValid
                         visible:            toolStrip._isMissionLayer && _planMasterController.controllerVehicle.roiModeSupported
@@ -617,7 +617,7 @@ Item {
                         onMyAddROIOnClickChanged: checked = _addROIOnClick
                     },
                     ToolStripAction {
-                        text:               _singleComplexItem ? _missionController.complexMissionItemNames[0] : qsTr("Pattern")
+                        text:               _singleComplexItem ? _missionController.complexMissionItemNames[0] : qsTr("Mẫu")
                         iconSource:         "/qmlimages/MapDrawShape.svg"
                         enabled:            _missionController.flyThroughCommandsAllowed
                         visible:            toolStrip._isMissionLayer
@@ -631,7 +631,7 @@ Item {
                     },
                     ToolStripAction {
                         text:       _planMasterController.controllerVehicle.multiRotor
-                                    ? qsTr("Return")
+                                    ? qsTr("Quay lại")
                                     : _missionController.isInsertLandValid && _missionController.hasLandItem
                                       ? qsTr("Alt Land")
                                       : qsTr("Land")
@@ -644,7 +644,7 @@ Item {
                         }
                     },
                     ToolStripAction {
-                        text:               qsTr("Center")
+                        text:               qsTr("Về giữa")
                         iconSource:         "/qmlimages/MapCenter.svg"
                         enabled:            true
                         visible:            true
@@ -704,14 +704,14 @@ Item {
                     visible:    QGroundControl.corePlugin.options.enablePlanViewSelector  && !_utmspEnabled
                     Component.onCompleted: currentIndex = 0
                     QGCTabButton {
-                        text:       qsTr("Mission")
+                        text:       qsTr("Nhiệm vụ")
                     }
                     QGCTabButton {
-                        text:       qsTr("Fence")
+                        text:       qsTr("Vùng an toàn")
                         enabled:    _geoFenceController.supported
                     }
                     QGCTabButton {
-                        text:       qsTr("Rally")
+                        text:       qsTr("Tập hợp")
                         enabled:    _rallyPointController.supported
                     }
                 }
@@ -965,22 +965,22 @@ Item {
             id:         columnHolder
             spacing:    _margin
 
-            property string _overwriteText: qsTr("Plan overwrite")
+            property string _overwriteText: qsTr("Ghi đè Kế hoạch")
 
             QGCLabel {
                 id:                 unsavedChangedLabel
                 Layout.fillWidth:   true
                 wrapMode:           Text.WordWrap
                 text:               globals.activeVehicle ?
-                                        qsTr("You have unsaved changes. You should upload to your vehicle, or save to a file.") :
-                                        qsTr("You have unsaved changes.")
+                                        qsTr("Bạn có những thay đổi chưa được lưu. Bạn nên tải lên xe của mình hoặc lưu thành tệp.") :
+                                        qsTr("Bạn có những thay đổi chưa được lưu.")
                 visible:            _planMasterController.dirty
             }
 
             SectionHeader {
                 id:                 createSection
                 Layout.fillWidth:   true
-                text:               qsTr("Create Plan")
+                text:               qsTr("Tạo Kế hoạch.")
                 showSpacer:         false
             }
 
@@ -1049,7 +1049,7 @@ Item {
             SectionHeader {
                 id:                 storageSection
                 Layout.fillWidth:   true
-                text:               qsTr("Storage")
+                text:               qsTr("Kho")
             }
 
             GridLayout {
@@ -1059,7 +1059,7 @@ Item {
                 visible:            storageSection.checked
 
                 QGCButton {
-                    text:               qsTr("Open...")
+                    text:               qsTr("Mở ...")
                     Layout.fillWidth:   true
                     enabled:            !_planMasterController.syncInProgress
                     onClicked: {
@@ -1073,7 +1073,7 @@ Item {
                 }
 
                 QGCButton {
-                    text:               qsTr("Save")
+                    text:               qsTr("Lưu")
                     Layout.fillWidth:   true
                     enabled:            !_planMasterController.syncInProgress && _planMasterController.currentPlanFile !== ""
                     onClicked: {
@@ -1087,7 +1087,7 @@ Item {
                 }
 
                 QGCButton {
-                    text:               qsTr("Save As...")
+                    text:               qsTr("Lưu thành...")
                     Layout.fillWidth:   true
                     enabled:            !_planMasterController.syncInProgress && _planMasterController.containsItems
                     onClicked: {
@@ -1099,12 +1099,12 @@ Item {
                 QGCButton {
                     Layout.columnSpan:  3
                     Layout.fillWidth:   true
-                    text:               qsTr("Save Mission Waypoints As KML...")
+                    text:               qsTr("Lưu điểm tham chiếu nhiệm vụ dưới dạng KML ...")
                     enabled:            !_planMasterController.syncInProgress && _visualItems.count > 1
                     onClicked: {
                         // First point does not count
                         if (_visualItems.count < 2) {
-                            mainWindow.showMessageDialog(qsTr("KML"), qsTr("You need at least one item to create a KML."))
+                            mainWindow.showMessageDialog(qsTr("KML"), qsTr("Bạn cần ít nhất một mục để tạo KML."))
                             return
                         }
                         dropPanel.hide()
@@ -1116,7 +1116,7 @@ Item {
             SectionHeader {
                 id:                 vehicleSection
                 Layout.fillWidth:   true
-                text:               qsTr("Vehicle")
+                text:               qsTr("Máy bay")
             }
 
             RowLayout {
@@ -1125,7 +1125,7 @@ Item {
                 visible:            vehicleSection.checked
 
                 QGCButton {
-                    text:               qsTr("Upload")
+                    text:               qsTr("Tải lên")
                     Layout.fillWidth:   true
                     enabled:            !_planMasterController.offline && !_planMasterController.syncInProgress && _planMasterController.containsItems
                     visible:            !QGroundControl.corePlugin.options.disableVehicleConnection
@@ -1136,7 +1136,7 @@ Item {
                 }
 
                 QGCButton {
-                    text:               qsTr("Download")
+                    text:               qsTr("Tải về")
                     Layout.fillWidth:   true
                     enabled:            !_planMasterController.offline && !_planMasterController.syncInProgress
                     visible:            !QGroundControl.corePlugin.options.disableVehicleConnection
@@ -1148,7 +1148,7 @@ Item {
                 }
 
                 QGCButton {
-                    text:               qsTr("Clear")
+                    text:               qsTr("Xóa")
                     Layout.fillWidth:   true
                     Layout.columnSpan:  2
                     enabled:            !_planMasterController.offline && !_planMasterController.syncInProgress

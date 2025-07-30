@@ -209,12 +209,12 @@ ApplicationWindow {
         return true
     }
 
-    property string closeDialogTitle: qsTr("Close %1").arg(QGroundControl.appName)
+    property string closeDialogTitle: qsTr("Đóng %1").arg(QGroundControl.appName)
 
     function checkForUnsavedMission() {
         if (planView._planMasterController.dirty) {
             showMessageDialog(closeDialogTitle,
-                              qsTr("You have a mission edit in progress which has not been saved/sent. If you close you will lose changes. Are you sure you want to close?"),
+                              qsTr("Bạn có một nhiệm vụ đang chỉnh sửa nhưng chưa được lưu/gửi. Nếu bạn đóng bạn sẽ mất các thay đổi. Bạn có chắc chắn muốn đóng không?"),
                               Dialog.Yes | Dialog.No,
                               function() { _closeChecksToSkip |= _skipUnsavedMissionCheckMask; performCloseChecks() })
             return false
@@ -227,7 +227,7 @@ ApplicationWindow {
         for (var index=0; index<QGroundControl.multiVehicleManager.vehicles.count; index++) {
             if (QGroundControl.multiVehicleManager.vehicles.get(index).parameterManager.pendingWrites) {
                 mainWindow.showMessageDialog(closeDialogTitle,
-                    qsTr("You have pending parameter updates to a vehicle. If you close you will lose changes. Are you sure you want to close?"),
+                    qsTr("Bạn có thông số cập nhật đang chờ xử lý cho một máy bay. Nếu bạn đóng bạn sẽ mất các thay đổi. Bạn có chắc chắn muốn đóng không?"),
                     Dialog.Yes | Dialog.No,
                     function() { _closeChecksToSkip |= _skipPendingParameterWritesCheckMask; performCloseChecks() })
                 return false
@@ -239,7 +239,7 @@ ApplicationWindow {
     function checkForActiveConnections() {
         if (QGroundControl.multiVehicleManager.activeVehicle) {
             mainWindow.showMessageDialog(closeDialogTitle,
-                qsTr("There are still active connections to vehicles. Are you sure you want to exit?"),
+                qsTr("Vẫn còn kết nối với máy bay. Bạn có chắc chắn muốn thoát không?"),
                 Dialog.Yes | Dialog.No,
                 function() { _closeChecksToSkip |= _skipActiveConnectionsCheckMask; performCloseChecks() })
             return false
