@@ -78,19 +78,39 @@ Rectangle {
         }
 
         //---------- NÚT LẬP KẾ HOẠCH BAY MỚI ----------
-                QGCButton {
-                    id:                 planFlightButton
-                    Layout.fillHeight:  true
-                    text:               "Lập Kế hoạch Bay"
-                    visible:            _activeVehicle !== null // Chỉ hiện khi đã kết nối
+        Item {
+            // Sử dụng Item làm container để không ảnh hưởng đến Layout chung
+            Layout.preferredHeight: ScreenTools.defaultFontPixelHeight * 2.5 // Đặt chiều cao cố định
+            Layout.preferredWidth: planFlightButton.implicitWidth + (_margin * 2) // Chiều rộng tự động + lề
 
-                    onClicked: {
-                        if (mainWindow.allowViewSwitch()) {
-                            mainWindow.showPlanView()
-                        }
+            property real _margin: ScreenTools.defaultFontPixelWidth * 0.75
+
+            Rectangle {
+                // Rectangle này chỉ dùng để vẽ nền và bo góc
+                anchors.fill: parent
+                color: planFlightButton.pressed ? qgcPal.buttonHighlight : qgcPal.button
+                radius: 8 // <-- BÁN KÍNH BO GÓC. Bạn có thể thay đổi số này.
+
+            }
+
+            QGCButton {
+                id:                 planFlightButton
+                anchors.centerIn:   parent // Căn nút vào giữa Item container
+                text:               "Lập Kế hoạch Bay"
+                flat:               true   // Làm cho nền của nút trong suốt để lộ ra Rectangle bo góc ở dưới
+                visible:            _activeVehicle !== null
+
+                onClicked: {
+                    if (mainWindow.allowViewSwitch()) {
+                        mainWindow.showPlanView()
                     }
                 }
-        //------------------------------------------
+
+                // Thuộc tính _activeVehicle cần được định nghĩa ở đâu đó trong file này
+                // Ví dụ: property var _activeVehicle: QGroundControl.multiVehicleManager.activeVehicle
+            }
+        }
+        //---------------------------------------------------------
 
         QGCButton {
             id:                 disconnectButton
