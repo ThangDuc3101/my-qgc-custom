@@ -44,7 +44,7 @@ RowLayout {
 
         property string _commLostText:      qsTr("Mất kết nối")
         property string _readyToFlyText:    qsTr("Sẵn sàng bay")
-        property string _notReadyToFlyText: qsTr("Chư sẵn sàng")
+        property string _notReadyToFlyText: qsTr("Chưa sẵn sàng")
         property string _disconnectedText:  qsTr("Không kết nối - Click để kết nối thủ công")
         property string _armedText:         qsTr("Khởi động")
         property string _flyingText:        qsTr("Đang bay")
