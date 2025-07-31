@@ -154,7 +154,7 @@ Item {
 
         QGCButton {
             id:          serialToggleButton
-            text:        isSerialActive ? "Dừng Serial" : "Bắt đầu Serial"
+            text:        isSerialActive ? "Dừng Serial" : "Nhận Serial"
             enabled:     !_controllerSyncInProgress
             primary:     isSerialActive
             property var configDialog: null
