@@ -48,7 +48,7 @@ Item {
     property real _zorderCenterHandle:  QGroundControl.zOrderMapItems + 1   // Lowest such that drag or split takes precedence
 
     readonly property string _polygonToolsText: qsTr("Polygon Tools")
-    readonly property string _traceText:        qsTr("Click in the map to add vertices. Click 'Done Tracing' when finished.")
+    readonly property string _traceText:        qsTr("Bấm vào bản đồ để thêm các đỉnh. Nhấp vào 'Xong' khi hoàn tất.")
 
     function addCommonVisuals() {
         if (_objMgrCommonVisuals.empty) {
@@ -589,21 +589,21 @@ Item {
 
             QGCButton {
                 _horizontalPadding: 0
-                text:               qsTr("Basic")
+                text:               qsTr("Cơ bản")
                 visible:            !mapPolygon.traceMode
                 onClicked:          _resetPolygon()
             }
 
             QGCButton {
                 _horizontalPadding: 0
-                text:               qsTr("Circular")
+                text:               qsTr("Dạng vòng tròn")
                 visible:            !mapPolygon.traceMode
                 onClicked:          _resetCircle()
             }
 
             QGCButton {
                 _horizontalPadding: 0
-                text:               mapPolygon.traceMode ? qsTr("Done Tracing") : qsTr("Trace")
+                text:               mapPolygon.traceMode ? qsTr("Xong") : qsTr("Chọn từng điểm")
                 onClicked: {
                     if (mapPolygon.traceMode) {
                         if (mapPolygon.count < 3) {
@@ -621,7 +621,7 @@ Item {
 
             QGCButton {
                 _horizontalPadding: 0
-                text:               qsTr("Load KML/SHP...")
+                text:               qsTr("Tải KML/SHP...")
                 onClicked:          kmlOrSHPLoadDialog.openForLoad()
                 visible:            !mapPolygon.traceMode
             }
