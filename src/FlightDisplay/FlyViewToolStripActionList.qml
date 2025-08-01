@@ -49,6 +49,24 @@ ToolStripActionList {
         GuidedActionLand { },
         GuidedActionRTL { },
         GuidedActionPause { },
+
+        //---------- NÚT MỞ CÀI ĐẶT VIDEO  ----------
+        ToolStripAction
+        {
+            text:       qsTr("Camera")
+
+            iconSource: "qrc:/qmlimages/camera_video.svg"
+
+            visible:    true
+
+            onTriggered:
+            {
+                mainWindow.showSettingsTool("Video")
+            }
+        },
+        //---------------------------------------------------------
+
+
         FlyViewAdditionalActionsButton { },
         GuidedActionGripper { }
     ]
