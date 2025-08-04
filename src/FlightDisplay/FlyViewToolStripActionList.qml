@@ -67,7 +67,7 @@ ToolStripActionList {
 
         //---------- NÚT MỚI ĐỂ BẬT CHẾ ĐỘ "ĐẶT HOME" ----------
         ToolStripAction {
-            text:       qsTr("Đặt Home")
+            text:       qsTr("Đặt VTHNV")
             iconSource: "qrc:/qmlimages/Home.svg"
 
             // Chỉ bật khi phương tiện đã được kích hoạt (armed)

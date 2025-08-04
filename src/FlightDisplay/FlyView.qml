@@ -32,13 +32,11 @@ Item {
     property bool isSettingHome: false
     //-------------------------------------------------------------
 
-    // These should only be used by MainRootWindow
+    // Các property gốc
     property var planController:    _planController
     property var guidedController:  _guidedController
     property bool utmspSendActTrigger: false
-
     PlanMasterController { id: _planController; flyView: true; Component.onCompleted: start() }
-
     property bool   _mainWindowIsMap:       mapControl.pipState.state === mapControl.pipState.fullState
     property bool   _isFullWindowItemDark:  _mainWindowIsMap ? mapControl.isSatelliteMap : true
     property var    _activeVehicle:         QGroundControl.multiVehicleManager.activeVehicle
@@ -55,13 +53,6 @@ Item {
     property var    _mapControl:            mapControl
     property real   _fullItemZorder:    0
     property real   _pipItemZorder:     QGroundControl.zOrderWidgets
-
-    function _calcCenterViewPort() {
-        if (widgetLayer && widgetLayer.toolStrip) {
-            var newToolInset = Qt.rect(0, 0, width, height)
-            widgetLayer.toolStrip.adjustToolInset(newToolInset)
-        }
-    }
 
     function dropMainStatusIndicatorTool() {
         toolbar.dropMainStatusIndicatorTool();
@@ -91,7 +82,6 @@ Item {
             utmspActTrigger:        utmspSendActTrigger
             isViewer3DOpen:         viewer3DWindow.isOpen
 
-            // BẮT TÍN HIỆU TỪ NÚT BẤM VÀ THAY ĐỔI TRẠNG THÁI
             onSetHomeModeToggled: {
                 _root.isSettingHome = !_root.isSettingHome;
             }
@@ -100,7 +90,6 @@ Item {
         FlyViewCustomLayer { id: customOverlay; anchors.fill: widgetLayer; z: _fullItemZorder + 2; parentToolInsets: widgetLayer.totalToolInsets; mapControl: _mapControl; visible: !QGroundControl.videoManager.fullScreen }
         FlyViewInsetViewer { id: widgetLayerInsetViewer; anchors.fill: parent; z: widgetLayer.z + 1; insetsToView: widgetLayer.totalToolInsets; visible: false }
 
-        // MOUSE AREA TRONG SUỐT ĐỂ BẮT SỰ KIỆN CLICK
         MouseArea {
             anchors.fill: parent
             acceptedButtons: Qt.LeftButton
@@ -129,102 +118,104 @@ Item {
         }
     }
 
-    //---------- COMPONENT CHO DIALOG XÁC NHẬN "SET HOME" ----------
+    //---------- COMPONENT CHO DIALOG XÁC NHẬN "SET HOME" (ĐÃ SỬA BỐ CỤC) ----------
     Component {
         id: setHomeConfirmationDialogComponent
+
         Dialog {
             property var selectedCoordinate
 
-            // Bỏ tiêu đề và các nút bấm mặc định
-            // title:           qsTr("Xác nhận Vị trí Home Mới")
-            // standardButtons: Dialog.Yes | Dialog.No
-
-            // Chúng ta sẽ tự tạo toàn bộ giao diện
             standardButtons: Dialog.NoButton
-
             parent: Overlay.overlay
             x: (parent.width - width) / 2
             y: (parent.height - height) / 2
 
-            // Kích thước sẽ tự động điều chỉnh
-            implicitWidth:  contentColumn.implicitWidth
+            width: ScreenTools.defaultFontPixelWidth * 40
             implicitHeight: contentColumn.implicitHeight
 
-            // Nền tối và bo góc
             background: Rectangle {
-                color: Qt.rgba(0.2, 0.2, 0.2, 0.95) // Màu xám đậm
+                color: Qt.rgba(0.2, 0.2, 0.2, 0.95)
                 border.color: Qt.rgba(1, 1, 1, 0.2)
                 radius: 8
             }
 
             contentItem: ColumnLayout {
                 id:         contentColumn
-                spacing:    ScreenTools.defaultFontPixelWidth * 1.5 // Tăng khoảng cách
+                width: parent.width
 
-                // TIÊU ĐỀ MỚI
+                spacing:    ScreenTools.defaultFontPixelWidth
+
+                // --- TIÊU ĐỀ ---
                 QGCLabel {
-                    Layout.alignment:   Qt.AlignHCenter
-                    text:               qsTr("Xác nhận Vị trí Home Mới")
-                    font.pointSize:     ScreenTools.largeFontPointSize
-                    font.bold:          true
+                    Layout.fillWidth:       true
+                    horizontalAlignment:    Text.AlignHCenter
+                    text:                   qsTr("XÁC NHẬN")
+                    font.pointSize:         ScreenTools.largeFontPointSize
+                    font.bold:              true
+                    bottomPadding:          ScreenTools.defaultFontPixelWidth
                 }
 
-                // NỘI DUNG CHÍNH
+                // --- NỘI DUNG ---
                 QGCLabel {
-                    Layout.alignment:   Qt.AlignHCenter
-                    text:               qsTr("Bạn có chắc chắn muốn đặt Vị trí Home tại đây?")
+                    Layout.fillWidth:       true
+                    horizontalAlignment:    Text.AlignHCenter
+                    text:                   qsTr("Bạn có chắc chắn muốn đặt Vị trí hủy nhiệm vụ ở đây?")
+                    wrapMode:               Text.WordWrap
                 }
 
-                // KHUNG CHỨA TỌA ĐỘ VỚI NỀN RIÊNG
+                // --- KHUNG TỌA ĐỘ ---
                 Rectangle {
                     Layout.fillWidth:   true
-                    color:              Qt.rgba(0, 0, 0, 0.5) // Nền đen mờ
+                    implicitHeight:     coordLayout.implicitHeight + (anchors.margins * 2)
+                    color:              Qt.rgba(0, 0, 0, 0.5)
                     radius:             4
 
-                    Column {
-                        anchors.fill:       parent
-                        anchors.margins:    ScreenTools.defaultFontPixelWidth
+                    GridLayout {
+                        id:             coordLayout
+                        anchors.fill:   parent
+                        anchors.margins: ScreenTools.defaultFontPixelWidth / 2
+                        columns:        2
+                        columnSpacing:  ScreenTools.defaultFontPixelWidth
 
+                        QGCLabel { text: qsTr("Vĩ độ:") }
                         QGCLabel {
-                            text: qsTr("Vĩ độ: %1").arg(selectedCoordinate.latitude.toFixed(7))
+                            text: selectedCoordinate.latitude.toFixed(7)
+                            font.bold: true
+                            Layout.alignment: Qt.AlignRight
                         }
+
+                        QGCLabel { text: qsTr("Kinh độ:") }
                         QGCLabel {
-                            text: qsTr("Kinh độ: %1").arg(selectedCoordinate.longitude.toFixed(7))
+                            text: selectedCoordinate.longitude.toFixed(7)
+                            font.bold: true
+                            Layout.alignment: Qt.AlignRight
                         }
                     }
                 }
 
-                RowLayout {
+                DialogButtonBox
+                {
                     Layout.fillWidth:   true
                     Layout.topMargin:   ScreenTools.defaultFontPixelWidth
-                    spacing:            ScreenTools.defaultFontPixelWidth // Thêm khoảng cách giữa 2 nút
 
-                    // --- Nút Hủy ---
+                    // THÊM KHỐI NÀY ĐỂ LÀM CHO NỀN TRONG SUỐT
+                    background: Item {}
+
                     QGCButton {
-                        // Để nút tự co giãn theo chiều rộng của text, không chiếm hết không gian
-                        Layout.fillWidth:   true
                         text:               qsTr("Hủy")
                         onClicked:          reject()
+                        DialogButtonBox.buttonRole: DialogButtonBox.RejectRole
                     }
-
-                    // --- Nút Xác nhận ---
                     QGCButton {
-                        Layout.fillWidth:   true
                         text:               qsTr("Xác nhận")
                         primary:            true
                         onClicked:          accept()
-
-                        // Yêu cầu nút này trở thành nút mặc định (có thể được kích hoạt bằng Enter)
                         DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole
                     }
                 }
             }
-
-            // Logic xử lý vẫn giữ nguyên
             onAccepted: {
-                if (_activeVehicle) {
-                    _activeVehicle.doSetHome(selectedCoordinate);
-                }
+                if (_activeVehicle) { _activeVehicle.doSetHome(selectedCoordinate); }
                 _root.isSettingHome = false;
             }
             onRejected: {
@@ -234,7 +225,7 @@ Item {
     }
     //-----------------------------------------------------------------
 
-    //---------- THANH THÔNG BÁO HƯỚNG DẪN "SET HOME" ----------
+    //---------- THANH THÔNG BÁO HƯỚNG DẪN ----------
     Rectangle {
         anchors.horizontalCenter:   parent.horizontalCenter
         anchors.top:                toolbar.bottom
@@ -252,7 +243,7 @@ Item {
         QGCLabel {
             id:                     instructionLabel
             anchors.centerIn:       parent
-            text:                   qsTr("Đang ở chế độ Đặt Home: Nhấn vào bản đồ để chọn vị trí.")
+            text:                   qsTr("Đang ở chế độ Đặt Vị trí hủy nhiệm vu: Nhấn vào bản đồ để chọn vị trí.")
             font.bold:              true
             color:                  "lightgreen"
         }

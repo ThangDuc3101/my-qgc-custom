@@ -729,7 +729,8 @@ FlightMap {
                     QGCButton {
                         Layout.fillWidth:   true
                         text:               qsTr("Set Estimator Origin")
-                        visible:            globals.guidedControllerFlyView.showSetEstimatorOrigin
+                        // visible:            globals.guidedControllerFlyView.showSetEstimatorOrigin
+                        visible:            false
                         onClicked: {
                             mapClickDropPanel.close()
                             globals.guidedControllerFlyView.confirmAction(globals.guidedControllerFlyView.actionSetEstimatorOrigin, mapClickCoord)
