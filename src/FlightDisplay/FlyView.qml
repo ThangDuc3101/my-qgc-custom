@@ -243,7 +243,7 @@ Item {
         QGCLabel {
             id:                     instructionLabel
             anchors.centerIn:       parent
-            text:                   qsTr("Đang ở chế độ Đặt Vị trí hủy nhiệm vu: Nhấn vào bản đồ để chọn vị trí.")
+            text:                   qsTr("Đang ở chế độ ĐẶT VỊ TRÍ HỦY NHIỆM VỤ: Nhấn vào bản đồ để chọn vị trí.")
             font.bold:              true
             color:                  "lightgreen"
         }
