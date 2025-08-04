@@ -11,11 +11,13 @@ import QtQml.Models
 
 import QGroundControl
 import QGroundControl.Controls
+import QGroundControl.FlightDisplay
 
 ToolStripActionList {
     id: _root
 
     signal displayPreFlightChecklist
+    signal setHomeModeToggled // <-- TÍN HIỆU MỚI CHO NÚT ĐẶT HOME
 
     model: [
         ToolStripAction {
@@ -54,11 +56,8 @@ ToolStripActionList {
         ToolStripAction
         {
             text:       qsTr("Camera")
-
-            iconSource: "qrc:/qmlimages/camera_video.svg"
-
+            iconSource: "qrc:/qmlimages/camera_video.svg" // Sử dụng icon tốt hơn
             visible:    true
-
             onTriggered:
             {
                 mainWindow.showSettingsTool("Video")
@@ -66,6 +65,22 @@ ToolStripActionList {
         },
         //---------------------------------------------------------
 
+        //---------- NÚT MỚI ĐỂ BẬT CHẾ ĐỘ "ĐẶT HOME" ----------
+        ToolStripAction {
+            text:       qsTr("Đặt Home")
+            iconSource: "qrc:/qmlimages/Home.svg"
+
+            // Chỉ bật khi phương tiện đã được kích hoạt (armed)
+            // enabled:    QGroundControl.multiVehicleManager.activeVehicle ? QGroundControl.multiVehicleManager.activeVehicle.armed : false
+            enabled:    true
+            visible:    QGroundControl.multiVehicleManager.activeVehicle
+
+            onTriggered: {
+                // Khi nhấn, phát tín hiệu "setHomeModeToggled" ra ngoài
+                _root.setHomeModeToggled()
+            }
+        },
+        //-----------------------------------------------------
 
         FlyViewAdditionalActionsButton { },
         GuidedActionGripper { }

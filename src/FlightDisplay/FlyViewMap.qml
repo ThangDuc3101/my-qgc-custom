@@ -718,7 +718,8 @@ FlightMap {
                     QGCButton {
                         Layout.fillWidth:   true
                         text:               qsTr("Set home here")
-                        visible:            globals.guidedControllerFlyView.showSetHome
+                        // visible:            globals.guidedControllerFlyView.showSetHome
+                        visible:            false
                         onClicked: {
                             mapClickDropPanel.close()
                             globals.guidedControllerFlyView.confirmAction(globals.guidedControllerFlyView.actionSetHome, mapClickCoord)

@@ -19,18 +19,17 @@ import QtQml.Models
 
 import QGroundControl
 import QGroundControl.Controls
-
-import QGroundControl.Controls
-
 import QGroundControl.FlightDisplay
 import QGroundControl.FlightMap
-
 import QGroundControl.ScreenTools
 
 
 // This is the ui overlay layer for the widgets/tools for Fly View
 Item {
     id: _root
+
+    // BƯỚC 1: Thêm một tín hiệu mới để "chuyền" lên cấp cao hơn (FlyView)
+    signal setHomeModeToggled
 
     property var    parentToolInsets
     property var    totalToolInsets:        _totalToolInsets
@@ -125,7 +124,6 @@ Item {
         utmspSliderTrigger:         utmspActTrigger
     }
 
-    //-- Virtual Joystick
     Loader {
         id:                         virtualJoystickMultiTouch
         z:                          QGroundControl.zOrderTopMost + 1
@@ -135,8 +133,8 @@ Item {
         visible:                    _virtualJoystickEnabled && !QGroundControl.videoManager.fullScreen && !(_activeVehicle ? _activeVehicle.usingHighLatencyLink : false)
         anchors.bottom:             parent.bottom
         anchors.bottomMargin:       bottomLoaderMargin
-        anchors.left:               parent.left   
-        anchors.leftMargin:         ( y > toolStrip.y + toolStrip.height ? toolStrip.width / 2 : toolStrip.width * 1.05 + toolStrip.x) 
+        anchors.left:               parent.left
+        anchors.leftMargin:         ( y > toolStrip.y + toolStrip.height ? toolStrip.width / 2 : toolStrip.width * 1.05 + toolStrip.x)
         source:                     "qrc:/qml/QGroundControl/FlightDisplay/VirtualJoystick.qml"
         active:                     _virtualJoystickEnabled && !(_activeVehicle ? _activeVehicle.usingHighLatencyLink : false)
 
@@ -145,24 +143,19 @@ Item {
         property bool leftHandedMode:          QGroundControl.settingsManager.appSettings.virtualJoystickLeftHandedMode.rawValue
         property bool _virtualJoystickEnabled: QGroundControl.settingsManager.appSettings.virtualJoystick.rawValue
         property real bottomEdgeRightInset:    parent.height-y
-        property var  _pipViewMargin:          _pipView.visible ? parentToolInsets.bottomEdgeLeftInset + ScreenTools.defaultFontPixelHeight * 2 : 
+        property var  _pipViewMargin:          _pipView.visible ? parentToolInsets.bottomEdgeLeftInset + ScreenTools.defaultFontPixelHeight * 2 :
                                                bottomRightRowLayout.height + ScreenTools.defaultFontPixelHeight * 1.5
 
         property var  bottomLoaderMargin:      _pipViewMargin >= parent.height / 2 ? parent.height / 2 : _pipViewMargin
-
-        // Width is difficult to access directly hence this hack which may not work in all circumstances
         property real leftEdgeBottomInset:  visible ? bottomEdgeLeftInset + width/18 - ScreenTools.defaultFontPixelHeight*2 : 0
         property real rightEdgeBottomInset: visible ? bottomEdgeRightInset + width/18 - ScreenTools.defaultFontPixelHeight*2 : 0
         property real rootWidth:            _root.width
-        property var  itemX:                virtualJoystickMultiTouch.x   // real X on screen
-
+        property var  itemX:                virtualJoystickMultiTouch.x
         onRootWidthChanged: virtualJoystickMultiTouch.status == Loader.Ready && visible ? virtualJoystickMultiTouch.item.uiTotalWidth = rootWidth : undefined
         onItemXChanged:     virtualJoystickMultiTouch.status == Loader.Ready && visible ? virtualJoystickMultiTouch.item.uiRealX = itemX : undefined
-
-        //Loader status logic
         onLoaded: {
             if (virtualJoystickMultiTouch.visible) {
-                virtualJoystickMultiTouch.item.calibration = true 
+                virtualJoystickMultiTouch.item.calibration = true
                 virtualJoystickMultiTouch.item.uiTotalWidth = rootWidth
                 virtualJoystickMultiTouch.item.uiRealX = itemX
             } else {
@@ -187,6 +180,9 @@ Item {
             }
             preFlightChecklistLoader.item.open()
         }
+
+        // BƯỚC 2: Khi nhận được tín hiệu từ toolStrip, hãy phát tín hiệu của chính mình
+        onSetHomeModeToggled: _root.setHomeModeToggled()
 
         property real topEdgeLeftInset:     visible ? y + height : 0
         property real leftEdgeTopInset:     visible ? x + width : 0
@@ -226,3 +222,4 @@ Item {
         }
     }
 }
+

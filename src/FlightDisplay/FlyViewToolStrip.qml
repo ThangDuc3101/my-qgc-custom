@@ -18,10 +18,16 @@ ToolStrip {
 
     signal displayPreFlightChecklist
 
+    // BƯỚC 1: Thêm một tín hiệu mới để "chuyền" đi
+    signal setHomeModeToggled
+
     FlyViewToolStripActionList {
         id: flyViewToolStripActionList
 
         onDisplayPreFlightChecklist: _root.displayPreFlightChecklist()
+
+        // BƯỚC 2: Khi nhận được tín hiệu từ con, hãy phát tín hiệu của chính mình
+        onSetHomeModeToggled: _root.setHomeModeToggled()
     }
 
     model: flyViewToolStripActionList.model
