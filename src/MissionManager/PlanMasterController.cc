@@ -675,7 +675,7 @@ void PlanMasterController::sendSavedPlanToServer()
 }
 //==================== KẾT THÚC MÃ NGUỒN HÀM SEND ====================
 
-//==================== HÀM NHẬP JSON (SỬ DỤNG LỆNH CHANGE SPEED) ====================
+//==================== HÀM NHẬP JSON (ĐÃ SỬA LỖI CUỐI CÙNG) ====================
 void PlanMasterController::loadMissionFromJson()
 {
     // 1. Mở và đọc file JSON
@@ -702,40 +702,47 @@ void PlanMasterController::loadMissionFromJson()
         return;
     }
 
-    // 3. Xóa kế hoạch cũ
+    QJsonArray waypointsArray = jsonDoc.object()["waypoints"].toArray();
+    if (waypointsArray.isEmpty()) {
+        qgcApp()->showAppMessage(tr("Plan file contains no waypoints."));
+        return;
+    }
+
+            // Ghi đè trực tiếp, không cần xác nhận
     _missionController.removeAll();
 
-    QJsonArray waypointsArray = jsonDoc.object()["waypoints"].toArray();
     qgcApp()->showAppMessage(tr("Importing %1 waypoints...").arg(waypointsArray.count()));
 
-    double lastSpeed = -1.0; // Lưu lại tốc độ cuối cùng để tránh chèn lệnh thừa
+    QJsonObject firstWaypoint = waypointsArray[0].toObject();
+    if (firstWaypoint.contains("altitude")) {
+        // Lấy vị trí từ vehicle đang được quản lý bởi PlanMasterController
+        QGeoCoordinate takeoffCoord = _managerVehicle ? _managerVehicle->coordinate() : _missionController.plannedHomePosition();
 
-            // 4. Lặp qua và tạo lại các item
+        takeoffCoord.setAltitude(firstWaypoint["altitude"].toDouble());
+
+        _missionController.insertTakeoffItem(takeoffCoord, -1);
+    }
+
+    // double lastSpeed = -1.0;
     for (const QJsonValue &value : waypointsArray) {
         QJsonObject wpObject = value.toObject();
 
         if (wpObject.contains("latitude") && wpObject.contains("longitude") && wpObject.contains("altitude")) {
-            // Xử lý tốc độ TRƯỚC khi thêm waypoint
-            if (wpObject.contains("flight_speed") && wpObject["flight_speed"].isDouble()) {
-                double flightSpeed = wpObject["flight_speed"].toDouble();
+            // if (wpObject.contains("flight_speed") && wpObject["flight_speed"].isDouble())
+            // {
+            //     double flightSpeed = wpObject["flight_speed"].toDouble();
+            //     if (flightSpeed >= 0 && flightSpeed != lastSpeed) {
+            //         QGeoCoordinate dummyCoord;
+            //         MissionItem* speedItem = qobject_cast<MissionItem*>(_missionController.insertSimpleMissionItem(dummyCoord, -1));
+            //         if (speedItem) {
+            //             speedItem->setCommand(MAV_CMD_DO_CHANGE_SPEED);
+            //             speedItem->setParam2(flightSpeed);
+            //             speedItem->setParam3(-1);
+            //         }
+            //         lastSpeed = flightSpeed;
+            //     }
+            // }
 
-                // Chỉ chèn lệnh Change Speed nếu tốc độ thay đổi so với lần trước
-                if (flightSpeed >= 0 && flightSpeed != lastSpeed) {
-                    // Tạo một coordinate giả, nó không quan trọng
-                    QGeoCoordinate dummyCoord;
-                    // Chèn một item mới với command là DO_CHANGE_SPEED
-                    MissionItem* speedItem = qobject_cast<MissionItem*>(_missionController.insertSimpleMissionItem(dummyCoord, -1));
-                    if (speedItem) {
-                        speedItem->setCommand(MAV_CMD_DO_CHANGE_SPEED);
-                        speedItem->setParam1(0); // Speed type (0=Airspeed, 1=Groundspeed)
-                        speedItem->setParam2(flightSpeed); // Tốc độ (m/s)
-                        speedItem->setParam3(-1); // Throttle (-1 = không đổi)
-                    }
-                    lastSpeed = flightSpeed;
-                }
-            }
-
-                    // Thêm waypoint
             QGeoCoordinate coordinate(
                 wpObject["latitude"].toDouble(),
                 wpObject["longitude"].toDouble(),
@@ -747,7 +754,6 @@ void PlanMasterController::loadMissionFromJson()
 
     qgcApp()->showAppMessage(tr("Plan import complete."));
 }
-//===================================================================================
 
 //==================== BẮT ĐẦU MÃ NGUỒN CHO SERIAL PORT ====================
 bool PlanMasterController::isSerialActive() const
