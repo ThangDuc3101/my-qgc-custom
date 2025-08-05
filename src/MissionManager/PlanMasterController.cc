@@ -742,8 +742,18 @@ void PlanMasterController::loadMissionFromJson()
 
     // 3c. Lặp qua file JSON và tạo các item tương ứng
     double lastSpeed = -1.0;
-    for (const QJsonValue &value : customWaypointsArray) {
+    for (const QJsonValue &value : customWaypointsArray)
+    {
         QJsonObject wpObject = value.toObject();
+
+        MissionItem waypointMissionItem;
+        waypointMissionItem.setCommand(MAV_CMD_NAV_WAYPOINT);
+        waypointMissionItem.setFrame(MAV_FRAME_GLOBAL_RELATIVE_ALT);
+        waypointMissionItem.setParam4(NAN);
+        waypointMissionItem.setParam5(wpObject["latitude"].toDouble());
+        waypointMissionItem.setParam6(wpObject["longitude"].toDouble());
+        waypointMissionItem.setParam7(wpObject["altitude"].toDouble());
+        newVisualItems->append(new SimpleMissionItem(this, false, waypointMissionItem));
 
         if (wpObject.contains("flight_speed") && wpObject["flight_speed"].isDouble()) {
             double flightSpeed = wpObject["flight_speed"].toDouble();
@@ -758,15 +768,6 @@ void PlanMasterController::loadMissionFromJson()
                 lastSpeed = flightSpeed;
             }
         }
-
-        MissionItem waypointMissionItem;
-        waypointMissionItem.setCommand(MAV_CMD_NAV_WAYPOINT);
-        waypointMissionItem.setFrame(MAV_FRAME_GLOBAL_RELATIVE_ALT);
-        waypointMissionItem.setParam4(NAN);
-        waypointMissionItem.setParam5(wpObject["latitude"].toDouble());
-        waypointMissionItem.setParam6(wpObject["longitude"].toDouble());
-        waypointMissionItem.setParam7(wpObject["altitude"].toDouble());
-        newVisualItems->append(new SimpleMissionItem(this, false, waypointMissionItem));
     }
 
             // 4. GỌI HÀM CỦA MISSIONCONTROLLER ĐỂ THAY THẾ TOÀN BỘ KẾ HOẠCH
