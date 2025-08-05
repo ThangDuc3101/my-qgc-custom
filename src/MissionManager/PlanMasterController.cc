@@ -675,15 +675,14 @@ void PlanMasterController::sendSavedPlanToServer()
 }
 //==================== KẾT THÚC MÃ NGUỒN HÀM SEND ====================
 
-//==================== HÀM NHẬP JSON (ĐÃ SỬA LỖI CUỐI CÙNG) ====================
 void PlanMasterController::loadMissionFromJson()
 {
-    // 1. Mở và đọc file JSON
+    // 1. Mở và đọc file JSON tùy chỉnh
     QString jsonFile = QFileDialog::getOpenFileName(
         nullptr,
-        tr("Import Plan from JSON file"),
+        tr("Import Custom Plan from JSON file"),
         SettingsManager::instance()->appSettings()->missionSavePath(),
-        tr("Plan JSON file (*.json)"));
+        tr("Custom Plan JSON file (*.json)"));
     if (jsonFile.isEmpty()) return;
     QFile file(jsonFile);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
@@ -693,66 +692,83 @@ void PlanMasterController::loadMissionFromJson()
     QByteArray jsonData = file.readAll();
     file.close();
 
-            // 2. Phân tích và xác thực
+            // 2. Phân tích file JSON tùy chỉnh
     QJsonParseError parseError;
     QJsonDocument jsonDoc = QJsonDocument::fromJson(jsonData, &parseError);
     if (parseError.error != QJsonParseError::NoError || !jsonDoc.isObject() ||
         !jsonDoc.object().contains("waypoints") || !jsonDoc.object()["waypoints"].isArray()) {
-        qgcApp()->showAppMessage(tr("Invalid or corrupted plan file."));
+        qgcApp()->showAppMessage(tr("Invalid or corrupted custom plan file."));
         return;
     }
+    QJsonArray customWaypointsArray = jsonDoc.object()["waypoints"].toArray();
 
-    QJsonArray waypointsArray = jsonDoc.object()["waypoints"].toArray();
-    if (waypointsArray.isEmpty()) {
-        qgcApp()->showAppMessage(tr("Plan file contains no waypoints."));
-        return;
-    }
+            // 3. TẠO RA MỘT DANH SÁCH VISUAL ITEM MỚI
+    QmlObjectListModel* newVisualItems = new QmlObjectListModel(this);
 
-            // Ghi đè trực tiếp, không cần xác nhận
-    _missionController.removeAll();
-
-    qgcApp()->showAppMessage(tr("Importing %1 waypoints...").arg(waypointsArray.count()));
-
-    QJsonObject firstWaypoint = waypointsArray[0].toObject();
-    if (firstWaypoint.contains("altitude")) {
-        // Lấy vị trí từ vehicle đang được quản lý bởi PlanMasterController
-        QGeoCoordinate takeoffCoord = _managerVehicle ? _managerVehicle->coordinate() : _missionController.plannedHomePosition();
-
-        takeoffCoord.setAltitude(firstWaypoint["altitude"].toDouble());
-
-        _missionController.insertTakeoffItem(takeoffCoord, -1);
-    }
-
-    // double lastSpeed = -1.0;
-    for (const QJsonValue &value : waypointsArray) {
-        QJsonObject wpObject = value.toObject();
-
-        if (wpObject.contains("latitude") && wpObject.contains("longitude") && wpObject.contains("altitude")) {
-            // if (wpObject.contains("flight_speed") && wpObject["flight_speed"].isDouble())
-            // {
-            //     double flightSpeed = wpObject["flight_speed"].toDouble();
-            //     if (flightSpeed >= 0 && flightSpeed != lastSpeed) {
-            //         QGeoCoordinate dummyCoord;
-            //         MissionItem* speedItem = qobject_cast<MissionItem*>(_missionController.insertSimpleMissionItem(dummyCoord, -1));
-            //         if (speedItem) {
-            //             speedItem->setCommand(MAV_CMD_DO_CHANGE_SPEED);
-            //             speedItem->setParam2(flightSpeed);
-            //             speedItem->setParam3(-1);
-            //         }
-            //         lastSpeed = flightSpeed;
-            //     }
-            // }
-
-            QGeoCoordinate coordinate(
-                wpObject["latitude"].toDouble(),
-                wpObject["longitude"].toDouble(),
-                wpObject["altitude"].toDouble()
-                );
-            _missionController.insertSimpleMissionItem(coordinate, -1);
+            // 3b. Thêm item "Takeoff"
+    if (!customWaypointsArray.isEmpty()) {
+        QJsonObject firstWaypoint = customWaypointsArray[0].toObject();
+        if (firstWaypoint.contains("altitude")) {
+            MissionItem takeoffMissionItem;
+            takeoffMissionItem.setCommand(MAV_CMD_NAV_TAKEOFF);
+            takeoffMissionItem.setFrame(MAV_FRAME_GLOBAL_RELATIVE_ALT);
+            takeoffMissionItem.setParam7(firstWaypoint["altitude"].toDouble());
+            newVisualItems->append(new SimpleMissionItem(this, false, takeoffMissionItem));
         }
     }
 
-    qgcApp()->showAppMessage(tr("Plan import complete."));
+    // 3c. Lặp qua file JSON và tạo các item tương ứng
+    double lastSpeed = -1.0;
+    for (const QJsonValue &value : customWaypointsArray) {
+        QJsonObject wpObject = value.toObject();
+
+        if (wpObject.contains("flight_speed") && wpObject["flight_speed"].isDouble()) {
+            double flightSpeed = wpObject["flight_speed"].toDouble();
+            if (flightSpeed >= 0 && flightSpeed != lastSpeed) {
+                MissionItem speedMissionItem;
+                speedMissionItem.setCommand(MAV_CMD_DO_CHANGE_SPEED);
+                speedMissionItem.setFrame(MAV_FRAME_MISSION);
+                speedMissionItem.setParam1(1);
+                speedMissionItem.setParam2(flightSpeed);
+                speedMissionItem.setParam3(-1);
+                newVisualItems->append(new SimpleMissionItem(this, false, speedMissionItem));
+                lastSpeed = flightSpeed;
+            }
+        }
+
+        MissionItem waypointMissionItem;
+        waypointMissionItem.setCommand(MAV_CMD_NAV_WAYPOINT);
+        waypointMissionItem.setFrame(MAV_FRAME_GLOBAL_RELATIVE_ALT);
+        waypointMissionItem.setParam5(wpObject["latitude"].toDouble());
+        waypointMissionItem.setParam6(wpObject["longitude"].toDouble());
+        waypointMissionItem.setParam7(wpObject["altitude"].toDouble());
+        newVisualItems->append(new SimpleMissionItem(this, false, waypointMissionItem));
+    }
+
+            // 4. GỌI HÀM CỦA MISSIONCONTROLLER ĐỂ THAY THẾ TOÀN BỘ KẾ HOẠCH
+    QJsonObject qgcMissionObject;
+    QJsonArray qgcItemsJsonArray;
+    for(int i=0; i<newVisualItems->count(); i++) {
+        QJsonArray itemJson;
+        qobject_cast<VisualMissionItem*>(newVisualItems->get(i))->save(itemJson);
+        for(const QJsonValue& val : itemJson) {
+            qgcItemsJsonArray.append(val);
+        }
+    }
+    QGeoCoordinate homePos = _managerVehicle ? _managerVehicle->homePosition() : QGeoCoordinate();
+    qgcMissionObject["plannedHomePosition"] = QJsonArray{ homePos.latitude(), homePos.longitude(), homePos.altitude() };
+    qgcMissionObject["items"] = qgcItemsJsonArray;
+    qgcMissionObject["firmwareType"] = _managerVehicle->firmwareType();
+    qgcMissionObject["vehicleType"] = _managerVehicle->vehicleType();
+
+    QString errorString;
+    if (!_missionController.load(qgcMissionObject, errorString)) {
+        qgcApp()->showAppMessage(tr("Failed to load converted plan: %1").arg(errorString));
+    } else {
+        qgcApp()->showAppMessage(tr("Plan import successful."));
+    }
+
+    newVisualItems->deleteLater();
 }
 
 //==================== BẮT ĐẦU MÃ NGUỒN CHO SERIAL PORT ====================
