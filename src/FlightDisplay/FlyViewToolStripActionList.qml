@@ -65,7 +65,7 @@ ToolStripActionList {
         },
         //---------------------------------------------------------
 
-        //---------- NÚT MỚI ĐỂ BẬT CHẾ ĐỘ "ĐẶT HOME" ----------
+        //---------- NÚT MỚI ĐỂ BẬT CHẾ ĐỘ "ĐẶT VỊ TRÍ HỦY NHIỆM VỤ" ----------
         ToolStripAction {
             text:       qsTr("Đặt VTHNV")
             iconSource: "qrc:/qmlimages/Home.svg"

@@ -142,7 +142,19 @@ Item {
                 _planMasterController.saveMissionWaypointsAsJson()
             }
         }
+        //---------- NÚT NHẬP KẾ HOẠCH MỚI ----------
+            QGCButton {
+                id:          importPlanButton
+                text:        qsTr("Nhập Kế hoạch")
+                enabled:     !_controllerSyncInProgress
 
+                onClicked: {
+                    // Gọi đến hàm C++ mới mà chúng ta sẽ tạo
+                    console.log("Nút Nhập Kế hoạch đã được nhấn!");
+                    _planMasterController.loadMissionFromJson()
+                }
+            }
+        //-------------------------------------------
         QGCButton {
             id:          sendPlanButton
             text:        "Gửi Kế Hoạch"

@@ -673,11 +673,83 @@ void PlanMasterController::sendSavedPlanToServer()
     qgcApp()->showAppMessage(tr("Sending plan to server..."));
     manager->post(request, jsonData);
 }
-
 //==================== KẾT THÚC MÃ NGUỒN HÀM SEND ====================
 
-//==================== BẮT ĐẦU MÃ NGUỒN CHO SERIAL PORT ====================
+//==================== HÀM NHẬP JSON (SỬ DỤNG LỆNH CHANGE SPEED) ====================
+void PlanMasterController::loadMissionFromJson()
+{
+    // 1. Mở và đọc file JSON
+    QString jsonFile = QFileDialog::getOpenFileName(
+        nullptr,
+        tr("Import Plan from JSON file"),
+        SettingsManager::instance()->appSettings()->missionSavePath(),
+        tr("Plan JSON file (*.json)"));
+    if (jsonFile.isEmpty()) return;
+    QFile file(jsonFile);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        qgcApp()->showAppMessage(tr("Failed to open file for reading: %1").arg(file.errorString()));
+        return;
+    }
+    QByteArray jsonData = file.readAll();
+    file.close();
 
+            // 2. Phân tích và xác thực
+    QJsonParseError parseError;
+    QJsonDocument jsonDoc = QJsonDocument::fromJson(jsonData, &parseError);
+    if (parseError.error != QJsonParseError::NoError || !jsonDoc.isObject() ||
+        !jsonDoc.object().contains("waypoints") || !jsonDoc.object()["waypoints"].isArray()) {
+        qgcApp()->showAppMessage(tr("Invalid or corrupted plan file."));
+        return;
+    }
+
+    // 3. Xóa kế hoạch cũ
+    _missionController.removeAll();
+
+    QJsonArray waypointsArray = jsonDoc.object()["waypoints"].toArray();
+    qgcApp()->showAppMessage(tr("Importing %1 waypoints...").arg(waypointsArray.count()));
+
+    double lastSpeed = -1.0; // Lưu lại tốc độ cuối cùng để tránh chèn lệnh thừa
+
+            // 4. Lặp qua và tạo lại các item
+    for (const QJsonValue &value : waypointsArray) {
+        QJsonObject wpObject = value.toObject();
+
+        if (wpObject.contains("latitude") && wpObject.contains("longitude") && wpObject.contains("altitude")) {
+            // Xử lý tốc độ TRƯỚC khi thêm waypoint
+            if (wpObject.contains("flight_speed") && wpObject["flight_speed"].isDouble()) {
+                double flightSpeed = wpObject["flight_speed"].toDouble();
+
+                // Chỉ chèn lệnh Change Speed nếu tốc độ thay đổi so với lần trước
+                if (flightSpeed >= 0 && flightSpeed != lastSpeed) {
+                    // Tạo một coordinate giả, nó không quan trọng
+                    QGeoCoordinate dummyCoord;
+                    // Chèn một item mới với command là DO_CHANGE_SPEED
+                    MissionItem* speedItem = qobject_cast<MissionItem*>(_missionController.insertSimpleMissionItem(dummyCoord, -1));
+                    if (speedItem) {
+                        speedItem->setCommand(MAV_CMD_DO_CHANGE_SPEED);
+                        speedItem->setParam1(0); // Speed type (0=Airspeed, 1=Groundspeed)
+                        speedItem->setParam2(flightSpeed); // Tốc độ (m/s)
+                        speedItem->setParam3(-1); // Throttle (-1 = không đổi)
+                    }
+                    lastSpeed = flightSpeed;
+                }
+            }
+
+                    // Thêm waypoint
+            QGeoCoordinate coordinate(
+                wpObject["latitude"].toDouble(),
+                wpObject["longitude"].toDouble(),
+                wpObject["altitude"].toDouble()
+                );
+            _missionController.insertSimpleMissionItem(coordinate, -1);
+        }
+    }
+
+    qgcApp()->showAppMessage(tr("Plan import complete."));
+}
+//===================================================================================
+
+//==================== BẮT ĐẦU MÃ NGUỒN CHO SERIAL PORT ====================
 bool PlanMasterController::isSerialActive() const
 {
     return _serialPort && _serialPort->isOpen();

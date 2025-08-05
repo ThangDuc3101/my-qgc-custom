@@ -99,6 +99,10 @@ public:
     Q_INVOKABLE void sendSavedPlanToServer();
     //---------------- KẾT THÚC KHAI BÁO ----------------
 
+    //---------- KHAI BÁO CHO HÀM NHẬP JSON ----------
+    Q_INVOKABLE void loadMissionFromJson();
+    //-----------------------------------------------
+
     //-------------- KHAI BÁO CHO SERIAL --------------
     Q_PROPERTY(bool isSerialActive READ isSerialActive NOTIFY isSerialActiveChanged)
 
