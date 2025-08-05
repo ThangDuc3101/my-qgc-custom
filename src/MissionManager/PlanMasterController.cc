@@ -705,14 +705,37 @@ void PlanMasterController::loadMissionFromJson()
             // 3. TẠO RA MỘT DANH SÁCH VISUAL ITEM MỚI
     QmlObjectListModel* newVisualItems = new QmlObjectListModel(this);
 
-            // 3b. Thêm item "Takeoff"
+    // 3b. Thêm item "Takeoff"
     if (!customWaypointsArray.isEmpty()) {
         QJsonObject firstWaypoint = customWaypointsArray[0].toObject();
         if (firstWaypoint.contains("altitude")) {
+
+            // --- LOGIC MỚI ĐỂ LẤY VỊ TRÍ TAKEOFF ---
+            QGeoCoordinate takeoffGroundCoord;
+            // Ưu tiên 1: Vị trí vehicle hiện tại nếu hợp lệ
+            if (_managerVehicle && _managerVehicle->coordinate().isValid()) {
+                takeoffGroundCoord = _managerVehicle->coordinate();
+            }
+            // Ưu tiên 2: Vị trí Home đã lên kế hoạch nếu hợp lệ
+            else if (_missionController.plannedHomePosition().isValid()) {
+                takeoffGroundCoord = _missionController.plannedHomePosition();
+            }
+            // Ưu tiên 3 (Dự phòng): Vị trí của waypoint đầu tiên
+            else {
+                takeoffGroundCoord.setLatitude(firstWaypoint["latitude"].toDouble());
+                takeoffGroundCoord.setLongitude(firstWaypoint["longitude"].toDouble());
+            }
+            // ------------------------------------------
+
             MissionItem takeoffMissionItem;
             takeoffMissionItem.setCommand(MAV_CMD_NAV_TAKEOFF);
             takeoffMissionItem.setFrame(MAV_FRAME_GLOBAL_RELATIVE_ALT);
+
+            // Gán tọa độ đã được xác định một cách thông minh
+            takeoffMissionItem.setParam5(takeoffGroundCoord.latitude());
+            takeoffMissionItem.setParam6(takeoffGroundCoord.longitude());
             takeoffMissionItem.setParam7(firstWaypoint["altitude"].toDouble());
+
             newVisualItems->append(new SimpleMissionItem(this, false, takeoffMissionItem));
         }
     }
@@ -739,6 +762,7 @@ void PlanMasterController::loadMissionFromJson()
         MissionItem waypointMissionItem;
         waypointMissionItem.setCommand(MAV_CMD_NAV_WAYPOINT);
         waypointMissionItem.setFrame(MAV_FRAME_GLOBAL_RELATIVE_ALT);
+        waypointMissionItem.setParam4(NAN);
         waypointMissionItem.setParam5(wpObject["latitude"].toDouble());
         waypointMissionItem.setParam6(wpObject["longitude"].toDouble());
         waypointMissionItem.setParam7(wpObject["altitude"].toDouble());
