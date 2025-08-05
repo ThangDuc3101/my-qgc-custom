@@ -675,18 +675,19 @@ void PlanMasterController::sendSavedPlanToServer()
 }
 //==================== KẾT THÚC MÃ NGUỒN HÀM SEND ====================
 
+// =================== MÃ NGUỒN CHO NÚT NHẬP NHIỆM VỤ ================
 void PlanMasterController::loadMissionFromJson()
 {
     // 1. Mở và đọc file JSON tùy chỉnh
     QString jsonFile = QFileDialog::getOpenFileName(
         nullptr,
-        tr("Import Custom Plan from JSON file"),
+        tr("Nhập Kế hoạch chuẩn bị trước ..."),
         SettingsManager::instance()->appSettings()->missionSavePath(),
         tr("Custom Plan JSON file (*.json)"));
     if (jsonFile.isEmpty()) return;
     QFile file(jsonFile);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        qgcApp()->showAppMessage(tr("Failed to open file for reading: %1").arg(file.errorString()));
+        qgcApp()->showAppMessage(tr("Không mở được file: %1").arg(file.errorString()));
         return;
     }
     QByteArray jsonData = file.readAll();
@@ -697,7 +698,7 @@ void PlanMasterController::loadMissionFromJson()
     QJsonDocument jsonDoc = QJsonDocument::fromJson(jsonData, &parseError);
     if (parseError.error != QJsonParseError::NoError || !jsonDoc.isObject() ||
         !jsonDoc.object().contains("waypoints") || !jsonDoc.object()["waypoints"].isArray()) {
-        qgcApp()->showAppMessage(tr("Invalid or corrupted custom plan file."));
+        qgcApp()->showAppMessage(tr("Tệp kế hoạch tùy chỉnh không hợp lệ hoặc bị hỏng."));
         return;
     }
     QJsonArray customWaypointsArray = jsonDoc.object()["waypoints"].toArray();
@@ -788,13 +789,14 @@ void PlanMasterController::loadMissionFromJson()
 
     QString errorString;
     if (!_missionController.load(qgcMissionObject, errorString)) {
-        qgcApp()->showAppMessage(tr("Failed to load converted plan: %1").arg(errorString));
+        qgcApp()->showAppMessage(tr("Nhập thất bại: %1").arg(errorString));
     } else {
-        qgcApp()->showAppMessage(tr("Plan import successful."));
+        qgcApp()->showAppMessage(tr("Nhập kế hoạch thành công."));
     }
 
     newVisualItems->deleteLater();
 }
+// =========================================================================
 
 //==================== BẮT ĐẦU MÃ NGUỒN CHO SERIAL PORT ====================
 bool PlanMasterController::isSerialActive() const
