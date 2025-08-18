@@ -860,9 +860,11 @@ bool PlanMasterController::startSerialListener(const QString& portName, int baud
 
 void PlanMasterController::stopSerialListener()
 {
-    if (_serialPort && _serialPort->isOpen()) {
+    if (_serialPort && _serialPort->isOpen())
+    {
         _serialPort->close();
         qCDebug(PlanMasterControllerLog) << "Serial port closed.";
+        qgcApp()->showAppMessage(tr("Đã đóng kết nối"));
         emit isSerialActiveChanged();
     }
 }

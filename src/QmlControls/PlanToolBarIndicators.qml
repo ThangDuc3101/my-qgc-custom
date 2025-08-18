@@ -79,7 +79,7 @@ Item {
 
     readonly property real _margins: ScreenTools.defaultFontPixelWidth
 
-    property bool isSerialActive: false
+    // property bool isSerialActive: false
 
     property bool _utmspEnabled: QGroundControl.utmspSupported
 
@@ -166,12 +166,12 @@ Item {
 
         QGCButton {
             id:          serialToggleButton
-            text:        isSerialActive ? "Dừng Serial" : "Nhận Serial"
+            text:        _planMasterController.isSerialActive ? "Dừng Serial" : "Nhận Serial"
             enabled:     !_controllerSyncInProgress
-            primary:     isSerialActive
+            primary:     _planMasterController.isSerialActive
             property var configDialog: null
             onClicked: {
-                if (isSerialActive) {
+                if (_planMasterController.isSerialActive) {
                     _planMasterController.stopSerialListener();
                 } else {
                     configDialog = serialConfigDialogComponent.createObject(_root);
@@ -329,21 +329,20 @@ Item {
                     id:             baudComboBox
                     Layout.fillWidth: true
                     model: [ 9600, 19200, 38400, 57600, 115200 ]
-                    currentIndex: 4
+                    currentIndex: 0
                 }
             }
 
             onAccepted: {
                 var success = _planMasterController.startSerialListener(selectedPort, selectedBaud);
-                if (success) {
-                    _root.isSerialActive = true;
-                } else {
+                if (!success) {
+                    // _root.isSerialActive = true;
                     qgcApp.showAppMessage("Không thể kết nối đến cổng serial. Vui lòng kiểm tra console.");
                 }
             }
 
             onRejected: {
-                 _root.isSerialActive = false;
+                 // _root.isSerialActive = false;
             }
         }
     }
