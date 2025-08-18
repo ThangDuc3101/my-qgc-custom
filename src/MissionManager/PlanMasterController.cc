@@ -849,6 +849,7 @@ bool PlanMasterController::startSerialListener(const QString& portName, int baud
     if (_serialPort->open(QIODevice::ReadOnly)) {
         connect(_serialPort, &QSerialPort::readyRead, this, &PlanMasterController::_onSerialDataReady);
         qCDebug(PlanMasterControllerLog) << "Successfully opened serial port" << portName << "at" << baudRate << "baud.";
+        qgcApp()->showAppMessage(tr("Kết nối thành công"));
         emit isSerialActiveChanged();
         return true;
     } else {
