@@ -19,6 +19,8 @@
 #include "GeoFenceController.h"
 #include "RallyPointController.h"
 
+#include <QtCore/QTimer>
+
 Q_DECLARE_LOGGING_CATEGORY(PlanMasterControllerLog)
 
 class QmlObjectListModel;
@@ -144,6 +146,7 @@ class PlanMasterController : public QObject
     void _onPythonProcessReadyRead();
     void _onPythonProcessErrorOccurred(QProcess::ProcessError error);
     void _onPythonProcessStateChanged(QProcess::ProcessState newState);
+    void _processBufferedData();
 
    private:
     void _commonInit                (void);
@@ -170,5 +173,6 @@ class PlanMasterController : public QObject
     // --- CÁC THÀNH VIÊN MỚI CHO LOGIC SERIAL QUA PYTHON ---
     QProcess*               _pythonProcess =            nullptr;
     QByteArray              _serialBuffer;
+    QTimer*                 _dataBufferTimer =          nullptr;
     QNetworkAccessManager*  _networkManager =           nullptr;
 };

@@ -101,6 +101,11 @@ void PlanMasterController::_commonInit(void)
     //---------- KẾT THÚC KHỐI MÃ MỚI ----------
 
     _networkManager = new QNetworkAccessManager(this);
+
+    _dataBufferTimer = new QTimer(this);
+    _dataBufferTimer->setSingleShot(true); // Timer chỉ kêu 1 lần rồi tắt
+    _dataBufferTimer->setInterval(20);     // Chờ 20ms sau byte cuối cùng
+    connect(_dataBufferTimer, &QTimer::timeout, this, &PlanMasterController::_processBufferedData);
 }
 
 
@@ -785,7 +790,8 @@ QStringList PlanMasterController::getAvailableSerialPorts()
 
 void PlanMasterController::startSerialListener(const QString& portName, int baudRate)
 {
-    if (isSerialActive()) {
+    if (isSerialActive())
+    {
         qCWarning(PlanMasterControllerLog) << "Serial reader process is already running.";
         return;
     }
@@ -816,15 +822,10 @@ void PlanMasterController::stopSerialListener()
 
 void PlanMasterController::_onPythonProcessReadyRead()
 {
-    QByteArray data = _pythonProcess->readAllStandardOutput();
+    QByteArray newData = _pythonProcess->readAllStandardOutput();
 
-    if (!data.isEmpty()) {
-        qCDebug(PlanMasterControllerLog) << "Data from Python:" << data;
-        qgcApp()->showAppMessage(tr("Đã nhận tín hiệu: %1").arg(QString::fromLatin1(data)));
-
-        _serialBuffer.append(data);
-        // (Tùy chọn) Thêm logic xử lý buffer tại đây nếu cần
-    }
+    _serialBuffer.append(newData);
+    _dataBufferTimer->start();
 }
 
 void PlanMasterController::_onPythonProcessErrorOccurred(QProcess::ProcessError error)
@@ -859,6 +860,25 @@ void PlanMasterController::_onPythonProcessStateChanged(QProcess::ProcessState n
         }
     }
     emit isSerialActiveChanged();
+}
+
+void PlanMasterController::_processBufferedData()
+{
+    if (_serialBuffer.isEmpty()) {
+        return;
+    }
+
+    const QList<QString> validSignals = {"1", "2", "3", "4", "6", "7"};
+    QString receivedSignal = QString::fromLatin1(_serialBuffer);
+
+    if (validSignals.contains(receivedSignal)) {
+        qCDebug(PlanMasterControllerLog) << "Valid signal packet received:" << receivedSignal;
+        qgcApp()->showAppMessage(tr("Đã nhận tín hiệu: %1").arg(receivedSignal));
+    } else {
+        qCWarning(PlanMasterControllerLog) << "Unsupported signal packet received:" << receivedSignal;
+        qgcApp()->showAppMessage(tr("Chức năng này chưa hỗ trợ"));
+    }
+    _serialBuffer.clear();
 }
 //---------- KẾT THÚC KHỐI MÃ MỚI ----------
 

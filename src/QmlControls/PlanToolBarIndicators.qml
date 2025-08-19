@@ -337,7 +337,7 @@ Item {
                 var success = _planMasterController.startSerialListener(selectedPort, selectedBaud);
                 if (!success) {
                     // _root.isSerialActive = true;
-                    qgcApp.showAppMessage("Không thể kết nối đến cổng serial. Vui lòng kiểm tra console.");
+                    // qgcApp.showAppMessage("Không thể kết nối đến cổng serial. Vui lòng kiểm tra console.");
                 }
             }
 

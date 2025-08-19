@@ -111,13 +111,13 @@ Rectangle {
         QGCLabel {
             text: {
                 if (_activeVehicle) {
-                    var pct = _activeVehicle.battery.percentRemaining.value;
-                    return isNaN(pct) ? "N/A" : pct.toFixed(0) + " %";
+                    // var pct = _activeVehicle.battery.percentRemaining.value;
+                    // return isNaN(pct) ? "N/A" : pct.toFixed(0) + " %";
                 }
                 return "--";
             }
             font.bold: true
-            color: _activeVehicle && _activeVehicle.battery.percentRemaining.value < 20 ? "orange" : "white"
+            // color: _activeVehicle && _activeVehicle.battery.percentRemaining.value < 20 ? "orange" : "white"
         }
     }
 
