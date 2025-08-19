@@ -12,15 +12,12 @@
 #include <QtCore/QObject>
 #include <QtCore/QLoggingCategory>
 #include <QtQmlIntegration/QtQmlIntegration>
+#include <QtCore/QProcess> // Thư viện cho tiến trình Python
+#include <QtSerialPort/QSerialPortInfo> // Thư viện để quét các cổng serial có sẵn
 
 #include "MissionController.h"
 #include "GeoFenceController.h"
 #include "RallyPointController.h"
-
-//---------- THÊM THƯ VIỆN SERIAL PORT ----------
-#include <QtSerialPort/QSerialPort>
-#include <QtSerialPort/QSerialPortInfo>
-//----------------------------------------------
 
 Q_DECLARE_LOGGING_CATEGORY(PlanMasterControllerLog)
 
@@ -35,8 +32,8 @@ class PlanMasterController : public QObject
     QML_ELEMENT
     Q_MOC_INCLUDE("QmlObjectListModel.h")
     Q_MOC_INCLUDE("Vehicle.h")
-    
-public:
+
+   public:
     PlanMasterController(QObject* parent = nullptr);
 #ifdef QT_DEBUG
     // Used by test code to create master controller with specific firmware/vehicle type
@@ -45,76 +42,56 @@ public:
 
     ~PlanMasterController();
 
+            // --- CÁC Q_PROPERTY CỦA QGC GỐC ---
     Q_PROPERTY(bool                     flyView                 MEMBER _flyView)
-    Q_PROPERTY(Vehicle*                 controllerVehicle       READ controllerVehicle                      CONSTANT)                       ///< Offline controller vehicle
-    Q_PROPERTY(Vehicle*                 managerVehicle          READ managerVehicle                         NOTIFY managerVehicleChanged)   ///< Either active vehicle or _controllerVehicle if no active vehicle
+    Q_PROPERTY(Vehicle*                 controllerVehicle       READ controllerVehicle                      CONSTANT)
+    Q_PROPERTY(Vehicle*                 managerVehicle          READ managerVehicle                         NOTIFY managerVehicleChanged)
     Q_PROPERTY(MissionController*       missionController       READ missionController                      CONSTANT)
     Q_PROPERTY(GeoFenceController*      geoFenceController      READ geoFenceController                     CONSTANT)
     Q_PROPERTY(RallyPointController*    rallyPointController    READ rallyPointController                   CONSTANT)
-    Q_PROPERTY(bool                     offline                 READ offline                                NOTIFY offlineChanged)          ///< true: controller is not connected to an active vehicle
-    Q_PROPERTY(bool                     containsItems           READ containsItems                          NOTIFY containsItemsChanged)    ///< true: Elemement is non-empty
-    Q_PROPERTY(bool                     syncInProgress          READ syncInProgress                         NOTIFY syncInProgressChanged)   ///< true: Information is currently being saved/sent, false: no active save/send in progress
-    Q_PROPERTY(bool                     dirty                   READ dirty                  WRITE setDirty  NOTIFY dirtyChanged)            ///< true: Unsaved/sent changes are present, false: no changes since last save/send
-    Q_PROPERTY(QString                  fileExtension           READ fileExtension                          CONSTANT)                       ///< File extension for missions
+    Q_PROPERTY(bool                     offline                 READ offline                                NOTIFY offlineChanged)
+    Q_PROPERTY(bool                     containsItems           READ containsItems                          NOTIFY containsItemsChanged)
+    Q_PROPERTY(bool                     syncInProgress          READ syncInProgress                         NOTIFY syncInProgressChanged)
+    Q_PROPERTY(bool                     dirty                   READ dirty                  WRITE setDirty  NOTIFY dirtyChanged)
+    Q_PROPERTY(QString                  fileExtension           READ fileExtension                          CONSTANT)
     Q_PROPERTY(QString                  kmlFileExtension        READ kmlFileExtension                       CONSTANT)
     Q_PROPERTY(QString                  currentPlanFile         READ currentPlanFile                        NOTIFY currentPlanFileChanged)
-    Q_PROPERTY(QStringList              loadNameFilters         READ loadNameFilters                        CONSTANT)                       ///< File filter list loading plan files
-    Q_PROPERTY(QStringList              saveNameFilters         READ saveNameFilters                        CONSTANT)                       ///< File filter list saving plan files
+    Q_PROPERTY(QStringList              loadNameFilters         READ loadNameFilters                        CONSTANT)
+    Q_PROPERTY(QStringList              saveNameFilters         READ saveNameFilters                        CONSTANT)
     Q_PROPERTY(QmlObjectListModel*      planCreators            MEMBER _planCreators                        NOTIFY planCreatorsChanged)
 
-    /// Should be called immediately upon Component.onCompleted.
+    // --- CÁC Q_INVOKABLE CỦA QGC GỐC ---
     Q_INVOKABLE void start(void);
-
-    /// Starts the controller using a single static active vehicle. Will not track global active vehicle changes.
-    ///     @param deleteWhenSendCmplete The PlanMasterController object should be deleted after the first send is completed.
     Q_INVOKABLE void startStaticActiveVehicle(Vehicle* vehicle, bool deleteWhenSendCompleted = false);
-
-    /// Determines if the plan has all information needed to be saved or sent to the vehicle.
-    /// IMPORTANT NOTE: The return value is a VisualMissionItem::ReadForSaveState value. It is an int here to work around
-    /// a nightmare of circular header dependency problems.
     Q_INVOKABLE int readyForSaveState(void) const { return _missionController.readyForSaveState(); }
-
-    /// Replaces any current plan with the plan from the manager vehicle even if offline.
     Q_INVOKABLE void showPlanFromManagerVehicle(void);
-
-    /// Sends a plan to the specified file
-    ///     @param[in] vehicle Vehicle we are sending a plan to
-    ///     @param[in] filename Plan file to load
     static void sendPlanToVehicle(Vehicle* vehicle, const QString& filename);
-
     Q_INVOKABLE void loadFromVehicle(void);
     Q_INVOKABLE void sendToVehicle(void);
     Q_INVOKABLE void loadFromFile(const QString& filename);
     Q_INVOKABLE void saveToCurrent();
     Q_INVOKABLE void saveToFile(const QString& filename);
     Q_INVOKABLE void saveToKml(const QString& filename);
-    Q_INVOKABLE void removeAll(void);                       ///< Removes all from controller only, synce required to remove from vehicle
-    Q_INVOKABLE void removeAllFromVehicle(void);            ///< Removes all from vehicle and controller
+    Q_INVOKABLE void removeAll(void);
+    Q_INVOKABLE void removeAllFromVehicle(void);
 
-    //---------- KHAI BÁO CHO HÀM CỦA NÚT SAVE ----------
+            // --- CÁC HÀM TÙY CHỈNH CỦA BẠN ---
     Q_INVOKABLE void saveMissionWaypointsAsJson();
-    //--------------- KẾT THÚC KHAI BÁO -----------------
-
-    //---------- KHAI BÁO CHO HÀM CỦA NÚT SEND ----------
     Q_INVOKABLE void sendSavedPlanToServer();
-    //---------------- KẾT THÚC KHAI BÁO ----------------
-
-    //---------- KHAI BÁO CHO HÀM NHẬP JSON ----------
     Q_INVOKABLE void loadMissionFromJson();
-    //-----------------------------------------------
 
-    //-------------- KHAI BÁO CHO SERIAL --------------
+            // --- CÁC HÀM VÀ THUỘC TÍNH MỚI CHO LOGIC SERIAL QUA PYTHON ---
     Q_PROPERTY(bool isSerialActive READ isSerialActive NOTIFY isSerialActiveChanged)
-
     Q_INVOKABLE QStringList getAvailableSerialPorts();
-    Q_INVOKABLE bool startSerialListener(const QString& portName, int baudRate);
+    Q_INVOKABLE void startSerialListener(const QString& portName, int baudRate);
     Q_INVOKABLE void stopSerialListener();
-    //-------------------------------------------------
+    bool isSerialActive() const;
+    // -----------------------------------------------------------------
 
+    // --- CÁC HÀM PUBLIC CỦA QGC GỐC ---
     MissionController*      missionController(void)     { return &_missionController; }
     GeoFenceController*     geoFenceController(void)    { return &_geoFenceController; }
     RallyPointController*   rallyPointController(void)  { return &_rallyPointController; }
-
     bool        offline         (void) const { return _offline; }
     bool        containsItems   (void) const;
     bool        syncInProgress  (void) const;
@@ -126,11 +103,8 @@ public:
     QStringList loadNameFilters (void) const;
     QStringList saveNameFilters (void) const;
     bool        isEmpty         (void) const;
-
     void        setFlyView(bool flyView) { _flyView = flyView; }
-
     QJsonDocument saveToJson    ();
-
     Vehicle* controllerVehicle(void) { return _controllerVehicle; }
     Vehicle* managerVehicle(void) { return _managerVehicle; }
 
@@ -140,7 +114,8 @@ public:
     static constexpr const char* kJsonGeoFenceObjectKey =      "geoFence";
     static constexpr const char* kJsonRallyPointsObjectKey =   "rallyPoints";
 
-signals:
+   signals:
+    // --- CÁC TÍN HIỆU CỦA QGC GỐC ---
     void containsItemsChanged               (bool containsItems);
     void syncInProgressChanged              (void);
     void dirtyChanged                       (bool dirty);
@@ -150,11 +125,11 @@ signals:
     void managerVehicleChanged              (Vehicle* managerVehicle);
     void promptForPlanUsageOnVehicleChange  (void);
 
-    //---------- TÍN HIỆU CHO SERIAL ----------
+            // --- TÍN HIỆU CHO TRẠNG THÁI SERIAL ---
     void isSerialActiveChanged();
-    //-----------------------------------------
 
-private slots:
+   private slots:
+    // --- CÁC SLOT CỦA QGC GỐC ---
     void _activeVehicleChanged      (Vehicle* activeVehicle);
     void _loadMissionComplete       (void);
     void _loadGeoFenceComplete      (void);
@@ -165,17 +140,19 @@ private slots:
     void _updateOverallDirty        (void);
     void _updatePlanCreatorsList    (void);
 
-    //---------- SLOT CHO SERIAL ----------
-    void _onSerialDataReady();
-    //-------------------------------------
+            // --- CÁC SLOT MỚI ĐỂ LẮNG NGHE TIẾN TRÌNH PYTHON ---
+    void _onPythonProcessReadyRead();
+    void _onPythonProcessErrorOccurred(QProcess::ProcessError error);
+    void _onPythonProcessStateChanged(QProcess::ProcessState newState);
 
-private:
+   private:
     void _commonInit                (void);
     void _showPlanFromManagerVehicle(void);
 
+            // --- CÁC THÀNH VIÊN PRIVATE CỦA QGC GỐC ---
     MultiVehicleManager*    _multiVehicleMgr =          nullptr;
-    Vehicle*                _controllerVehicle =        nullptr;    ///< Offline controller vehicle
-    Vehicle*                _managerVehicle =           nullptr;    ///< Either active vehicle or _controllerVehicle if none
+    Vehicle*                _controllerVehicle =        nullptr;
+    Vehicle*                _managerVehicle =           nullptr;
     bool                    _flyView =                  true;
     bool                    _offline =                  true;
     MissionController       _missionController;
@@ -190,12 +167,8 @@ private:
     bool                    _previousOverallDirty =     false;
     QmlObjectListModel*     _planCreators =             nullptr;
 
-    //---------- THÀNH VIÊN CHO SERIAL ----------
-    QSerialPort*            _serialPort =               nullptr;
+    // --- CÁC THÀNH VIÊN MỚI CHO LOGIC SERIAL QUA PYTHON ---
+    QProcess*               _pythonProcess =            nullptr;
     QByteArray              _serialBuffer;
     QNetworkAccessManager*  _networkManager =           nullptr;
-
-    bool isSerialActive() const;
-    //-------------------------------------------
-
 };

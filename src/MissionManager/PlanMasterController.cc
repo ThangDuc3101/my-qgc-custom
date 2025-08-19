@@ -50,12 +50,12 @@ QGC_LOGGING_CATEGORY(PlanMasterControllerLog, "PlanMasterControllerLog")
 
 PlanMasterController::PlanMasterController(QObject* parent)
     : QObject               (parent)
-    , _multiVehicleMgr      (MultiVehicleManager::instance())
-    , _controllerVehicle    (new Vehicle(Vehicle::MAV_AUTOPILOT_TRACK, Vehicle::MAV_TYPE_TRACK, this))
-    , _managerVehicle       (_controllerVehicle)
-    , _missionController    (this)
-    , _geoFenceController   (this)
-    , _rallyPointController (this)
+      , _multiVehicleMgr      (MultiVehicleManager::instance())
+      , _controllerVehicle    (new Vehicle(Vehicle::MAV_AUTOPILOT_TRACK, Vehicle::MAV_TYPE_TRACK, this))
+      , _managerVehicle       (_controllerVehicle)
+      , _missionController    (this)
+      , _geoFenceController   (this)
+      , _rallyPointController (this)
 {
     _commonInit();
 }
@@ -63,12 +63,12 @@ PlanMasterController::PlanMasterController(QObject* parent)
 #ifdef QT_DEBUG
 PlanMasterController::PlanMasterController(MAV_AUTOPILOT firmwareType, MAV_TYPE vehicleType, QObject* parent)
     : QObject               (parent)
-    , _multiVehicleMgr      (MultiVehicleManager::instance())
-    , _controllerVehicle    (new Vehicle(firmwareType, vehicleType))
-    , _managerVehicle       (_controllerVehicle)
-    , _missionController    (this)
-    , _geoFenceController   (this)
-    , _rallyPointController (this)
+      , _multiVehicleMgr      (MultiVehicleManager::instance())
+      , _controllerVehicle    (new Vehicle(firmwareType, vehicleType))
+      , _managerVehicle       (_controllerVehicle)
+      , _missionController    (this)
+      , _geoFenceController   (this)
+      , _rallyPointController (this)
 {
     _commonInit();
 }
@@ -89,19 +89,27 @@ void PlanMasterController::_commonInit(void)
     connect(&_geoFenceController,   &GeoFenceController::syncInProgressChanged,     this, &PlanMasterController::syncInProgressChanged);
     connect(&_rallyPointController, &RallyPointController::syncInProgressChanged,   this, &PlanMasterController::syncInProgressChanged);
 
-    // Offline vehicle can change firmware/vehicle type
+            // Offline vehicle can change firmware/vehicle type
     connect(_controllerVehicle,     &Vehicle::vehicleTypeChanged,                   this, &PlanMasterController::_updatePlanCreatorsList);
 
-    //---------- THÊM KHỞI TẠO CHO SERIAL ----------
-    _serialPort = new QSerialPort(this);
+            //---------- BẮT ĐẦU KHỐI MÃ MỚI: KHỞI TẠO QPROCESS ----------
+    _pythonProcess = new QProcess(this);
+    connect(_pythonProcess, &QProcess::readyReadStandardOutput, this, &PlanMasterController::_onPythonProcessReadyRead);
+    connect(_pythonProcess, &QProcess::errorOccurred, this, &PlanMasterController::_onPythonProcessErrorOccurred);
+    connect(_pythonProcess, &QProcess::stateChanged, this, &PlanMasterController::_onPythonProcessStateChanged);
+    //---------- KẾT THÚC KHỐI MÃ MỚI ----------
+
     _networkManager = new QNetworkAccessManager(this);
-    //-----------------------------------------------
 }
 
 
 PlanMasterController::~PlanMasterController()
 {
-
+    //---------- BẮT ĐẦU KHỐI MÃ MỚI: DỌN DẸP QPROCESS ----------
+    if (isSerialActive()) {
+        stopSerialListener();
+    }
+    //---------- KẾT THÚC KHỐI MÃ MỚI ----------
 }
 
 void PlanMasterController::start(void)
@@ -151,12 +159,12 @@ void PlanMasterController::_activeVehicleChanged(Vehicle* activeVehicle)
         newOffline = false;
         _managerVehicle = activeVehicle;
 
-        // Update controllerVehicle to the currently connected vehicle
+                // Update controllerVehicle to the currently connected vehicle
         AppSettings* appSettings = SettingsManager::instance()->appSettings();
         appSettings->offlineEditingFirmwareClass()->setRawValue(QGCMAVLink::firmwareClass(_managerVehicle->firmwareType()));
         appSettings->offlineEditingVehicleClass()->setRawValue(QGCMAVLink::vehicleClass(_managerVehicle->vehicleType()));
 
-        // We use these signals to sequence upload and download to the multiple controller/managers
+                // We use these signals to sequence upload and download to the multiple controller/managers
         connect(_managerVehicle->missionManager(),      &MissionManager::newMissionItemsAvailable,  this, &PlanMasterController::_loadMissionComplete);
         connect(_managerVehicle->geoFenceManager(),     &GeoFenceManager::loadComplete,             this, &PlanMasterController::_loadGeoFenceComplete);
         connect(_managerVehicle->rallyPointManager(),   &RallyPointManager::loadComplete,           this, &PlanMasterController::_loadRallyPointsComplete);
@@ -213,7 +221,7 @@ void PlanMasterController::_activeVehicleChanged(Vehicle* activeVehicle)
         }
     }
 
-    // Vehicle changed so we need to signal everything
+            // Vehicle changed so we need to signal everything
     emit containsItemsChanged(containsItems());
     emit syncInProgressChanged();
     emit dirtyChanged(dirty());
@@ -401,18 +409,18 @@ void PlanMasterController::loadFromFile(const QString& filename)
         }
 
         QList<JsonHelper::KeyValidateInfo> rgKeyInfo = {
-            { kJsonMissionObjectKey,        QJsonValue::Object, true },
-            { kJsonGeoFenceObjectKey,       QJsonValue::Object, true },
-            { kJsonRallyPointsObjectKey,    QJsonValue::Object, true },
-        };
+                                                        { kJsonMissionObjectKey,        QJsonValue::Object, true },
+                                                        { kJsonGeoFenceObjectKey,       QJsonValue::Object, true },
+                                                        { kJsonRallyPointsObjectKey,    QJsonValue::Object, true },
+                                                        };
         if (!JsonHelper::validateKeys(json, rgKeyInfo, errorString)) {
             qgcApp()->showAppMessage(errorMessage.arg(errorString));
             return;
         }
 
         if (!_missionController.load(json[kJsonMissionObjectKey].toObject(), errorString) ||
-                !_geoFenceController.load(json[kJsonGeoFenceObjectKey].toObject(), errorString) ||
-                !_rallyPointController.load(json[kJsonRallyPointsObjectKey].toObject(), errorString)) {
+            !_geoFenceController.load(json[kJsonGeoFenceObjectKey].toObject(), errorString) ||
+            !_rallyPointController.load(json[kJsonRallyPointsObjectKey].toObject(), errorString)) {
             qgcApp()->showAppMessage(errorMessage.arg(errorString));
         } else {
             //-- Allow plugins to post process the load
@@ -489,7 +497,7 @@ void PlanMasterController::saveToFile(const QString& filename)
         }
     }
 
-    // Only clear dirty bit if we are offline
+            // Only clear dirty bit if we are offline
     if (offline()) {
         setDirty(false);
     }
@@ -519,13 +527,11 @@ void PlanMasterController::saveToKml(const QString& filename)
     }
 }
 
-//---------- MÃ CHO NÚT SAVE ----------
 void PlanMasterController::saveMissionWaypointsAsJson()
 {
     QmlObjectListModel* visualItems = _missionController.visualItems();
     if (!visualItems) return;
 
-            // BƯỚC 1: DUMP TOÀN BỘ KẾ HOẠCH RA MỘT MẢNG JSON TẠM
     QJsonArray fullDataArray;
     for (int i = 0; i < visualItems->count(); i++) {
         VisualMissionItem* vItem = qobject_cast<VisualMissionItem*>(visualItems->get(i));
@@ -534,7 +540,6 @@ void PlanMasterController::saveMissionWaypointsAsJson()
         }
     }
 
-            // BƯỚC 2: XỬ LÝ MẢNG JSON TẠM
     QJsonArray waypointsArray;
     double missionSpeed = _controllerVehicle ? _controllerVehicle->defaultCruiseSpeed() : -1.0;
 
@@ -542,8 +547,7 @@ void PlanMasterController::saveMissionWaypointsAsJson()
         QJsonObject itemObject = fullDataArray[i].toObject();
         int command = itemObject["command"].toInt();
 
-                // Chỉ xử lý các item là WAYPOINT
-        if (command == 16) { // MAV_CMD_NAV_WAYPOINT
+        if (command == 16) {
             QJsonObject waypointObject;
             QJsonArray params = itemObject["params"].toArray();
 
@@ -551,7 +555,6 @@ void PlanMasterController::saveMissionWaypointsAsJson()
             waypointObject["longitude"] = params[5];
             waypointObject["altitude"]  = params[6];
 
-            // LOGIC LẤY TỐC ĐỘ: Nhìn về phía trước
             double flightSpeed = missionSpeed;
 
             if (i + 1 < fullDataArray.count()) {
@@ -561,27 +564,18 @@ void PlanMasterController::saveMissionWaypointsAsJson()
                 }
             }
             waypointObject["flight_speed"] = flightSpeed > 0 ? flightSpeed : QJsonValue::Null;
-
-            // TẠM THỜI ĐẶT is_target LÀ FALSE CHO TẤT CẢ
             waypointObject["is_target"] = false;
-
             waypointsArray.append(waypointObject);
         }
     }
 
-    // BƯỚC 3: GÁN is_target=true CHO WAYPOINT CUỐI CÙNG
     if (!waypointsArray.isEmpty()) {
-        // Lấy ra bản sao của đối tượng cuối cùng
         QJsonObject lastWaypoint = waypointsArray.last().toObject();
-        // Sửa đổi bản sao
         lastWaypoint["is_target"] = true;
-        // Xóa đối tượng cũ khỏi mảng
         waypointsArray.removeLast();
-        // Thêm bản sao đã được sửa đổi vào lại mảng
         waypointsArray.append(lastWaypoint);
     }
 
-            // BƯỚC 4: TẠO VÀ LƯU FILE
     QJsonObject rootObject;
     rootObject["fileType"]  = "FinalPlanWithTarget";
     rootObject["version"]   = 12.0;
@@ -601,12 +595,9 @@ void PlanMasterController::saveMissionWaypointsAsJson()
     file.close();
     qgcApp()->showAppMessage(tr("Plan saved to %1").arg(jsonFile));
 }
-//------------ KẾT THÚC MÃ ------------
 
-//==================== BẮT ĐẦU MÃ NGUỒN HÀM SEND ====================
 void PlanMasterController::sendSavedPlanToServer()
 {
-    // 1. Mở hộp thoại để người dùng chọn file JSON
     QString jsonFile = QFileDialog::getOpenFileName(
         nullptr,
         tr("Select Plan JSON File to Send"),
@@ -614,11 +605,9 @@ void PlanMasterController::sendSavedPlanToServer()
         tr("Simple Plan JSON file (*.json)"));
 
     if (jsonFile.isEmpty()) {
-        // Người dùng đã nhấn Cancel
         return;
     }
 
-            // 2. Đọc nội dung của file đã chọn
     QFile file(jsonFile);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
         qgcApp()->showAppMessage(tr("Failed to open file for reading: %1").arg(file.errorString()));
@@ -627,24 +616,15 @@ void PlanMasterController::sendSavedPlanToServer()
     QByteArray jsonData = file.readAll();
     file.close();
 
-            // 3. Chuẩn bị yêu cầu mạng (Network Request)
-    // QUrl url("http://127.0.0.1:5000/submit_plan");
     QUrl url("http://192.168.144.30:5000/submit_plan");
     QNetworkRequest request(url);
-
-    // Đặt header quan trọng
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
-            // 4. Gửi yêu cầu POST và xử lý phản hồi
-            // Chúng ta cần một QNetworkAccessManager để thực hiện việc này.
-            // Tạo một manager mới cho mỗi lần gửi để đảm bảo an toàn luồng (thread-safe).
     QNetworkAccessManager* manager = new QNetworkAccessManager(this);
 
-            // Kết nối tín hiệu 'finished' của reply với một hàm lambda để xử lý khi có phản hồi
     connect(manager, &QNetworkAccessManager::finished, this,
             [=](QNetworkReply* reply)
             {
-                // Kiểm tra lỗi mạng
                 if (reply->error() != QNetworkReply::NoError)
                 {
                     QString errorMessage = tr("Network Error: %1").arg(reply->errorString());
@@ -653,7 +633,6 @@ void PlanMasterController::sendSavedPlanToServer()
                 }
                 else
                 {
-                    // Đọc phản hồi từ server
                     QByteArray responseData = reply->readAll();
                     QJsonDocument jsonResponse = QJsonDocument::fromJson(responseData);
 
@@ -664,8 +643,6 @@ void PlanMasterController::sendSavedPlanToServer()
                         qgcApp()->showAppMessage(tr("Server Response: %1").arg(message));
                     }
                 }
-
-                // Dọn dẹp
                 reply->deleteLater();
                 manager->deleteLater();
             });
@@ -673,12 +650,9 @@ void PlanMasterController::sendSavedPlanToServer()
     qgcApp()->showAppMessage(tr("Sending plan to server..."));
     manager->post(request, jsonData);
 }
-//==================== KẾT THÚC MÃ NGUỒN HÀM SEND ====================
 
-// =================== MÃ NGUỒN CHO NÚT NHẬP NHIỆM VỤ ================
 void PlanMasterController::loadMissionFromJson()
 {
-    // 1. Mở và đọc file JSON tùy chỉnh
     QString jsonFile = QFileDialog::getOpenFileName(
         nullptr,
         tr("Nhập Kế hoạch chuẩn bị trước ..."),
@@ -693,7 +667,6 @@ void PlanMasterController::loadMissionFromJson()
     QByteArray jsonData = file.readAll();
     file.close();
 
-            // 2. Phân tích file JSON tùy chỉnh
     QJsonParseError parseError;
     QJsonDocument jsonDoc = QJsonDocument::fromJson(jsonData, &parseError);
     if (parseError.error != QJsonParseError::NoError || !jsonDoc.isObject() ||
@@ -703,36 +676,28 @@ void PlanMasterController::loadMissionFromJson()
     }
     QJsonArray customWaypointsArray = jsonDoc.object()["waypoints"].toArray();
 
-            // 3. TẠO RA MỘT DANH SÁCH VISUAL ITEM MỚI
     QmlObjectListModel* newVisualItems = new QmlObjectListModel(this);
 
-    // 3b. Thêm item "Takeoff"
     if (!customWaypointsArray.isEmpty()) {
         QJsonObject firstWaypoint = customWaypointsArray[0].toObject();
         if (firstWaypoint.contains("altitude")) {
 
-            // --- LOGIC MỚI ĐỂ LẤY VỊ TRÍ TAKEOFF ---
             QGeoCoordinate takeoffGroundCoord;
-            // Ưu tiên 1: Vị trí vehicle hiện tại nếu hợp lệ
             if (_managerVehicle && _managerVehicle->coordinate().isValid()) {
                 takeoffGroundCoord = _managerVehicle->coordinate();
             }
-            // Ưu tiên 2: Vị trí Home đã lên kế hoạch nếu hợp lệ
             else if (_missionController.plannedHomePosition().isValid()) {
                 takeoffGroundCoord = _missionController.plannedHomePosition();
             }
-            // Ưu tiên 3 (Dự phòng): Vị trí của waypoint đầu tiên
             else {
                 takeoffGroundCoord.setLatitude(firstWaypoint["latitude"].toDouble());
                 takeoffGroundCoord.setLongitude(firstWaypoint["longitude"].toDouble());
             }
-            // ------------------------------------------
 
             MissionItem takeoffMissionItem;
             takeoffMissionItem.setCommand(MAV_CMD_NAV_TAKEOFF);
             takeoffMissionItem.setFrame(MAV_FRAME_GLOBAL_RELATIVE_ALT);
 
-            // Gán tọa độ đã được xác định một cách thông minh
             takeoffMissionItem.setParam5(takeoffGroundCoord.latitude());
             takeoffMissionItem.setParam6(takeoffGroundCoord.longitude());
             takeoffMissionItem.setParam7(firstWaypoint["altitude"].toDouble());
@@ -741,7 +706,6 @@ void PlanMasterController::loadMissionFromJson()
         }
     }
 
-    // 3c. Lặp qua file JSON và tạo các item tương ứng
     double lastSpeed = -1.0;
     for (const QJsonValue &value : customWaypointsArray)
     {
@@ -771,7 +735,6 @@ void PlanMasterController::loadMissionFromJson()
         }
     }
 
-            // 4. GỌI HÀM CỦA MISSIONCONTROLLER ĐỂ THAY THẾ TOÀN BỘ KẾ HOẠCH
     QJsonObject qgcMissionObject;
     QJsonArray qgcItemsJsonArray;
     for(int i=0; i<newVisualItems->count(); i++) {
@@ -796,112 +759,120 @@ void PlanMasterController::loadMissionFromJson()
 
     newVisualItems->deleteLater();
 }
-// =========================================================================
 
-//==================== BẮT ĐẦU MÃ NGUỒN CHO SERIAL PORT ====================
+//---------- BẮT ĐẦU KHỐI MÃ MỚI: LOGIC QPROCESS ----------
+
 bool PlanMasterController::isSerialActive() const
 {
-    return _serialPort && _serialPort->isOpen();
+    return _pythonProcess && (_pythonProcess->state() == QProcess::Running || _pythonProcess->state() == QProcess::Starting);
 }
 
 QStringList PlanMasterController::getAvailableSerialPorts()
 {
     QStringList portList;
     const auto portInfos = QSerialPortInfo::availablePorts();
-
-    qCDebug(PlanMasterControllerLog) << "Scanning for available serial ports...";
-
     for (const QSerialPortInfo &info : portInfos) {
-        QString name = info.portName();
-
-        // Chỉ thêm vào danh sách nếu tên cổng bắt đầu bằng "ttyUSB" hoặc "ttyACM"
-        if (name.startsWith("ttyUSB") || name.startsWith("ttyACM")) {
-            portList.append(name);
-            qCDebug(PlanMasterControllerLog) << "  > Found relevant port:" << name;
-        } else {
-            qCDebug(PlanMasterControllerLog) << "  > Skipping irrelevant port:" << name;
+        if (info.portName().startsWith("ttyUSB") || info.portName().startsWith("ttyACM")) {
+            portList.append(info.portName());
         }
     }
-
     if (portList.isEmpty()) {
         qCDebug(PlanMasterControllerLog) << "No relevant serial ports (ttyUSB*, ttyACM*) found.";
     }
-
     return portList;
 }
 
-bool PlanMasterController::startSerialListener(const QString& portName, int baudRate)
+void PlanMasterController::startSerialListener(const QString& portName, int baudRate)
 {
-    if (!_serialPort) {
-        qCWarning(PlanMasterControllerLog) << "Serial port object is null.";
-        return false;
+    if (isSerialActive()) {
+        qCWarning(PlanMasterControllerLog) << "Python process is already running.";
+        return;
     }
 
-    if (_serialPort->isOpen()) {
-        qCWarning(PlanMasterControllerLog) << "Serial port is already open.";
-        return true;
-    }
+    QString serverDir = "/home/thg/serverqgc";
+    QString venvActivateScript = serverDir + "/venvqgc/bin/activate";
+    QString pythonScript = serverDir + "/serial_reader.py";
+    QString fullPortPath = "/dev/" + portName;
 
-    _serialPort->setPortName(portName);
-    _serialPort->setBaudRate(baudRate);
-    // Các cài đặt khác có thể giữ mặc định (Data8, NoParity, OneStop)
+    QString fullCommand = QString("cd %1 && . %2 && python3 %3 %4 %5")
+                              .arg(serverDir)
+                              .arg(venvActivateScript)
+                              .arg(pythonScript)
+                              .arg(fullPortPath)
+                              .arg(QString::number(baudRate));
 
-    if (_serialPort->open(QIODevice::ReadOnly)) {
-        connect(_serialPort, &QSerialPort::readyRead, this, &PlanMasterController::_onSerialDataReady);
-        qCDebug(PlanMasterControllerLog) << "Successfully opened serial port" << portName << "at" << baudRate << "baud.";
-        qgcApp()->showAppMessage(tr("Kết nối thành công"));
-        emit isSerialActiveChanged();
-        return true;
-    } else {
-        qCWarning(PlanMasterControllerLog) << "Failed to open serial port" << portName << ":" << _serialPort->errorString();
-        qgcApp()->showAppMessage(tr("Failed to open serial port %1: %2").arg(portName).arg(_serialPort->errorString()));
-        return false;
-    }
+    qCDebug(PlanMasterControllerLog) << "Constructed shell command:" << fullCommand;
+
+    QString command = "/bin/bash";
+    QStringList args;
+    args << "-c" << fullCommand;
+
+    qCDebug(PlanMasterControllerLog) << "Starting shell process:" << command << args.join(" ");
+
+    _pythonProcess->start(command, args);
 }
 
 void PlanMasterController::stopSerialListener()
 {
-    if (_serialPort && _serialPort->isOpen())
-    {
-        _serialPort->close();
-        qCDebug(PlanMasterControllerLog) << "Serial port closed.";
-        qgcApp()->showAppMessage(tr("Đã đóng kết nối"));
-        emit isSerialActiveChanged();
-    }
-}
+    if (_pythonProcess && _pythonProcess->state() != QProcess::NotRunning) {
+        qCDebug(PlanMasterControllerLog) << "Terminating Python process...";
+        _pythonProcess->closeWriteChannel();
+        _pythonProcess->terminate();
 
-void PlanMasterController::_onSerialDataReady()
-{
-    // Đọc tất cả dữ liệu có sẵn và nối vào buffer
-    _serialBuffer.append(_serialPort->readAll());
-
-            // Xử lý buffer để tìm các gói tin hoàn chỉnh (kết thúc bằng '\n')
-    while (_serialBuffer.contains('\n')) {
-        int newlineIndex = _serialBuffer.indexOf('\n');
-        // Lấy ra gói tin (không bao gồm ký tự '\n')
-        QByteArray packet = _serialBuffer.left(newlineIndex);
-        // Xóa gói tin đã xử lý và ký tự '\n' khỏi buffer
-        _serialBuffer.remove(0, newlineIndex + 1);
-
-                // Chỉ xử lý nếu gói tin có đúng 10 ký tự
-        if (packet.length() == 10) {
-            QString rawData = QString::fromLatin1(packet);
-            qCDebug(PlanMasterControllerLog) << "Serial packet received:" << rawData;
-
-            // Gửi dữ liệu thô lên server
-            QUrl url("http://192.168.144.30:5000/submit_button_states"); // Sử dụng endpoint mới
-            QNetworkRequest request(url);
-            request.setHeader(QNetworkRequest::ContentTypeHeader, "text/plain");
-
-                    // Gửi và quên đi, không cần xử lý phản hồi phức tạp cho mỗi gói tin
-            _networkManager->post(request, rawData.toUtf8());
-
-        } else {
-            qCWarning(PlanMasterControllerLog) << "Received malformed serial packet, length:" << packet.length() << "Content:" << QString::fromLatin1(packet);
+        if (!_pythonProcess->waitForFinished(1000)) {
+            qWarning(PlanMasterControllerLog) << "Process did not terminate gracefully. Killing it.";
+            _pythonProcess->kill();
         }
     }
 }
-//==================== KẾT THÚC MÃ NGUỒN CHO SERIAL PORT ====================
+
+void PlanMasterController::_onPythonProcessReadyRead()
+{
+    QByteArray data = _pythonProcess->readAllStandardOutput();
+
+    if (!data.isEmpty()) {
+        qCDebug(PlanMasterControllerLog) << "Data from Python:" << data;
+        qgcApp()->showAppMessage(tr("Đã nhận tín hiệu: %1").arg(QString::fromLatin1(data)));
+
+        _serialBuffer.append(data);
+        // (Tùy chọn) Thêm logic xử lý buffer tại đây nếu cần
+    }
+}
+
+void PlanMasterController::_onPythonProcessErrorOccurred(QProcess::ProcessError error)
+{
+    QString errorString;
+    switch (error) {
+        case QProcess::FailedToStart:
+            errorString = tr("Lỗi: Không thể khởi chạy tiến trình Python. Hãy kiểm tra đường dẫn script và đảm bảo 'python3' đã được cài đặt.");
+            break;
+        case QProcess::Crashed:
+            errorString = tr("Lỗi: Tiến trình Python đã bị crash.");
+            break;
+        default:
+            errorString = tr("Lỗi không xác định từ tiến trình Python.");
+            break;
+    }
+
+    qCritical() << "Python process error:" << errorString;
+    qCritical() << "Python stderr:" << _pythonProcess->readAllStandardError();
+    qgcApp()->showAppMessage(errorString);
+    emit isSerialActiveChanged();
+}
+
+void PlanMasterController::_onPythonProcessStateChanged(QProcess::ProcessState newState)
+{
+    qCDebug(PlanMasterControllerLog) << "Python process state changed to:" << newState;
+    if (newState == QProcess::NotRunning) {
+        qCDebug(PlanMasterControllerLog) << "Python process has stopped.";
+        QByteArray errorData = _pythonProcess->readAllStandardError();
+        if (!errorData.isEmpty()) {
+            qWarning(PlanMasterControllerLog) << "Python stderr on exit:" << errorData;
+        }
+    }
+    emit isSerialActiveChanged();
+}
+//---------- KẾT THÚC KHỐI MÃ MỚI ----------
 
 void PlanMasterController::removeAll(void)
 {
@@ -965,7 +936,7 @@ QStringList PlanMasterController::loadNameFilters(void) const
     QStringList filters;
 
     filters << tr("Supported types (*.%1 *.%2 *.%3 *.%4)").arg(AppSettings::planFileExtension).arg(AppSettings::missionFileExtension).arg(AppSettings::waypointsFileExtension).arg("txt") <<
-               tr("All Files (*)");
+        tr("All Files (*)");
     return filters;
 }
 
@@ -994,7 +965,7 @@ void PlanMasterController::_showPlanFromManagerVehicle(void)
         _managerVehicle->forceInitialPlanRequestComplete();
     }
 
-    // The crazy if structure is to handle the load propagating by itself through the system
+            // The crazy if structure is to handle the load propagating by itself through the system
     if (!_missionController.showPlanFromManagerVehicle()) {
         if (!_geoFenceController.showPlanFromManagerVehicle()) {
             _rallyPointController.showPlanFromManagerVehicle();
@@ -1005,15 +976,15 @@ void PlanMasterController::_showPlanFromManagerVehicle(void)
 bool PlanMasterController::syncInProgress(void) const
 {
     return _missionController.syncInProgress() ||
-            _geoFenceController.syncInProgress() ||
-            _rallyPointController.syncInProgress();
+           _geoFenceController.syncInProgress() ||
+           _rallyPointController.syncInProgress();
 }
 
 bool PlanMasterController::isEmpty(void) const
 {
     return _missionController.isEmpty() &&
-            _geoFenceController.isEmpty() &&
-            _rallyPointController.isEmpty();
+           _geoFenceController.isEmpty() &&
+           _rallyPointController.isEmpty();
 }
 
 void PlanMasterController::_updateOverallDirty(void)
@@ -1021,7 +992,7 @@ void PlanMasterController::_updateOverallDirty(void)
     if(_previousOverallDirty != dirty()){
         _previousOverallDirty = dirty();
         emit dirtyChanged(_previousOverallDirty);
-    }    
+    }
 }
 
 void PlanMasterController::_updatePlanCreatorsList(void)
