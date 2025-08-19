@@ -622,7 +622,8 @@ void PlanMasterController::sendSavedPlanToServer()
     QByteArray jsonData = file.readAll();
     file.close();
 
-    QUrl url("http://192.168.144.30:5000/submit_plan");
+    // QUrl url("http://192.168.144.30:5000/submit_plan");
+    QUrl url("http://127.0.0.1:5000/submit_plan");
     QNetworkRequest request(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
@@ -864,21 +865,53 @@ void PlanMasterController::_onPythonProcessStateChanged(QProcess::ProcessState n
 
 void PlanMasterController::_processBufferedData()
 {
+    // if (_serialBuffer.isEmpty()) {
+    //     return;
+    // }
+
+    // const QList<QString> validSignals = {"1", "2", "3", "4", "6", "7"};
+    // QString receivedSignal = QString::fromLatin1(_serialBuffer);
+
+    // if (validSignals.contains(receivedSignal)) {
+    //     qCDebug(PlanMasterControllerLog) << "Valid signal packet received:" << receivedSignal;
+    //     qgcApp()->showAppMessage(tr("Đã nhận tín hiệu: %1").arg(receivedSignal));
+    // } else {
+    //     qCWarning(PlanMasterControllerLog) << "Unsupported signal packet received:" << receivedSignal;
+    //     qgcApp()->showAppMessage(tr("Chức năng này chưa hỗ trợ"));
+    // }
+    // _serialBuffer.clear();
+
     if (_serialBuffer.isEmpty()) {
         return;
     }
 
     const QList<QString> validSignals = {"1", "2", "3", "4", "6", "7"};
     QString receivedSignal = QString::fromLatin1(_serialBuffer);
+    _serialBuffer.clear(); // Xóa buffer ngay sau khi đọc
 
     if (validSignals.contains(receivedSignal)) {
-        qCDebug(PlanMasterControllerLog) << "Valid signal packet received:" << receivedSignal;
-        qgcApp()->showAppMessage(tr("Đã nhận tín hiệu: %1").arg(receivedSignal));
+        qCDebug(PlanMasterControllerLog) << "Valid signal received:" << receivedSignal << ". Sending to localhost...";
+        qgcApp()->showAppMessage(tr("Đã nhận tín hiệu: %1. Đang gửi...").arg(receivedSignal));
+
+                // --- BẮT ĐẦU KHỐI GỬI DỮ LIỆU QUA MẠNG ---
+
+                // 1. Sử dụng localhost (hoặc 127.0.0.1) để kiểm tra
+        QUrl url("http://127.0.0.1:5000/button_press");
+
+                // 2. Tạo yêu cầu và đặt header
+        QNetworkRequest request(url);
+        request.setHeader(QNetworkRequest::ContentTypeHeader, "text/plain");
+
+                // 3. Gửi dữ liệu (dưới dạng QByteArray)
+                // _networkManager đã được khởi tạo trong _commonInit
+        _networkManager->post(request, receivedSignal.toUtf8());
+
+                // --- KẾT THÚC KHỐI GỬI DỮ LIỆU ---
+
     } else {
-        qCWarning(PlanMasterControllerLog) << "Unsupported signal packet received:" << receivedSignal;
+        qCWarning(PlanMasterControllerLog) << "Unsupported signal received:" << receivedSignal;
         qgcApp()->showAppMessage(tr("Chức năng này chưa hỗ trợ"));
     }
-    _serialBuffer.clear();
 }
 //---------- KẾT THÚC KHỐI MÃ MỚI ----------
 
