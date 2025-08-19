@@ -45,6 +45,7 @@
 #include <QtNetwork/QNetworkReply>
 #include <QtCore/QUrl>
 //----------------------------------------------------
+#include <QCoreApplication>
 
 QGC_LOGGING_CATEGORY(PlanMasterControllerLog, "PlanMasterControllerLog")
 
@@ -785,29 +786,16 @@ QStringList PlanMasterController::getAvailableSerialPorts()
 void PlanMasterController::startSerialListener(const QString& portName, int baudRate)
 {
     if (isSerialActive()) {
-        qCWarning(PlanMasterControllerLog) << "Python process is already running.";
+        qCWarning(PlanMasterControllerLog) << "Serial reader process is already running.";
         return;
     }
 
-    QString serverDir = "/home/thg/serverqgc";
-    QString venvActivateScript = serverDir + "/venvqgc/bin/activate";
-    QString pythonScript = serverDir + "/serial_reader.py";
-    QString fullPortPath = "/dev/" + portName;
+    QString appDir = QCoreApplication::applicationDirPath();
+    QString command = appDir + "/serial_reader";
 
-    QString fullCommand = QString("cd %1 && . %2 && python3 %3 %4 %5")
-                              .arg(serverDir)
-                              .arg(venvActivateScript)
-                              .arg(pythonScript)
-                              .arg(fullPortPath)
-                              .arg(QString::number(baudRate));
-
-    qCDebug(PlanMasterControllerLog) << "Constructed shell command:" << fullCommand;
-
-    QString command = "/bin/bash";
     QStringList args;
-    args << "-c" << fullCommand;
-
-    qCDebug(PlanMasterControllerLog) << "Starting shell process:" << command << args.join(" ");
+    args << "/dev/" + portName << QString::number(baudRate);
+    qCDebug(PlanMasterControllerLog) << "Starting bundled serial reader:" << command << args.join(" ");
 
     _pythonProcess->start(command, args);
 }
