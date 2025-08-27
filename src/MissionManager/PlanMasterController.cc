@@ -37,6 +37,7 @@
 #include "MissionItem.h"
 #include "VisualMissionItem.h"
 #include "MissionManager/SimpleMissionItem.h"
+#include "MissionManager/TakeoffMissionItem.h" // <<< THÊM INCLUDE NÀY
 //----------------------------------------------------
 
 //---------- BỔ SUNG THƯ VIỆN CHO NÚT SEND ----------
@@ -90,32 +91,27 @@ void PlanMasterController::_commonInit(void)
     connect(&_geoFenceController,   &GeoFenceController::syncInProgressChanged,     this, &PlanMasterController::syncInProgressChanged);
     connect(&_rallyPointController, &RallyPointController::syncInProgressChanged,   this, &PlanMasterController::syncInProgressChanged);
 
-            // Offline vehicle can change firmware/vehicle type
     connect(_controllerVehicle,     &Vehicle::vehicleTypeChanged,                   this, &PlanMasterController::_updatePlanCreatorsList);
 
-            //---------- BẮT ĐẦU KHỐI MÃ MỚI: KHỞI TẠO QPROCESS ----------
     _pythonProcess = new QProcess(this);
     connect(_pythonProcess, &QProcess::readyReadStandardOutput, this, &PlanMasterController::_onPythonProcessReadyRead);
     connect(_pythonProcess, &QProcess::errorOccurred, this, &PlanMasterController::_onPythonProcessErrorOccurred);
     connect(_pythonProcess, &QProcess::stateChanged, this, &PlanMasterController::_onPythonProcessStateChanged);
-    //---------- KẾT THÚC KHỐI MÃ MỚI ----------
 
     _networkManager = new QNetworkAccessManager(this);
 
     _dataBufferTimer = new QTimer(this);
-    _dataBufferTimer->setSingleShot(true); // Timer chỉ kêu 1 lần rồi tắt
-    _dataBufferTimer->setInterval(20);     // Chờ 20ms sau byte cuối cùng
+    _dataBufferTimer->setSingleShot(true);
+    _dataBufferTimer->setInterval(20);
     connect(_dataBufferTimer, &QTimer::timeout, this, &PlanMasterController::_processBufferedData);
 }
 
 
 PlanMasterController::~PlanMasterController()
 {
-    //---------- BẮT ĐẦU KHỐI MÃ MỚI: DỌN DẸP QPROCESS ----------
     if (isSerialActive()) {
         stopSerialListener();
     }
-    //---------- KẾT THÚC KHỐI MÃ MỚI ----------
 }
 
 void PlanMasterController::start(void)
@@ -143,14 +139,12 @@ void PlanMasterController::startStaticActiveVehicle(Vehicle* vehicle, bool delet
 void PlanMasterController::_activeVehicleChanged(Vehicle* activeVehicle)
 {
     if (_managerVehicle == activeVehicle) {
-        // We are already setup for this vehicle
         return;
     }
 
     qCDebug(PlanMasterControllerLog) << "_activeVehicleChanged" << activeVehicle;
 
     if (_managerVehicle) {
-        // Disconnect old vehicle. Be careful of wildcarding disconnect too much since _managerVehicle may equal _controllerVehicle
         disconnect(_managerVehicle->missionManager(),       nullptr, this, nullptr);
         disconnect(_managerVehicle->geoFenceManager(),      nullptr, this, nullptr);
         disconnect(_managerVehicle->rallyPointManager(),    nullptr, this, nullptr);
@@ -158,19 +152,16 @@ void PlanMasterController::_activeVehicleChanged(Vehicle* activeVehicle)
 
     bool newOffline = false;
     if (activeVehicle == nullptr) {
-        // Since there is no longer an active vehicle we use the offline controller vehicle as the manager vehicle
         _managerVehicle = _controllerVehicle;
         newOffline = true;
     } else {
         newOffline = false;
         _managerVehicle = activeVehicle;
 
-                // Update controllerVehicle to the currently connected vehicle
         AppSettings* appSettings = SettingsManager::instance()->appSettings();
         appSettings->offlineEditingFirmwareClass()->setRawValue(QGCMAVLink::firmwareClass(_managerVehicle->firmwareType()));
         appSettings->offlineEditingVehicleClass()->setRawValue(QGCMAVLink::vehicleClass(_managerVehicle->vehicleType()));
 
-                // We use these signals to sequence upload and download to the multiple controller/managers
         connect(_managerVehicle->missionManager(),      &MissionManager::newMissionItemsAvailable,  this, &PlanMasterController::_loadMissionComplete);
         connect(_managerVehicle->geoFenceManager(),     &GeoFenceManager::loadComplete,             this, &PlanMasterController::_loadGeoFenceComplete);
         connect(_managerVehicle->rallyPointManager(),   &RallyPointManager::loadComplete,           this, &PlanMasterController::_loadRallyPointsComplete);
@@ -184,50 +175,37 @@ void PlanMasterController::_activeVehicleChanged(Vehicle* activeVehicle)
     emit managerVehicleChanged(_managerVehicle);
 
     if (_flyView) {
-        // We are in the Fly View
         if (newOffline) {
-            // No active vehicle, clear mission
             qCDebug(PlanMasterControllerLog) << "_activeVehicleChanged: Fly View - No active vehicle, clearing stale plan";
             removeAll();
         } else {
-            // Fly view has changed to a new active vehicle, update to show correct mission
             qCDebug(PlanMasterControllerLog) << "_activeVehicleChanged: Fly View - New active vehicle, loading new plan from manager vehicle";
             _showPlanFromManagerVehicle();
         }
     } else {
-        // We are in the Plan view.
         if (containsItems()) {
-            // The plan view has a stale plan in it
             if (dirty()) {
-                // Plan is dirty, the user must decide what to do in all cases
                 qCDebug(PlanMasterControllerLog) << "_activeVehicleChanged: Plan View - Previous dirty plan exists, no new active vehicle, sending promptForPlanUsageOnVehicleChange signal";
                 emit promptForPlanUsageOnVehicleChange();
             } else {
-                // Plan is not dirty
                 if (newOffline) {
-                    // The active vehicle went away with no new active vehicle
                     qCDebug(PlanMasterControllerLog) << "_activeVehicleChanged: Plan View - Previous clean plan exists, no new active vehicle, clear stale plan";
                     removeAll();
                 } else {
-                    // We are transitioning from one active vehicle to another. Show the plan from the new vehicle.
                     qCDebug(PlanMasterControllerLog) << "_activeVehicleChanged: Plan View - Previous clean plan exists, new active vehicle, loading from new manager vehicle";
                     _showPlanFromManagerVehicle();
                 }
             }
         } else {
-            // There is no previous Plan in the view
             if (newOffline) {
-                // Nothing special to do in this case
                 qCDebug(PlanMasterControllerLog) << "_activeVehicleChanged: Plan View - No previous plan, no longer connected to vehicle, nothing to do";
             } else {
-                // Just show the plan from the new vehicle
                 qCDebug(PlanMasterControllerLog) << "_activeVehicleChanged: Plan View - No previous plan, new active vehicle, loading from new manager vehicle";
                 _showPlanFromManagerVehicle();
             }
         }
     }
 
-            // Vehicle changed so we need to signal everything
     emit containsItemsChanged(containsItems());
     emit syncInProgressChanged();
     emit dirtyChanged(dirty());
@@ -244,7 +222,6 @@ void PlanMasterController::loadFromVehicle(void)
             return;
         }
     } else {
-        // Vehicle is shutting down
         return;
     }
 
@@ -348,7 +325,6 @@ void PlanMasterController::sendToVehicle(void)
             return;
         }
     } else {
-        // Vehicle is shutting down
         return;
     }
 
@@ -405,7 +381,6 @@ void PlanMasterController::loadFromFile(const QString& filename)
         }
 
         QJsonObject json = jsonDoc.object();
-        //-- Allow plugins to pre process the load
         QGCCorePlugin::instance()->preLoadFromJson(this, json);
 
         int version;
@@ -429,7 +404,6 @@ void PlanMasterController::loadFromFile(const QString& filename)
             !_rallyPointController.load(json[kJsonRallyPointsObjectKey].toObject(), errorString)) {
             qgcApp()->showAppMessage(errorMessage.arg(errorString));
         } else {
-            //-- Allow plugins to post process the load
             QGCCorePlugin::instance()->postLoadFromJson(this, json);
             success = true;
         }
@@ -455,10 +429,8 @@ QJsonDocument PlanMasterController::saveToJson()
     QJsonObject fenceJson;
     QJsonObject rallyJson;
     JsonHelper::saveQGCJsonFileHeader(planJson, kPlanFileType, kPlanFileVersion);
-    //-- Allow plugin to preemptly add its own keys to mission
     QGCCorePlugin::instance()->preSaveToMissionJson(this, missionJson);
     _missionController.save(missionJson);
-    //-- Allow plugin to add its own keys to mission
     QGCCorePlugin::instance()->postSaveToMissionJson(this, missionJson);
     _geoFenceController.save(fenceJson);
     _rallyPointController.save(rallyJson);
@@ -503,7 +475,6 @@ void PlanMasterController::saveToFile(const QString& filename)
         }
     }
 
-            // Only clear dirty bit if we are offline
     if (offline()) {
         setDirty(false);
     }
@@ -533,11 +504,68 @@ void PlanMasterController::saveToKml(const QString& filename)
     }
 }
 
+//---------- BẮT ĐẦU HÀM saveMissionWaypointsAsJson ĐÃ SỬA ĐỔI ----------
+// <<<<<<<<<<<< BẮT ĐẦU VÙNG THAY THẾ >>>>>>>>>>>>
+
+//---------- MÃ CHO NÚT SAVE ----------
 void PlanMasterController::saveMissionWaypointsAsJson()
 {
     QmlObjectListModel* visualItems = _missionController.visualItems();
-    if (!visualItems) return;
+    // SỬA LỖI: Dùng count() thay vì isEmpty()
+    if (!visualItems || visualItems->count() == 0) {
+        qgcApp()->showAppMessage(tr("Không có điểm nào trong kế hoạch để lưu."));
+        return;
+    }
 
+    QJsonObject rootObject;
+    rootObject["fileType"]  = "FinalPlanWithTarget";
+    rootObject["version"]   = 12.0;
+
+    // --- BƯỚC 1: TÌM VÀ THÊM ĐIỂM "LAUNCH" ---
+    bool launchPointFound = false;
+    for (int i = 0; i < visualItems->count(); ++i) {
+        VisualMissionItem* vItem = qobject_cast<VisualMissionItem*>(visualItems->get(i));
+        // Điểm Launch thường là Takeoff item đầu tiên hoặc waypoint đầu tiên
+        if (vItem && vItem->specifiesCoordinate() && vItem->coordinate().isValid()) {
+            // Kiểm tra xem có phải là Takeoff item không
+            TakeoffMissionItem* takeoffItem = qobject_cast<TakeoffMissionItem*>(vItem);
+            if (takeoffItem) {
+                QJsonObject launchPointObject;
+                launchPointObject["latitude"]  = takeoffItem->coordinate().latitude();
+                launchPointObject["longitude"] = takeoffItem->coordinate().longitude();
+                launchPointObject["altitude"]  = takeoffItem->altitude()->rawValue().toDouble(); // Lấy độ cao cất cánh
+                rootObject["launch_point"] = launchPointObject;
+                launchPointFound = true;
+                break; // Tìm thấy rồi thì thoát
+            }
+        }
+    }
+
+            // Nếu không tìm thấy Takeoff item cụ thể, lấy điểm đầu tiên có tọa độ
+    if (!launchPointFound) {
+        for (int i = 0; i < visualItems->count(); ++i) {
+            VisualMissionItem* vItem = qobject_cast<VisualMissionItem*>(visualItems->get(i));
+            if (vItem && vItem->specifiesCoordinate() && vItem->coordinate().isValid()) {
+                SimpleMissionItem* simpleItem = qobject_cast<SimpleMissionItem*>(vItem);
+                if(simpleItem) {
+                    QJsonObject launchPointObject;
+                    launchPointObject["latitude"]  = simpleItem->coordinate().latitude();
+                    launchPointObject["longitude"] = simpleItem->coordinate().longitude();
+                    launchPointObject["altitude"]  = simpleItem->altitude()->rawValue().toDouble();
+                    rootObject["launch_point"] = launchPointObject;
+                    launchPointFound = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    if (!launchPointFound) {
+        qgcApp()->showAppMessage(tr("Không tìm thấy điểm Launch hợp lệ."));
+        // Cân nhắc có nên tiếp tục lưu hay không
+    }
+
+            // --- BƯỚC 2: XỬ LÝ WAYPOINTS (logic cũ) ---
     QJsonArray fullDataArray;
     for (int i = 0; i < visualItems->count(); i++) {
         VisualMissionItem* vItem = qobject_cast<VisualMissionItem*>(visualItems->get(i));
@@ -553,7 +581,7 @@ void PlanMasterController::saveMissionWaypointsAsJson()
         QJsonObject itemObject = fullDataArray[i].toObject();
         int command = itemObject["command"].toInt();
 
-        if (command == 16) {
+        if (command == 16) { // MAV_CMD_NAV_WAYPOINT
             QJsonObject waypointObject;
             QJsonArray params = itemObject["params"].toArray();
 
@@ -582,10 +610,9 @@ void PlanMasterController::saveMissionWaypointsAsJson()
         waypointsArray.append(lastWaypoint);
     }
 
-    QJsonObject rootObject;
-    rootObject["fileType"]  = "FinalPlanWithTarget";
-    rootObject["version"]   = 12.0;
     rootObject["waypoints"] = waypointsArray;
+
+            // --- BƯỚC 3: LƯU FILE (logic cũ) ---
     QJsonDocument jsonDocument(rootObject);
 
     QString jsonFile = QFileDialog::getSaveFileName(nullptr, tr("Save Corrected Plan"), SettingsManager::instance()->appSettings()->missionSavePath(), tr("Plan JSON file (*.json)"));
@@ -601,6 +628,10 @@ void PlanMasterController::saveMissionWaypointsAsJson()
     file.close();
     qgcApp()->showAppMessage(tr("Plan saved to %1").arg(jsonFile));
 }
+//------------ KẾT THÚC MÃ ------------
+
+// <<<<<<<<<<<< KẾT THÚC VÙNG THAY THẾ >>>>>>>>>>>>
+//---------- KẾT THÚC HÀM saveMissionWaypointsAsJson ĐÃ SỬA ĐỔI ----------
 
 void PlanMasterController::sendSavedPlanToServer()
 {
@@ -622,8 +653,7 @@ void PlanMasterController::sendSavedPlanToServer()
     QByteArray jsonData = file.readAll();
     file.close();
 
-    QUrl url("http://192.168.144.30:5000/submit_plan");
-    // QUrl url("http://127.0.0.1:5000/submit_plan");
+    QUrl url("http://127.0.0.1:5000/submit_plan");
     QNetworkRequest request(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
@@ -865,21 +895,6 @@ void PlanMasterController::_onPythonProcessStateChanged(QProcess::ProcessState n
 
 void PlanMasterController::_processBufferedData()
 {
-    // if (_serialBuffer.isEmpty()) {
-    //     return;
-    // }
-
-    // const QList<QString> validSignals = {"1", "2", "3", "4", "6", "7"};
-    // QString receivedSignal = QString::fromLatin1(_serialBuffer);
-
-    // if (validSignals.contains(receivedSignal)) {
-    //     qCDebug(PlanMasterControllerLog) << "Valid signal packet received:" << receivedSignal;
-    //     qgcApp()->showAppMessage(tr("Đã nhận tín hiệu: %1").arg(receivedSignal));
-    // } else {
-    //     qCWarning(PlanMasterControllerLog) << "Unsupported signal packet received:" << receivedSignal;
-    //     qgcApp()->showAppMessage(tr("Chức năng này chưa hỗ trợ"));
-    // }
-    // _serialBuffer.clear();
 
     if (_serialBuffer.isEmpty()) {
         return;
@@ -893,20 +908,12 @@ void PlanMasterController::_processBufferedData()
         qCDebug(PlanMasterControllerLog) << "Valid signal received:" << receivedSignal << ". Sending to localhost...";
         qgcApp()->showAppMessage(tr("Đã nhận tín hiệu: %1. Đang gửi...").arg(receivedSignal));
 
-                // --- BẮT ĐẦU KHỐI GỬI DỮ LIỆU QUA MẠNG ---
-
-                // 1. Sử dụng localhost (hoặc 127.0.0.1) để kiểm tra
         QUrl url("http://127.0.0.1:5000/button_press");
 
-                // 2. Tạo yêu cầu và đặt header
         QNetworkRequest request(url);
         request.setHeader(QNetworkRequest::ContentTypeHeader, "text/plain");
 
-                // 3. Gửi dữ liệu (dưới dạng QByteArray)
-                // _networkManager đã được khởi tạo trong _commonInit
         _networkManager->post(request, receivedSignal.toUtf8());
-
-                // --- KẾT THÚC KHỐI GỬI DỮ LIỆU ---
 
     } else {
         qCWarning(PlanMasterControllerLog) << "Unsupported signal received:" << receivedSignal;
@@ -992,7 +999,6 @@ QStringList PlanMasterController::saveNameFilters(void) const
 
 void PlanMasterController::sendPlanToVehicle(Vehicle* vehicle, const QString& filename)
 {
-    // Use a transient PlanMasterController to accomplish this
     PlanMasterController* controller = new PlanMasterController();
     controller->startStaticActiveVehicle(vehicle, true /* deleteWhenSendCompleted */);
     controller->loadFromFile(filename);
@@ -1002,11 +1008,9 @@ void PlanMasterController::sendPlanToVehicle(Vehicle* vehicle, const QString& fi
 void PlanMasterController::_showPlanFromManagerVehicle(void)
 {
     if (!_managerVehicle->initialPlanRequestComplete() && !syncInProgress()) {
-        // Something went wrong with initial load. All controllers are idle, so just force it off
         _managerVehicle->forceInitialPlanRequestComplete();
     }
 
-            // The crazy if structure is to handle the load propagating by itself through the system
     if (!_missionController.showPlanFromManagerVehicle()) {
         if (!_geoFenceController.showPlanFromManagerVehicle()) {
             _rallyPointController.showPlanFromManagerVehicle();
@@ -1062,11 +1066,9 @@ void PlanMasterController::_updatePlanCreatorsList(void)
 void PlanMasterController::showPlanFromManagerVehicle(void)
 {
     if (offline()) {
-        // There is no new vehicle so clear any previous plan
         qCDebug(PlanMasterControllerLog) << "showPlanFromManagerVehicle: Plan View - No new vehicle, clear any previous plan";
         removeAll();
     } else {
-        // We have a new active vehicle, show the plan from that
         qCDebug(PlanMasterControllerLog) << "showPlanFromManagerVehicle: Plan View - New vehicle available, show plan from new manager vehicle";
         _showPlanFromManagerVehicle();
     }
