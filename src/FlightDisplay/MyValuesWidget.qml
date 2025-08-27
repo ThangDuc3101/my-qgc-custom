@@ -57,7 +57,11 @@ Rectangle {
         columnSpacing: ScreenTools.defaultFontPixelWidth
 
         // Dòng 1: Tốc độ
-        QGCLabel { text: qsTr("Tốc độ:") }
+        QGCLabel
+        {
+            text: qsTr("Tốc độ:")
+            color: "white"
+        }
         QGCLabel {
             text: _activeVehicle ? _activeVehicle.groundSpeed.value.toFixed(1) + " m/s" : "--"
             font.bold: true
@@ -65,7 +69,11 @@ Rectangle {
         }
 
         // Dòng 2: Độ cao
-        QGCLabel { text: qsTr("Độ cao:") }
+        QGCLabel
+        {
+            text: qsTr("Độ cao:")
+            color: "white"
+        }
         QGCLabel {
             text: _activeVehicle ? _activeVehicle.altitudeRelative.value.toFixed(1) + " m" : "--"
             font.bold: true
@@ -73,7 +81,11 @@ Rectangle {
         }
 
         // Dòng 3: Cự ly (về Launch)
-        QGCLabel { text: qsTr("Cự ly (về Launch):") }
+        QGCLabel
+        {
+            text: qsTr("Cự ly (về Launch):")
+            color: "white"
+        }
         QGCLabel {
             text: _activeVehicle ? _activeVehicle.distanceToHome.value.toFixed(0) + " m" : "--"
             font.bold: true
@@ -81,7 +93,11 @@ Rectangle {
         }
 
         // Dòng 4: Quãng đường đã đi
-        QGCLabel { text: qsTr("Quãng đường:") }
+        QGCLabel
+        {
+            text: qsTr("Quãng đường:")
+            color: "white"
+        }
         QGCLabel {
             text: _activeVehicle ? _activeVehicle.flightDistance.value.toFixed(0) + " m" : "--"
             font.bold: true
@@ -89,7 +105,11 @@ Rectangle {
         }
 
         // Dòng 5: Khoảng cách đến mục tiêu
-        QGCLabel { text: qsTr("Đến mục tiêu:") }
+        QGCLabel
+        {
+            text: qsTr("Đến mục tiêu:")
+            color: "white"
+        }
         QGCLabel {
             text: distanceToTarget >= 0 ? distanceToTarget.toFixed(0) + " m" : "--"
             font.bold: true
@@ -97,7 +117,11 @@ Rectangle {
         }
 
         // Dòng 6: Trạng thái
-        QGCLabel { text: qsTr("Trạng thái:") }
+        QGCLabel
+        {
+            text: qsTr("Trạng thái:")
+            color: "white"
+        }
         QGCLabel {
             text: _activeVehicle ? (_activeVehicle.armed ? "ARMED" : "DISARMED") + " / " + _activeVehicle.flightMode : "--"
             font.bold: true
@@ -105,7 +129,11 @@ Rectangle {
         }
 
         // Dòng 7: Thời gian bay
-        QGCLabel { text: qsTr("Thời gian bay:") }
+        QGCLabel
+        {
+            text: qsTr("Thời gian bay:")
+            color: "white"
+        }
         QGCLabel {
             text: _activeVehicle ? formatTime(_activeVehicle.flightTime) : "00:00:00"
             font.bold: true
@@ -113,7 +141,11 @@ Rectangle {
         }
 
         // Dòng 8: Pin
-        QGCLabel { text: qsTr("Pin:") }
+        QGCLabel
+        {
+            text: qsTr("Pin:")
+            color: "white"
+        }
         QGCLabel {
             text: {
                 if (_activeVehicle) {
