@@ -61,6 +61,7 @@ Rectangle {
         QGCLabel {
             text: _activeVehicle ? _activeVehicle.groundSpeed.value.toFixed(1) + " m/s" : "--"
             font.bold: true
+            color: "white"
         }
 
         // Dòng 2: Độ cao
@@ -68,6 +69,7 @@ Rectangle {
         QGCLabel {
             text: _activeVehicle ? _activeVehicle.altitudeRelative.value.toFixed(1) + " m" : "--"
             font.bold: true
+            color: "white"
         }
 
         // Dòng 3: Cự ly (về Launch)
@@ -75,6 +77,7 @@ Rectangle {
         QGCLabel {
             text: _activeVehicle ? _activeVehicle.distanceToHome.value.toFixed(0) + " m" : "--"
             font.bold: true
+            color: "white"
         }
 
         // Dòng 4: Quãng đường đã đi
@@ -82,6 +85,7 @@ Rectangle {
         QGCLabel {
             text: _activeVehicle ? _activeVehicle.flightDistance.value.toFixed(0) + " m" : "--"
             font.bold: true
+            color: "white"
         }
 
         // Dòng 5: Khoảng cách đến mục tiêu
@@ -89,6 +93,7 @@ Rectangle {
         QGCLabel {
             text: distanceToTarget >= 0 ? distanceToTarget.toFixed(0) + " m" : "--"
             font.bold: true
+            color: "white"
         }
 
         // Dòng 6: Trạng thái
@@ -104,6 +109,7 @@ Rectangle {
         QGCLabel {
             text: _activeVehicle ? formatTime(_activeVehicle.flightTime) : "00:00:00"
             font.bold: true
+            color: "white"
         }
 
         // Dòng 8: Pin
@@ -111,13 +117,13 @@ Rectangle {
         QGCLabel {
             text: {
                 if (_activeVehicle) {
-                    // var pct = _activeVehicle.battery.percentRemaining.value;
-                    // return isNaN(pct) ? "N/A" : pct.toFixed(0) + " %";
+                    var pct = _activeVehicle.battery.percentRemaining.value;
+                    return isNaN(pct) ? "N/A" : pct.toFixed(0) + " %";
                 }
                 return "--";
             }
             font.bold: true
-            // color: _activeVehicle && _activeVehicle.battery.percentRemaining.value < 20 ? "orange" : "white"
+            color: _activeVehicle && _activeVehicle.battery.percentRemaining.value < 20 ? "orange" : "white"
         }
     }
 
