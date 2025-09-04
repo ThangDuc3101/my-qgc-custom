@@ -21,29 +21,19 @@ Rectangle {
     // Lấy MissionController trực tiếp từ đối tượng globals để đảm bảo tính ổn định
     property var _missionController: globals.planMasterControllerFlyView.missionController
 
-    // --- THUỘC TÍNH TÍNH TOÁN (PHIÊN BẢN ROBUST CUỐI CÙNG) ---
-        property real distanceToTarget: {
-            // Chỉ tính toán khi có đủ các đối tượng cần thiết
-            if (_activeVehicle && _missionController && _missionController.visualItems.count > 1) {
-
-                // Lặp ngược từ cuối danh sách để tìm waypoint cuối cùng có tọa độ
-                for (var i = _missionController.visualItems.count - 1; i >= 0; i--) {
-                    var item = _missionController.visualItems.get(i);
-
-                    // Tìm item cuối cùng thực sự có tọa độ
-                    if (item && item.specifiesCoordinate) {
-                        // Ngay khi tìm thấy, tính khoảng cách và thoát khỏi hàm
-                        var dist = _activeVehicle.coordinate.distanceTo(item.coordinate);
-                        // console.log("Distance to last valid item (Seq:", item.sequenceNumber, ") is", dist); // Bỏ comment để debug
-                        return dist;
-                    }
+    // --- THUỘC TÍNH TÍNH TOÁN ---
+    property real distanceToTarget: {
+        if (_activeVehicle && _missionController && _missionController.visualItems.count > 1) {
+            for (var i = _missionController.visualItems.count - 1; i >= 0; i--) {
+                var item = _missionController.visualItems.get(i);
+                if (item && item.specifiesCoordinate) {
+                    var dist = _activeVehicle.coordinate.distanceTo(item.coordinate);
+                    return dist;
                 }
             }
-
-            // Nếu không tìm thấy waypoint nào có tọa độ (ví dụ: kế hoạch trống), trả về -1
-            return -1;
         }
-        // ----------------------------------------------------
+        return -1;
+    }
 
     // Chỉ hiển thị widget này khi có phương tiện được kết nối
     visible: _activeVehicle !== null
@@ -57,113 +47,67 @@ Rectangle {
         columnSpacing: ScreenTools.defaultFontPixelWidth
 
         // Dòng 1: Tốc độ
-        QGCLabel
-        {
-            text: qsTr("Tốc độ:")
-            color: "white"
-        }
-        QGCLabel {
-            text: _activeVehicle ? _activeVehicle.groundSpeed.value.toFixed(1) + " m/s" : "--"
-            font.bold: true
-            color: "white"
-        }
+        QGCLabel { text: qsTr("Tốc độ:"); color: "white" }
+        QGCLabel { text: _activeVehicle ? _activeVehicle.groundSpeed.value.toFixed(1) + " m/s" : "--"; font.bold: true; color: "white" }
 
         // Dòng 2: Độ cao
-        QGCLabel
-        {
-            text: qsTr("Độ cao:")
-            color: "white"
-        }
-        QGCLabel {
-            text: _activeVehicle ? _activeVehicle.altitudeRelative.value.toFixed(1) + " m" : "--"
-            font.bold: true
-            color: "white"
-        }
+        QGCLabel { text: qsTr("Độ cao:"); color: "white" }
+        QGCLabel { text: _activeVehicle ? _activeVehicle.altitudeRelative.value.toFixed(1) + " m" : "--"; font.bold: true; color: "white" }
 
         // Dòng 3: Cự ly (về Launch)
-        QGCLabel
-        {
-            text: qsTr("Cự ly (về Launch):")
-            color: "white"
-        }
-        QGCLabel {
-            text: _activeVehicle ? _activeVehicle.distanceToHome.value.toFixed(0) + " m" : "--"
-            font.bold: true
-            color: "white"
-        }
+        QGCLabel { text: qsTr("Cự ly (về Launch):"); color: "white" }
+        QGCLabel { text: _activeVehicle ? _activeVehicle.distanceToHome.value.toFixed(0) + " m" : "--"; font.bold: true; color: "white" }
 
         // Dòng 4: Quãng đường đã đi
-        QGCLabel
-        {
-            text: qsTr("Quãng đường:")
-            color: "white"
-        }
-        QGCLabel {
-            text: _activeVehicle ? _activeVehicle.flightDistance.value.toFixed(0) + " m" : "--"
-            font.bold: true
-            color: "white"
-        }
+        QGCLabel { text: qsTr("Quãng đường:"); color: "white" }
+        QGCLabel { text: _activeVehicle ? _activeVehicle.flightDistance.value.toFixed(0) + " m" : "--"; font.bold: true; color: "white" }
 
         // Dòng 5: Khoảng cách đến mục tiêu
-        QGCLabel
-        {
-            text: qsTr("Đến mục tiêu:")
-            color: "white"
-        }
-        QGCLabel {
-            text: distanceToTarget >= 0 ? distanceToTarget.toFixed(0) + " m" : "--"
-            font.bold: true
-            color: "white"
-        }
+        QGCLabel { text: qsTr("Đến mục tiêu:"); color: "white" }
+        QGCLabel { text: distanceToTarget >= 0 ? distanceToTarget.toFixed(0) + " m" : "--"; font.bold: true; color: "white" }
 
         // Dòng 6: Trạng thái
-        QGCLabel
-        {
-            text: qsTr("Trạng thái:")
-            color: "white"
-        }
-        QGCLabel {
-            text: _activeVehicle ? (_activeVehicle.armed ? "ARMED" : "DISARMED") + " / " + _activeVehicle.flightMode : "--"
-            font.bold: true
-            color: _activeVehicle && _activeVehicle.armed ? "lightgreen" : "white"
-        }
+        QGCLabel { text: qsTr("Trạng thái:"); color: "white" }
+        QGCLabel { text: _activeVehicle ? (_activeVehicle.armed ? "ARMED" : "DISARMED") + " / " + _activeVehicle.flightMode : "--"; font.bold: true; color: _activeVehicle && _activeVehicle.armed ? "lightgreen" : "white" }
 
         // Dòng 7: Thời gian bay
-        QGCLabel
-        {
-            text: qsTr("Thời gian bay:")
+        QGCLabel { text: qsTr("Thời gian bay:"); color: "white" }
+        QGCLabel { text: _activeVehicle ? formatTime(_activeVehicle.flightTime) : "00:00:00"; font.bold: true; color: "white" }
+
+        // >>> BẮT ĐẦU THAY ĐỔI <<<
+
+        // Dòng 8 (MỚI): Góc Pitch
+        QGCLabel {
+            text: qsTr("Góc Pitch:")
             color: "white"
         }
         QGCLabel {
-            text: _activeVehicle ? formatTime(_activeVehicle.flightTime) : "00:00:00"
+            text: _activeVehicle ? _activeVehicle.pitch.value.toFixed(1) + "°" : "--"
             font.bold: true
             color: "white"
         }
 
-        // Dòng 8: Pin
-        QGCLabel
-        {
-            text: qsTr("Pin:")
+        // Dòng 9 (MỚI): Góc Roll
+        QGCLabel {
+            text: qsTr("Góc Roll:")
             color: "white"
         }
         QGCLabel {
-            text: {
-                if (_activeVehicle) {
-                    var pct = _activeVehicle.battery.percentRemaining.value;
-                    return isNaN(pct) ? "N/A" : pct.toFixed(0) + " %";
-                }
-                return "--";
-            }
+            text: _activeVehicle ? _activeVehicle.roll.value.toFixed(1) + "°" : "--"
             font.bold: true
-            color: _activeVehicle && _activeVehicle.battery.percentRemaining.value < 20 ? "orange" : "white"
+            color: "white"
         }
+
+        // Khối mã hiển thị Pin đã được xóa bỏ
+
+        // >>> KẾT THÚC THAY ĐỔI <<<
     }
 
     function formatTime(totalSeconds) {
         if (isNaN(totalSeconds)) return "00:00:00";
         var hours   = Math.floor(totalSeconds / 3600);
         var minutes = Math.floor((totalSeconds - (hours * 3600)) / 60);
-        var seconds = totalSeconds - (hours * 3600) - (minutes * 60);
+        var seconds = Math.floor(totalSeconds - (hours * 3600) - (minutes * 60));
         if (hours   < 10) { hours   = "0" + hours; }
         if (minutes < 10) { minutes = "0" + minutes; }
         if (seconds < 10) { seconds = "0" + seconds; }

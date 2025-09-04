@@ -11,10 +11,8 @@ import QtQuick
 import QtQuick.Controls
 import QtLocation
 import QtPositioning
-
 import QGroundControl
 import QGroundControl.ScreenTools
-
 import QGroundControl.Controls
 import QGroundControl.FlightMap
 
@@ -28,7 +26,6 @@ Item {
     property bool   interactive:            false
     property bool   planView:               false
     property var    homePosition
-
     property var    _breachReturnPointComponent
     property var    _breachReturnDragComponent
     property var    _paramCircleFenceComponent
@@ -44,14 +41,12 @@ Item {
     property var    safePolygonPath: []
     QtObject { id: safePolygonDataObject; property var path: _root.safePolygonPath }
 
-    // >>> THAY ĐỔI: Chuyển sang co nhỏ 200 mét <<<
     function processAndBuildSafePolygon(polygon) {
         if (!polygon || !polygon.path || polygon.path.length < 3) {
             safePolygonPath = [];
             if(myGeoFenceController) { myGeoFenceController.updateSafePolygonPath(safePolygonPath); }
             return;
         }
-
         var oldPath = polygon.path;
         var totalLat = 0.0, totalLon = 0.0;
         for (var i = 0; i < oldPath.length; i++) {
@@ -59,39 +54,31 @@ Item {
             totalLon += oldPath[i].longitude;
         }
         var centroid = QtPositioning.coordinate(totalLat / oldPath.length, totalLon / oldPath.length);
-
         var newCoords = [];
-        var shrinkDistanceMeters = 200.0; // Khoảng cách co nhỏ là 200 mét
-
+        var shrinkFactor = 0.8;
         for (var j = 0; j < oldPath.length; j++) {
-            var vertex = oldPath[j];
-
-            // Tính khoảng cách và góc từ trọng tâm đến đỉnh
-            var distanceToCentroid = centroid.distanceTo(vertex);
-            var azimuth = centroid.azimuthTo(vertex);
-
-            // Tính khoảng cách mới
-            var newDistance = distanceToCentroid - shrinkDistanceMeters;
-
-            // Kiểm tra an toàn: nếu khoảng cách mới < 0 (đa giác quá nhỏ),
-            // thì không co nhỏ điểm này nữa để tránh lỗi.
-            if (newDistance > 0) {
-                // Sử dụng atDistanceAndAzimuth để tìm điểm mới
-                var newCoord = centroid.atDistanceAndAzimuth(newDistance, azimuth);
-                newCoords.push(newCoord);
-            } else {
-                // Nếu đa giác quá nhỏ, chúng ta giữ lại điểm cũ hoặc điểm trọng tâm
-                // Ở đây, ta chỉ đơn giản là bỏ qua điểm này để tạo ra một đa giác nhỏ hơn nữa
-                // Hoặc an toàn hơn là thêm lại chính điểm đó
-                 newCoords.push(vertex);
-            }
+            var originalVertex = oldPath[j];
+            var vecLat = originalVertex.latitude - centroid.latitude;
+            var vecLon = originalVertex.longitude - centroid.longitude;
+            var newLat = centroid.latitude + vecLat * shrinkFactor;
+            var newLon = centroid.longitude + vecLon * shrinkFactor;
+            newCoords.push(QtPositioning.coordinate(newLat, newLon));
         }
-
         safePolygonPath = newCoords;
         if (myGeoFenceController) {
             myGeoFenceController.updateSafePolygonPath(safePolygonPath);
         }
     }
+
+    // >>> BẮT ĐẦU SỬA LỖI <<<
+    Connections {
+        target: _polygons
+        onCountChanged: {
+            var lastPolygon = _polygons.count > 0 ? _polygons.get(_polygons.count - 1) : null;
+            processAndBuildSafePolygon(lastPolygon);
+        }
+    }
+    // >>> KẾT THÚC SỬA LỖI <<<
 
     function addPolygon(inclusionPolygon) {
         var rect = Qt.rect(map.centerViewport.x, map.centerViewport.y, map.centerViewport.width, map.centerViewport.height);
@@ -168,14 +155,14 @@ Item {
     Instantiator {
         model: _circles
         delegate : QGCMapCircleVisuals {
-            parent: _root
-            mapControl: map
-            mapCircle: object
-            borderWidth: object.inclusion ? _borderWidthInclusion : _borderWidthExclusion
-            borderColor: _borderColor
-            interiorColor: object.inclusion ? _interiorColorInclusion : _interiorColorExclusion
-            interiorOpacity: object.inclusion ? _interiorOpacityInclusion : _interiorOpacityExclusion
-            interactive: _root.interactive && mapCircle && mapCircle.interactive
+            parent:             _root
+            mapControl:         map
+            mapCircle:          object
+            borderWidth:        object.inclusion ? _borderWidthInclusion : _borderWidthExclusion
+            borderColor:        _borderColor
+            interiorColor:      object.inclusion ? _interiorColorInclusion : _interiorColorExclusion
+            interiorOpacity:    object.inclusion ? _interiorOpacityInclusion : _interiorOpacityExclusion
+            interactive:         _root.interactive && mapCircle && mapCircle.interactive
         }
     }
 
