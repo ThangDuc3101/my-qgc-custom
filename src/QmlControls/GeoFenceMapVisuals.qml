@@ -11,10 +11,8 @@ import QtQuick
 import QtQuick.Controls
 import QtLocation
 import QtPositioning
-
 import QGroundControl
 import QGroundControl.ScreenTools
-
 import QGroundControl.Controls
 import QGroundControl.FlightMap
 
@@ -28,7 +26,6 @@ Item {
     property bool   interactive:            false
     property bool   planView:               false
     property var    homePosition
-
     property var    _breachReturnPointComponent
     property var    _breachReturnDragComponent
     property var    _paramCircleFenceComponent
@@ -41,25 +38,14 @@ Item {
     property color  _interiorColorInclusion:    "transparent"
     property real   _interiorOpacityExclusion:  0.2 * opacity
     property real   _interiorOpacityInclusion:  1 * opacity
+    property var    safePolygonPath: []
+    QtObject { id: safePolygonDataObject; property var path: _root.safePolygonPath }
 
-    // >>> BẮT ĐẦU MÃ GIAI ĐOẠN 2 <<<
-
-    // 1. Tạo một thuộc tính để LƯU TRỮ danh sách tọa độ của hàng rào an toàn
-    property var safePolygonPath: []
-
-    // 2. Tạo một đối tượng QML đơn giản để TRUYỀN dữ liệu cho khối hiển thị
-    QtObject {
-        id: safePolygonDataObject
-        property var path: _root.safePolygonPath
-    }
-
-    // 3. Hàm JavaScript được nâng cấp để cập nhật thuộc tính 'safePolygonPath'
     function processAndBuildSafePolygon(polygon) {
         if (!polygon || !polygon.path || polygon.path.length < 3) {
-            safePolygonPath = []; // Xóa đường đi cũ nếu đa giác không hợp lệ
+            safePolygonPath = [];
             return;
         }
-
         var oldPath = polygon.path;
         var totalLat = 0.0, totalLon = 0.0;
         for (var i = 0; i < oldPath.length; i++) {
@@ -67,7 +53,6 @@ Item {
             totalLon += oldPath[i].longitude;
         }
         var centroid = QtPositioning.coordinate(totalLat / oldPath.length, totalLon / oldPath.length);
-
         var newCoords = [];
         var shrinkFactor = 0.8;
         for (var j = 0; j < oldPath.length; j++) {
@@ -78,64 +63,58 @@ Item {
             var newLon = centroid.longitude + vecLon * shrinkFactor;
             newCoords.push(QtPositioning.coordinate(newLat, newLon));
         }
-
-        // Cập nhật thuộc tính lưu trữ đường đi của chúng ta, điều này sẽ tự động cập nhật giao diện
         safePolygonPath = newCoords;
     }
 
-    // >>> KẾT THÚC MÃ GIAI ĐOẠN 2 <<<
-
     function addPolygon(inclusionPolygon) {
-        var rect = Qt.rect(map.centerViewport.x, map.centerViewport.y, map.centerViewport.width, map.centerViewport.height)
-        rect.x += (rect.width * 0.25) / 2
-        rect.y += (rect.height * 0.25) / 2
-        rect.width *= 0.75
-        rect.height *= 0.75
-        var centerCoord = map.toCoordinate(Qt.point(rect.x + (rect.width / 2), rect.y + (rect.height / 2)), false)
-        var topLeftCoord = map.toCoordinate(Qt.point(rect.x, rect.y), false)
-        var topRightCoord = map.toCoordinate(Qt.point(rect.x + rect.width, rect.y), false)
-        var bottomLeftCoord = map.toCoordinate(Qt.point(rect.x, rect.y + rect.height), false)
-        var bottomRightCoord = map.toCoordinate(Qt.point(rect.x + rect.width, rect.y + rect.height), false)
-        var halfWidthMeters = Math.min(topLeftCoord.distanceTo(topRightCoord), 3000) / 2
-        var halfHeightMeters = Math.min(topLeftCoord.distanceTo(bottomLeftCoord), 3000) / 2
-        topLeftCoord = centerCoord.atDistanceAndAzimuth(halfWidthMeters, -90).atDistanceAndAzimuth(halfHeightMeters, 0)
-        topRightCoord = centerCoord.atDistanceAndAzimuth(halfWidthMeters, 90).atDistanceAndAzimuth(halfHeightMeters, 0)
-        bottomLeftCoord = centerCoord.atDistanceAndAzimuth(halfWidthMeters, -90).atDistanceAndAzimuth(halfHeightMeters, 180)
-        bottomRightCoord = centerCoord.atDistanceAndAzimuth(halfWidthMeters, 90).atDistanceAndAzimuth(halfHeightMeters, 180)
+        var rect = Qt.rect(map.centerViewport.x, map.centerViewport.y, map.centerViewport.width, map.centerViewport.height);
+        rect.x += (rect.width * 0.25) / 2;
+        rect.y += (rect.height * 0.25) / 2;
+        rect.width *= 0.75;
+        rect.height *= 0.75;
+        var centerCoord = map.toCoordinate(Qt.point(rect.x + (rect.width / 2), rect.y + (rect.height / 2)), false);
+        var topLeftCoord = map.toCoordinate(Qt.point(rect.x, rect.y), false);
+        var topRightCoord = map.toCoordinate(Qt.point(rect.x + rect.width, rect.y), false);
+        var bottomLeftCoord = map.toCoordinate(Qt.point(rect.x, rect.y + rect.height), false);
+        var bottomRightCoord = map.toCoordinate(Qt.point(rect.x + rect.width, rect.y + rect.height), false);
+        var halfWidthMeters = Math.min(topLeftCoord.distanceTo(topRightCoord), 3000) / 2;
+        var halfHeightMeters = Math.min(topLeftCoord.distanceTo(bottomLeftCoord), 3000) / 2;
+        topLeftCoord = centerCoord.atDistanceAndAzimuth(halfWidthMeters, -90).atDistanceAndAzimuth(halfHeightMeters, 0);
+        topRightCoord = centerCoord.atDistanceAndAzimuth(halfWidthMeters, 90).atDistanceAndAzimuth(halfHeightMeters, 0);
+        bottomLeftCoord = centerCoord.atDistanceAndAzimuth(halfWidthMeters, -90).atDistanceAndAzimuth(halfHeightMeters, 180);
+        bottomRightCoord = centerCoord.atDistanceAndAzimuth(halfWidthMeters, 90).atDistanceAndAzimuth(halfHeightMeters, 180);
         if (inclusionPolygon) {
-            myGeoFenceController.addInclusion(topLeftCoord, bottomRightCoord)
+            myGeoFenceController.addInclusion(topLeftCoord, bottomRightCoord);
         } else {
-            myGeoFenceController.addExclusion(topLeftCoord, bottomRightCoord)
+            myGeoFenceController.addExclusion(topLeftCoord, bottomRightCoord);
         }
     }
 
     Component.onCompleted: {
-        _breachReturnPointComponent = breachReturnPointComponent.createObject(map)
-        map.addMapItem(_breachReturnPointComponent)
-        _breachReturnDragComponent = breachReturnDragComponent.createObject(map, { "itemIndicator": _breachReturnPointComponent })
-        _paramCircleFenceComponent = paramCircleFenceComponent.createObject(map)
-        map.addMapItem(_paramCircleFenceComponent)
+        _breachReturnPointComponent = breachReturnPointComponent.createObject(map);
+        map.addMapItem(_breachReturnPointComponent);
+        _breachReturnDragComponent = breachReturnDragComponent.createObject(map, { "itemIndicator": _breachReturnPointComponent });
+        _paramCircleFenceComponent = paramCircleFenceComponent.createObject(map);
+        map.addMapItem(_paramCircleFenceComponent);
     }
 
     Component.onDestruction: {
-        if (_breachReturnPointComponent) _breachReturnPointComponent.destroy()
-        if (_breachReturnDragComponent) _breachReturnDragComponent.destroy()
-        if (_paramCircleFenceComponent) _paramCircleFenceComponent.destroy()
+        if (_breachReturnPointComponent) _breachReturnPointComponent.destroy();
+        if (_breachReturnDragComponent) _breachReturnDragComponent.destroy();
+        if (_paramCircleFenceComponent) _paramCircleFenceComponent.destroy();
     }
 
-    // Instantiator để vẽ đa giác GỐC (màu cam)
     Instantiator {
         model: _polygons
         delegate : QGCMapPolygonVisuals {
-            parent:             _root
-            mapControl:         map
-            mapPolygon:         object
-            borderWidth:        object.inclusion ? _borderWidthInclusion : _borderWidthExclusion
-            borderColor:        _borderColor
-            interiorColor:      object.inclusion ? _interiorColorInclusion : _interiorColorExclusion
-            interiorOpacity:    object.inclusion ? _interiorOpacityInclusion : _interiorOpacityExclusion
-            interactive:        _root.interactive && object && object.interactive
-
+            parent: _root
+            mapControl: map
+            mapPolygon: object
+            borderWidth: object.inclusion ? _borderWidthInclusion : _borderWidthExclusion
+            borderColor: _borderColor
+            interiorColor: object.inclusion ? _interiorColorInclusion : _interiorColorExclusion
+            interiorOpacity: object.inclusion ? _interiorOpacityInclusion : _interiorOpacityExclusion
+            interactive: _root.interactive && object && object.interactive
             Connections {
                 target: object
                 onPathChanged: {
@@ -150,27 +129,26 @@ Item {
         }
     }
 
-    // Khối hiển thị mới để vẽ đa giác AN TOÀN (màu đỏ)
     QGCMapPolygonVisuals {
-        mapControl:         map
-        mapPolygon:         safePolygonDataObject
-        borderColor:        "red"
-        borderWidth:        2
-        interactive:        false
-        visible:            safePolygonPath.length > 0
+        mapControl: map
+        mapPolygon: safePolygonDataObject
+        borderColor: "red"
+        borderWidth: 2
+        interactive: false
+        visible: safePolygonPath.length > 0
     }
 
     Instantiator {
         model: _circles
         delegate : QGCMapCircleVisuals {
-            parent:             _root
-            mapControl:         map
-            mapCircle:          object
-            borderWidth:        object.inclusion ? _borderWidthInclusion : _borderWidthExclusion
-            borderColor:        _borderColor
-            interiorColor:      object.inclusion ? _interiorColorInclusion : _interiorColorExclusion
-            interiorOpacity:    object.inclusion ? _interiorOpacityInclusion : _interiorOpacityExclusion
-            interactive:         _root.interactive && mapCircle && mapCircle.interactive
+            parent: _root
+            mapControl: map
+            mapCircle: object
+            borderWidth: object.inclusion ? _borderWidthInclusion : _borderWidthExclusion
+            borderColor: _borderColor
+            interiorColor: object.inclusion ? _interiorColorInclusion : _interiorColorExclusion
+            interiorOpacity: object.inclusion ? _interiorOpacityInclusion : _interiorOpacityExclusion
+            interactive: _root.interactive && mapCircle && mapCircle.interactive
         }
     }
 
