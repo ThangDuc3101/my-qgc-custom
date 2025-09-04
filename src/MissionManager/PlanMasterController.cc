@@ -653,7 +653,7 @@ void PlanMasterController::sendSavedPlanToServer()
     QByteArray jsonData = file.readAll();
     file.close();
 
-    QUrl url("http://127.0.0.1:5000/submit_plan");
+    QUrl url("http://192.168.144.30:5000/submit_plan");
     QNetworkRequest request(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
