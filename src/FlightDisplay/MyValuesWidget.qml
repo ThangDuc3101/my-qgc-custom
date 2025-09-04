@@ -8,8 +8,8 @@ Rectangle {
     id: _root
 
     // Chiều rộng và chiều cao sẽ tự động điều chỉnh theo nội dung bên trong
-    implicitWidth: gridLayout.width + (_margins * 2)
-    implicitHeight: gridLayout.height + (_margins * 2)
+    implicitWidth: mainRowLayout.implicitWidth + (_margins * 2)
+    implicitHeight: mainRowLayout.implicitHeight + (_margins * 2)
 
     color:          Qt.rgba(0, 0, 0, 0.75) // Nền đen mờ
     radius:         ScreenTools.defaultFontPixelWidth / 2 // Bo góc
@@ -18,7 +18,6 @@ Rectangle {
 
     // --- CÁC BIẾN TRUY CẬP DỮ LIỆU ---
     property var _activeVehicle: QGroundControl.multiVehicleManager.activeVehicle
-    // Lấy MissionController trực tiếp từ đối tượng globals để đảm bảo tính ổn định
     property var _missionController: globals.planMasterControllerFlyView.missionController
 
     // --- THUỘC TÍNH TÍNH TOÁN ---
@@ -27,8 +26,7 @@ Rectangle {
             for (var i = _missionController.visualItems.count - 1; i >= 0; i--) {
                 var item = _missionController.visualItems.get(i);
                 if (item && item.specifiesCoordinate) {
-                    var dist = _activeVehicle.coordinate.distanceTo(item.coordinate);
-                    return dist;
+                    return _activeVehicle.coordinate.distanceTo(item.coordinate);
                 }
             }
         }
@@ -38,71 +36,65 @@ Rectangle {
     // Chỉ hiển thị widget này khi có phương tiện được kết nối
     visible: _activeVehicle !== null
 
-    // Sử dụng GridLayout để sắp xếp các giá trị thành một bảng gọn gàng
-    GridLayout
-    {
-        id: gridLayout
+    // SỬ DỤNG ROWLAYOUT LÀM BỐ CỤC CHÍNH
+    RowLayout {
+        id: mainRowLayout
         anchors.centerIn: parent
-        columns: 2
-        columnSpacing: ScreenTools.defaultFontPixelWidth
+        spacing: _margins * 1.5 // Tăng khoảng cách giữa các cột
 
-        // Dòng 1: Tốc độ
-        QGCLabel { text: qsTr("Tốc độ:"); color: "white" }
-        QGCLabel { text: _activeVehicle ? _activeVehicle.groundSpeed.value.toFixed(1) + " m/s" : "--"; font.bold: true; color: "white" }
+        // --- CỘT 1: Tốc độ ---
+        ColumnLayout {
+            spacing: _margins / 4
+            QGCLabel { text: qsTr("Tốc độ"); color: "lightgrey"; Layout.alignment: Qt.AlignHCenter }
+            QGCLabel { text: _activeVehicle ? _activeVehicle.groundSpeed.value.toFixed(1) + " m/s" : "--"; font.bold: true; color: "white"; Layout.alignment: Qt.AlignHCenter }
+        }
 
-        // Dòng 2: Độ cao
-        QGCLabel { text: qsTr("Độ cao:"); color: "white" }
-        QGCLabel { text: _activeVehicle ? _activeVehicle.altitudeRelative.value.toFixed(1) + " m" : "--"; font.bold: true; color: "white" }
-
-        // Dòng 3: Cự ly (về Launch)
-        QGCLabel { text: qsTr("Cự ly (về Launch):"); color: "white" }
-        QGCLabel { text: _activeVehicle ? _activeVehicle.distanceToHome.value.toFixed(0) + " m" : "--"; font.bold: true; color: "white" }
-
-        // Dòng 4: Quãng đường đã đi
-        QGCLabel { text: qsTr("Quãng đường:"); color: "white" }
-        QGCLabel { text: _activeVehicle ? _activeVehicle.flightDistance.value.toFixed(0) + " m" : "--"; font.bold: true; color: "white" }
-
-        // Dòng 5: Khoảng cách đến mục tiêu
-        QGCLabel { text: qsTr("Đến mục tiêu:"); color: "white" }
-        QGCLabel { text: distanceToTarget >= 0 ? distanceToTarget.toFixed(0) + " m" : "--"; font.bold: true; color: "white" }
-
-        // Dòng 6: Trạng thái
-        QGCLabel { text: qsTr("Trạng thái:"); color: "white" }
-        QGCLabel { text: _activeVehicle ? (_activeVehicle.armed ? "ARMED" : "DISARMED") + " / " + _activeVehicle.flightMode : "--"; font.bold: true; color: _activeVehicle && _activeVehicle.armed ? "lightgreen" : "white" }
-
-        // Dòng 7: Thời gian bay
-        QGCLabel { text: qsTr("Thời gian bay:"); color: "white" }
-        QGCLabel { text: _activeVehicle ? formatTime(_activeVehicle.flightTime) : "00:00:00"; font.bold: true; color: "white" }
+        // --- CỘT 2: Độ cao ---
+        ColumnLayout {
+            spacing: _margins / 4
+            QGCLabel { text: qsTr("Độ cao"); color: "lightgrey"; Layout.alignment: Qt.AlignHCenter }
+            QGCLabel { text: _activeVehicle ? _activeVehicle.altitudeRelative.value.toFixed(1) + " m" : "--"; font.bold: true; color: "white"; Layout.alignment: Qt.AlignHCenter }
+        }
 
         // >>> BẮT ĐẦU THAY ĐỔI <<<
-
-        // Dòng 8 (MỚI): Góc Pitch
-        QGCLabel {
-            text: qsTr("Góc Pitch:")
-            color: "white"
+        // --- CỘT 3: Quãng đường (Thay cho Cự ly) ---
+        ColumnLayout {
+            spacing: _margins / 4
+            QGCLabel { text: qsTr("Q.đường"); color: "lightgrey"; Layout.alignment: Qt.AlignHCenter } // Nhãn đã đổi
+            QGCLabel { text: _activeVehicle ? _activeVehicle.flightDistance.value.toFixed(0) + " m" : "--"; font.bold: true; color: "white"; Layout.alignment: Qt.AlignHCenter } // Nguồn dữ liệu đã đổi
         }
-        QGCLabel {
-            text: _activeVehicle ? _activeVehicle.pitch.value.toFixed(1) + "°" : "--"
-            font.bold: true
-            color: "white"
-        }
-
-        // Dòng 9 (MỚI): Góc Roll
-        QGCLabel {
-            text: qsTr("Góc Roll:")
-            color: "white"
-        }
-        QGCLabel {
-            text: _activeVehicle ? _activeVehicle.roll.value.toFixed(1) + "°" : "--"
-            font.bold: true
-            color: "white"
-        }
-
-        // Khối mã hiển thị Pin đã được xóa bỏ
-
         // >>> KẾT THÚC THAY ĐỔI <<<
+
+        // --- CỘT 4: Đến mục tiêu ---
+        ColumnLayout {
+            spacing: _margins / 4
+            QGCLabel { text: qsTr("Mục tiêu"); color: "lightgrey"; Layout.alignment: Qt.AlignHCenter }
+            QGCLabel { text: distanceToTarget >= 0 ? distanceToTarget.toFixed(0) + " m" : "--"; font.bold: true; color: "white"; Layout.alignment: Qt.AlignHCenter }
+        }
+
+        // --- CỘT 5: Góc Pitch ---
+        ColumnLayout {
+            spacing: _margins / 4
+            QGCLabel { text: qsTr("Pitch"); color: "lightgrey"; Layout.alignment: Qt.AlignHCenter }
+            QGCLabel { text: _activeVehicle ? _activeVehicle.pitch.value.toFixed(1) + "°" : "--"; font.bold: true; color: "white"; Layout.alignment: Qt.AlignHCenter }
+        }
+
+        // --- CỘT 6: Góc Roll ---
+        ColumnLayout {
+            spacing: _margins / 4
+            QGCLabel { text: qsTr("Roll"); color: "lightgrey"; Layout.alignment: Qt.AlignHCenter }
+            QGCLabel { text: _activeVehicle ? _activeVehicle.roll.value.toFixed(1) + "°" : "--"; font.bold: true; color: "white"; Layout.alignment: Qt.AlignHCenter }
+        }
+
+        // --- CỘT 7: Thời gian bay ---
+        ColumnLayout {
+            spacing: _margins / 4
+            QGCLabel { text: qsTr("T.gian bay"); color: "lightgrey"; Layout.alignment: Qt.AlignHCenter }
+            QGCLabel { text: _activeVehicle ? formatTime(_activeVehicle.flightTime) : "00:00:00"; font.bold: true; color: "white"; Layout.alignment: Qt.AlignHCenter }
+        }
     }
 
+    // Hàm formatTime vẫn được giữ lại để sử dụng
     function formatTime(totalSeconds) {
         if (isNaN(totalSeconds)) return "00:00:00";
         var hours   = Math.floor(totalSeconds / 3600);
