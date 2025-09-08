@@ -32,6 +32,9 @@ Item {
     property var    _breachReturnPointComponent
     property var    _breachReturnDragComponent
     property var    _paramCircleFenceComponent
+    // QUAN TRỌNG: Thuộc tính _polygons này nhận dữ liệu tự động từ C++.
+    // - Trong Plan View, nó nhận hàng rào GỐC.
+    // - Trong Fly View, nó nhận hàng rào AN TOÀN.
     property var    _polygons:                  myGeoFenceController.polygons
     property var    _circles:                   myGeoFenceController.circles
     property color  _borderColor:               "orange"
@@ -41,14 +44,11 @@ Item {
     property color  _interiorColorInclusion:    "transparent"
     property real   _interiorOpacityExclusion:  0.2 * opacity
     property real   _interiorOpacityInclusion:  1 * opacity
-    property var    safePolygonPath: []
-    QtObject { id: safePolygonDataObject; property var path: _root.safePolygonPath }
 
-    // >>> THAY ĐỔI: Chuyển sang co nhỏ 200 mét <<<
+    // Hàm này chỉ tính toán và gửi dữ liệu an toàn về C++. Nó không vẽ gì cả.
     function processAndBuildSafePolygon(polygon) {
         if (!polygon || !polygon.path || polygon.path.length < 3) {
-            safePolygonPath = [];
-            if(myGeoFenceController) { myGeoFenceController.updateSafePolygonPath(safePolygonPath); }
+            myGeoFenceController.updateSafePolygonPath([]);
             return;
         }
 
@@ -59,48 +59,76 @@ Item {
             totalLon += oldPath[i].longitude;
         }
         var centroid = QtPositioning.coordinate(totalLat / oldPath.length, totalLon / oldPath.length);
-
         var newCoords = [];
-        var shrinkDistanceMeters = 200.0; // Khoảng cách co nhỏ là 200 mét
+        var shrinkDistanceMeters = 200.0;
 
         for (var j = 0; j < oldPath.length; j++) {
             var vertex = oldPath[j];
-
-            // Tính khoảng cách và góc từ trọng tâm đến đỉnh
             var distanceToCentroid = centroid.distanceTo(vertex);
             var azimuth = centroid.azimuthTo(vertex);
-
-            // Tính khoảng cách mới
             var newDistance = distanceToCentroid - shrinkDistanceMeters;
 
-            // Kiểm tra an toàn: nếu khoảng cách mới < 0 (đa giác quá nhỏ),
-            // thì không co nhỏ điểm này nữa để tránh lỗi.
             if (newDistance > 0) {
-                // Sử dụng atDistanceAndAzimuth để tìm điểm mới
-                var newCoord = centroid.atDistanceAndAzimuth(newDistance, azimuth);
-                newCoords.push(newCoord);
+                newCoords.push(centroid.atDistanceAndAzimuth(newDistance, azimuth));
             } else {
-                // Nếu đa giác quá nhỏ, chúng ta giữ lại điểm cũ hoặc điểm trọng tâm
-                // Ở đây, ta chỉ đơn giản là bỏ qua điểm này để tạo ra một đa giác nhỏ hơn nữa
-                // Hoặc an toàn hơn là thêm lại chính điểm đó
-                 newCoords.push(vertex);
+                newCoords.push(vertex);
             }
         }
 
-        safePolygonPath = newCoords;
-        if (myGeoFenceController) {
-            myGeoFenceController.updateSafePolygonPath(safePolygonPath);
+        myGeoFenceController.updateSafePolygonPath(newCoords);
+    }
+
+    // >>> BẮT ĐẦU KHỐI LOGIC HIỂN THỊ DUY NHẤT <<<
+    // Instantiator này sẽ vẽ duy nhất MỘT hàng rào.
+    // Dữ liệu và màu sắc của nó sẽ thay đổi tùy theo chế độ xem.
+    Instantiator {
+        model: _polygons
+        delegate : QGCMapPolygonVisuals {
+            parent: _root
+            mapControl: map
+            mapPolygon: object // Dữ liệu được cung cấp tự động bởi _polygons
+            borderWidth: object.inclusion ? _borderWidthInclusion : _borderWidthExclusion
+
+            // >>> THAY ĐỔI CỐT LÕI: Màu sắc động <<<
+            // - Nếu ở Plan View, màu sẽ là "đỏ" (chế độ chỉnh sửa).
+            // - Nếu ở Fly View, màu sẽ là cam tiêu chuẩn.
+            borderColor: _root.planView ? "red" : _borderColor
+
+            interactive: _root.interactive && object && object.interactive
+
+            // Chỉ kết nối tín hiệu này khi ở Plan View để tính toán
+            Connections {
+                target: object
+                // Bỏ qua nếu không ở Plan View
+                enabled: _root.planView
+
+                onPathChanged: {
+                    // Khi người dùng kéo thả, tính lại hàng rào an toàn
+                    _root.processAndBuildSafePolygon(object);
+                }
+            }
+            Component.onCompleted: {
+                if (_root.planView) {
+                    // Khi tạo mới, tính hàng rào an toàn lần đầu
+                    Qt.callLater(function() {
+                        _root.processAndBuildSafePolygon(object);
+                    })
+                }
+            }
         }
     }
-    // >>> BẮT ĐẦU SỬA LỖI <<<
+
+    // Theo dõi việc thêm/xóa đa giác để tính toán lại
     Connections {
         target: _polygons
+        enabled: _root.planView // Chỉ cần thiết trong Plan View
         onCountChanged: {
             var lastPolygon = _polygons.count > 0 ? _polygons.get(_polygons.count - 1) : null;
             processAndBuildSafePolygon(lastPolygon);
         }
     }
-    // >>> KẾT THÚC SỬA LỖI <<<
+    // >>> KẾT THÚC KHỐI LOGIC HIỂN THỊ DUY NHẤT <<<
+
     function addPolygon(inclusionPolygon) {
         var rect = Qt.rect(map.centerViewport.x, map.centerViewport.y, map.centerViewport.width, map.centerViewport.height);
         rect.x += (rect.width * 0.25) / 2;
@@ -119,9 +147,7 @@ Item {
         bottomLeftCoord = centerCoord.atDistanceAndAzimuth(halfWidthMeters, -90).atDistanceAndAzimuth(halfHeightMeters, 180);
         bottomRightCoord = centerCoord.atDistanceAndAzimuth(halfWidthMeters, 90).atDistanceAndAzimuth(halfHeightMeters, 180);
         if (inclusionPolygon) {
-            myGeoFenceController.addInclusion(topLeftCoord, bottomRightCoord);
-        } else {
-            myGeoFenceController.addExclusion(topLeftCoord, bottomRightCoord);
+            myGeoFenceController.addInclusionPolygon(topLeftCoord, bottomRightCoord);
         }
     }
 
@@ -139,113 +165,9 @@ Item {
         if (_paramCircleFenceComponent) _paramCircleFenceComponent.destroy();
     }
 
-    // >>> BẮT ĐẦU SỬA LỖI HIỂN THỊ <<<
-
-    // Instantiator này chỉ vẽ đa giác GỐC (màu cam) của người dùng khi ở trong PlanView.
-    // Trong FlyView, nó sẽ bị ẩn đi để tránh gây nhầm lẫn.
-    Instantiator {
-        model: _polygons
-        delegate : QGCMapPolygonVisuals {
-            parent: _root
-            mapControl: map
-            mapPolygon: object
-            borderWidth: object.inclusion ? _borderWidthInclusion : _borderWidthExclusion
-            borderColor: _borderColor
-            interiorColor: object.inclusion ? _interiorColorInclusion : _interiorColorExclusion
-            interiorOpacity: object.inclusion ? _interiorOpacityInclusion : _interiorOpacityExclusion
-            interactive: _root.interactive && object && object.interactive
-
-            // Chỉ hiển thị đa giác gốc này trong Plan View
-            visible: _root.planView
-
-            Connections {
-                target: object
-                onPathChanged: {
-                    _root.processAndBuildSafePolygon(object);
-                }
-            }
-            Component.onCompleted: {
-                Qt.callLater(function() {
-                    _root.processAndBuildSafePolygon(object);
-                })
-            }
-        }
-    }
-
-    // QGCMapPolygonVisuals này vẽ đa giác AN TOÀN (đã được thu nhỏ).
-    // Nó sẽ thay đổi màu sắc tùy thuộc vào chế độ xem.
-    QGCMapPolygonVisuals {
-        mapControl: map
-        mapPolygon: safePolygonDataObject
-
-        // Trong PlanView: màu đỏ để phân biệt với đa giác gốc.
-        // Trong FlyView: màu cam (_borderColor) để trở thành hàng rào chính thức.
-        borderColor: _root.planView ? "red" : _borderColor
-
-        // Trong PlanView: dùng border width tùy chỉnh.
-        // Trong FlyView: dùng border width tiêu chuẩn của geofence.
-        borderWidth: _root.planView ? 2 : _borderWidthInclusion
-
-        interactive: false
-        visible: safePolygonPath.length > 0
-    }
-
-    // >>> KẾT THÚC SỬA LỖI HIỂN THỊ <<<
-
-    Instantiator {
-        model: _circles
-        delegate : QGCMapCircleVisuals {
-            parent: _root
-            mapControl: map
-            mapCircle: object
-            borderWidth: object.inclusion ? _borderWidthInclusion : _borderWidthExclusion
-            borderColor: _borderColor
-            interiorColor: object.inclusion ? _interiorColorInclusion : _interiorColorExclusion
-            interiorOpacity: object.inclusion ? _interiorOpacityInclusion : _interiorOpacityExclusion
-            interactive: _root.interactive && mapCircle && mapCircle.interactive
-        }
-    }
-
-    Component {
-        id: paramCircleFenceComponent
-        MapCircle {
-            color:          _interiorColorInclusion
-            opacity:        _interiorOpacityInclusion
-            border.color:   _borderColor
-            border.width:   _borderWidthInclusion
-            center:         homePosition
-            radius:         _radius
-            visible:        homePosition.isValid && _radius > 0
-            property real _radius: myGeoFenceController ? myGeoFenceController.paramCircularFence : 0
-        }
-    }
-
-    Component {
-        id: breachReturnDragComponent
-        MissionItemIndicatorDrag {
-            mapControl:     map
-            itemCoordinate: myGeoFenceController ? myGeoFenceController.breachReturnPoint : undefined
-            visible:        _root.interactive
-            onItemCoordinateChanged: {
-                if(myGeoFenceController) {
-                    myGeoFenceController.breachReturnPoint = itemCoordinate
-                }
-            }
-        }
-    }
-
-    Component {
-        id: breachReturnPointComponent
-        MapQuickItem {
-            anchorPoint.x:  sourceItem.anchorPointX
-            anchorPoint.y:  sourceItem.anchorPointY
-            z:              QGroundControl.zOrderMapItems
-            coordinate:     myGeoFenceController ? myGeoFenceController.breachReturnPoint : undefined
-            opacity:        _root.opacity
-            sourceItem: MissionItemIndexLabel {
-                label:      qsTr("B", "Breach Return Point item indicator")
-                checked:    true
-            }
-        }
-    }
+    // (Các thành phần còn lại không thay đổi)
+    Instantiator { model: _circles; delegate : QGCMapCircleVisuals { parent: _root; mapControl: map; mapCircle: object; borderWidth: object.inclusion ? _borderWidthInclusion : _borderWidthExclusion; borderColor: _borderColor; interiorColor: object.inclusion ? _interiorColorInclusion : _interiorColorExclusion; interiorOpacity: object.inclusion ? _interiorOpacityInclusion : _interiorOpacityExclusion; interactive: _root.interactive && mapCircle && mapCircle.interactive } }
+    Component { id: paramCircleFenceComponent; MapCircle { color: _interiorColorInclusion; opacity: _interiorOpacityInclusion; border.color: _borderColor; border.width: _borderWidthInclusion; center: homePosition; radius: _radius; visible: homePosition.isValid && _radius > 0; property real _radius: myGeoFenceController ? myGeoFenceController.paramCircularFence : 0 } }
+    Component { id: breachReturnDragComponent; MissionItemIndicatorDrag { mapControl: map; itemCoordinate: myGeoFenceController ? myGeoFenceController.breachReturnPoint : undefined; visible: _root.interactive; onItemCoordinateChanged: { if(myGeoFenceController) { myGeoFenceController.breachReturnPoint = itemCoordinate } } } }
+    Component { id: breachReturnPointComponent; MapQuickItem { anchorPoint.x: sourceItem.anchorPointX; anchorPoint.y: sourceItem.anchorPointY; z: QGroundControl.zOrderMapItems; coordinate: myGeoFenceController ? myGeoFenceController.breachReturnPoint : undefined; opacity: _root.opacity; sourceItem: MissionItemIndexLabel { label: qsTr("B", "Breach Return Point item indicator"); checked: true } } }
 }
