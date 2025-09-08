@@ -92,7 +92,15 @@ Item {
             myGeoFenceController.updateSafePolygonPath(safePolygonPath);
         }
     }
-
+    // >>> BẮT ĐẦU SỬA LỖI <<<
+    Connections {
+        target: _polygons
+        onCountChanged: {
+            var lastPolygon = _polygons.count > 0 ? _polygons.get(_polygons.count - 1) : null;
+            processAndBuildSafePolygon(lastPolygon);
+        }
+    }
+    // >>> KẾT THÚC SỬA LỖI <<<
     function addPolygon(inclusionPolygon) {
         var rect = Qt.rect(map.centerViewport.x, map.centerViewport.y, map.centerViewport.width, map.centerViewport.height);
         rect.x += (rect.width * 0.25) / 2;
@@ -131,6 +139,10 @@ Item {
         if (_paramCircleFenceComponent) _paramCircleFenceComponent.destroy();
     }
 
+    // >>> BẮT ĐẦU SỬA LỖI HIỂN THỊ <<<
+
+    // Instantiator này chỉ vẽ đa giác GỐC (màu cam) của người dùng khi ở trong PlanView.
+    // Trong FlyView, nó sẽ bị ẩn đi để tránh gây nhầm lẫn.
     Instantiator {
         model: _polygons
         delegate : QGCMapPolygonVisuals {
@@ -142,6 +154,10 @@ Item {
             interiorColor: object.inclusion ? _interiorColorInclusion : _interiorColorExclusion
             interiorOpacity: object.inclusion ? _interiorOpacityInclusion : _interiorOpacityExclusion
             interactive: _root.interactive && object && object.interactive
+
+            // Chỉ hiển thị đa giác gốc này trong Plan View
+            visible: _root.planView
+
             Connections {
                 target: object
                 onPathChanged: {
@@ -156,14 +172,25 @@ Item {
         }
     }
 
+    // QGCMapPolygonVisuals này vẽ đa giác AN TOÀN (đã được thu nhỏ).
+    // Nó sẽ thay đổi màu sắc tùy thuộc vào chế độ xem.
     QGCMapPolygonVisuals {
         mapControl: map
         mapPolygon: safePolygonDataObject
-        borderColor: "red"
-        borderWidth: 2
+
+        // Trong PlanView: màu đỏ để phân biệt với đa giác gốc.
+        // Trong FlyView: màu cam (_borderColor) để trở thành hàng rào chính thức.
+        borderColor: _root.planView ? "red" : _borderColor
+
+        // Trong PlanView: dùng border width tùy chỉnh.
+        // Trong FlyView: dùng border width tiêu chuẩn của geofence.
+        borderWidth: _root.planView ? 2 : _borderWidthInclusion
+
         interactive: false
         visible: safePolygonPath.length > 0
     }
+
+    // >>> KẾT THÚC SỬA LỖI HIỂN THỊ <<<
 
     Instantiator {
         model: _circles
