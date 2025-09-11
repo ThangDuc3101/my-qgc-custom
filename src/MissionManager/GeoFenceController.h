@@ -12,7 +12,6 @@
 #include <QtCore/QLoggingCategory>
 #include <QtPositioning/QGeoCoordinate>
 #include <QtQmlIntegration/QtQmlIntegration>
-#include <QtCore/QVariantList> // Thêm include này
 
 #include "PlanElementController.h"
 #include "QmlObjectListModel.h"
@@ -33,7 +32,7 @@ class GeoFenceController : public PlanElementController
     Q_MOC_INCLUDE("QGCFencePolygon.h")
     Q_MOC_INCLUDE("QGCFenceCircle.h")
 
-   public:
+public:
     GeoFenceController(PlanMasterController* masterController, QObject* parent = nullptr);
     ~GeoFenceController();
 
@@ -41,18 +40,30 @@ class GeoFenceController : public PlanElementController
     Q_PROPERTY(QmlObjectListModel*  circles                 READ circles                                            CONSTANT)
     Q_PROPERTY(QGeoCoordinate       breachReturnPoint       READ breachReturnPoint      WRITE setBreachReturnPoint  NOTIFY breachReturnPointChanged)
     Q_PROPERTY(Fact*                breachReturnAltitude    READ breachReturnAltitude                               CONSTANT)
+
+    // Radius of the "paramCircularFence" which is called the "Geofence Failsafe" in PX4 and the "Circular Geofence" on ArduPilot
     Q_PROPERTY(double               paramCircularFence      READ paramCircularFence                                 NOTIFY paramCircularFenceChanged)
 
+    /// Add a new inclusion polygon to the fence
+    ///     @param topLeft: Top left coordinate or map viewport
+    ///     @param bottomRight: Bottom right left coordinate or map viewport
     Q_INVOKABLE void addInclusionPolygon(QGeoCoordinate topLeft, QGeoCoordinate bottomRight);
-    Q_INVOKABLE void addInclusionCircle(QGeoCoordinate topLeft, QGeoCoordinate bottomRight);
-    Q_INVOKABLE void deletePolygon(int index);
-    Q_INVOKABLE void deleteCircle(int index);
-    Q_INVOKABLE void clearAllInteractive(void);
 
-            // >>> BẮT ĐẦU MÃ GIAI ĐOẠN 3 <<<
-            // Hàm này sẽ được QML gọi để gửi dữ liệu hàng rào an toàn về C++
-    Q_INVOKABLE void updateSafePolygonPath(QVariantList safePath);
-    // >>> KẾT THÚC MÃ GIAI ĐOẠN 3 <<<
+    /// Add a new inclusion circle to the fence
+    ///     @param topLeft: Top left coordinate or map viewport
+    ///     @param bottomRight: Bottom right left coordinate or map viewport
+    Q_INVOKABLE void addInclusionCircle(QGeoCoordinate topLeft, QGeoCoordinate bottomRight);
+
+    /// Deletes the specified polygon from the polygon list
+    ///     @param index: Index of poygon to delete
+    Q_INVOKABLE void deletePolygon(int index);
+
+    /// Deletes the specified circle from the circle list
+    ///     @param index: Index of circle to delete
+    Q_INVOKABLE void deleteCircle(int index);
+
+    /// Clears the interactive bit from all fence items
+    Q_INVOKABLE void clearAllInteractive(void);
 
 #ifdef QGC_UTM_ADAPTER
     Q_INVOKABLE void loadFlightPlanData(void);
@@ -61,7 +72,7 @@ class GeoFenceController : public PlanElementController
     double  paramCircularFence  (void);
     Fact*   breachReturnAltitude(void) { return &_breachReturnAltitudeFact; }
 
-            // Overrides from PlanElementController
+    // Overrides from PlanElementController
     bool supported                  (void) const final;
     void start                      (bool flyView) final;
     void save                       (QJsonObject& json) final;
@@ -83,7 +94,7 @@ class GeoFenceController : public PlanElementController
     void setBreachReturnPoint   (const QGeoCoordinate& breachReturnPoint);
     bool isEmpty                (void) const;
 
-   signals:
+signals:
     void breachReturnPointChanged       (QGeoCoordinate breachReturnPoint);
     void editorQmlChanged               (QString editorQml);
     void loadComplete                   (void);
@@ -94,7 +105,7 @@ class GeoFenceController : public PlanElementController
     void polygonBoundarySent    (QList<QGeoCoordinate> coords);
 #endif
 
-   private slots:
+private slots:
     void _polygonDirtyChanged       (bool dirty);
     void _setDirty                  (void);
     void _setFenceFromManager       (const QList<QGCFencePolygon>& polygons, const QList<QGCFenceCircle>&  circles);
@@ -106,7 +117,7 @@ class GeoFenceController : public PlanElementController
     void _parametersReady           (void);
     void _managerVehicleChanged      (Vehicle* managerVehicle);
 
-   private:
+private:
     void _init(void);
 
     Vehicle*            _managerVehicle =               nullptr;
@@ -139,9 +150,4 @@ class GeoFenceController : public PlanElementController
     static constexpr const char* _apmParamCircularFenceRadius =    "FENCE_RADIUS";
     static constexpr const char* _apmParamCircularFenceEnabled =    "FENCE_ENABLE";
     static constexpr const char* _apmParamCircularFenceType =    "FENCE_TYPE";
-
-            // >>> BẮT ĐẦU MÃ GIAI ĐOẠN 3 <<<
-            // Biến thành viên để lưu trữ đường đi của hàng rào an toàn
-    QList<QGeoCoordinate> _safePolygonPath;
-    // >>> KẾT THÚC MÃ GIAI ĐOẠN 3 <<<
 };

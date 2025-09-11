@@ -4,7 +4,7 @@ import QtQuick.Layouts
 import QtPositioning
 
 import QGroundControl
-import QGroundControl.ScreenTools
+
 import QGroundControl.Controls
 
 import QGroundControl.FactControls
@@ -34,7 +34,7 @@ QGCFlickable {
             anchors.margins:    _margin
             anchors.left:       parent.left
             anchors.top:        parent.top
-            text:               qsTr("Vùng an toàn")
+            text:               qsTr("GeoFence")
             anchors.leftMargin: ScreenTools.defaultFontPixelWidth
         }
 
@@ -62,8 +62,8 @@ QGCFlickable {
                     wrapMode:           Text.WordWrap
                     font.pointSize:     myGeoFenceController.supported ? ScreenTools.smallFontPointSize : ScreenTools.defaultFontPointSize
                     text:               myGeoFenceController.supported ?
-                                            qsTr("Chức năng Vùng an toàn cho phép bạn thiết lập hàng rào ảo xung quanh khu vực bạn muốn bay tới.") :
-                                            qsTr("mãy bay này không hỗ trợ chức năng Vùng an toàn.")
+                                            qsTr("GeoFencing allows you to set a virtual fence around the area you want to fly in.") :
+                                            qsTr("This vehicle does not support GeoFence.")
                 }
 
                 Column {
@@ -113,12 +113,12 @@ QGCFlickable {
                         id:             insertSection
                         anchors.left:   parent.left
                         anchors.right:  parent.right
-                        text:           qsTr("Thêm Vùng an toàn")
+                        text:           qsTr("Insert GeoFence")
                     }
 
                     QGCButton {
                         Layout.fillWidth:   true
-                        text:               qsTr("Dạng đa giác")
+                        text:               qsTr("Polygon Fence")
 
                         onClicked: {
                             var rect = Qt.rect(flightMap.centerViewport.x, flightMap.centerViewport.y, flightMap.centerViewport.width, flightMap.centerViewport.height)
@@ -130,7 +130,7 @@ QGCFlickable {
 
                     QGCButton {
                         Layout.fillWidth:   true
-                        text:               qsTr("Dạng vòng tròn")
+                        text:               qsTr("Circular Fence")
 
                         onClicked: {
                             var rect = Qt.rect(flightMap.centerViewport.x, flightMap.centerViewport.y, flightMap.centerViewport.width, flightMap.centerViewport.height)
