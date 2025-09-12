@@ -4,7 +4,7 @@ import QtQuick.Layouts
 import QtPositioning
 
 import QGroundControl
-import QGroundControl.ScreenTools
+
 import QGroundControl.Controls
 
 import QGroundControl.FactControls
@@ -21,6 +21,9 @@ QGCFlickable {
     readonly property real  _margin:            ScreenTools.defaultFontPixelWidth / 2
     readonly property real  _radius:            ScreenTools.defaultFontPixelWidth / 2
 
+    property var lastPolygonTopLeft     //adding for geofence
+    property var lastPolygonBottomRight //adding for geofence
+
     Rectangle {
         id:     geoFenceEditorRect
         anchors.left:   parent.left
@@ -34,7 +37,7 @@ QGCFlickable {
             anchors.margins:    _margin
             anchors.left:       parent.left
             anchors.top:        parent.top
-            text:               qsTr("Vùng an toàn")
+            text:               qsTr("GeoFence")
             anchors.leftMargin: ScreenTools.defaultFontPixelWidth
         }
 
@@ -62,8 +65,8 @@ QGCFlickable {
                     wrapMode:           Text.WordWrap
                     font.pointSize:     myGeoFenceController.supported ? ScreenTools.smallFontPointSize : ScreenTools.defaultFontPointSize
                     text:               myGeoFenceController.supported ?
-                                            qsTr("Chức năng Vùng an toàn cho phép bạn thiết lập hàng rào ảo xung quanh khu vực bạn muốn bay tới.") :
-                                            qsTr("mãy bay này không hỗ trợ chức năng Vùng an toàn.")
+                                            qsTr("GeoFencing allows you to set a virtual fence around the area you want to fly in.") :
+                                            qsTr("This vehicle does not support GeoFence.")
                 }
 
                 Column {
@@ -113,24 +116,28 @@ QGCFlickable {
                         id:             insertSection
                         anchors.left:   parent.left
                         anchors.right:  parent.right
-                        text:           qsTr("Thêm Vùng an toàn")
+                        text:           qsTr("Insert GeoFence")
                     }
 
                     QGCButton {
                         Layout.fillWidth:   true
-                        text:               qsTr("Dạng đa giác")
+                        text:               qsTr("Polygon Fence")
 
                         onClicked: {
                             var rect = Qt.rect(flightMap.centerViewport.x, flightMap.centerViewport.y, flightMap.centerViewport.width, flightMap.centerViewport.height)
                             var topLeftCoord = flightMap.toCoordinate(Qt.point(rect.x, rect.y), false /* clipToViewPort */)
                             var bottomRightCoord = flightMap.toCoordinate(Qt.point(rect.x + rect.width, rect.y + rect.height), false /* clipToViewPort */)
                             myGeoFenceController.addInclusionPolygon(topLeftCoord, bottomRightCoord)
+
+                            // save the last geofence that user added
+                            lastPolygonTopLeft = topLeftCoord;
+                            lastPolygonBottomRight = bottomRightCoord;
                         }
                     }
 
                     QGCButton {
                         Layout.fillWidth:   true
-                        text:               qsTr("Dạng vòng tròn")
+                        text:               qsTr("Circular Fence")
 
                         onClicked: {
                             var rect = Qt.rect(flightMap.centerViewport.x, flightMap.centerViewport.y, flightMap.centerViewport.width, flightMap.centerViewport.height)
@@ -154,7 +161,7 @@ QGCFlickable {
 
                     GridLayout {
                         Layout.fillWidth:   true
-                        columns:            3
+                        columns:            4       //adding the calib button.
                         flow:               GridLayout.TopToBottom
                         visible:            polygonSection.checked && myGeoFenceController.polygons.count > 0
 
@@ -199,8 +206,52 @@ QGCFlickable {
                         }
 
                         QGCLabel {
-                            text:               qsTr("Delete")
+                            text:               qsTr("Calib")
                             Layout.column:      2
+                            Layout.alignment:   Qt.AlignHCenter
+                        }
+
+                        Repeater {
+                            model: myGeoFenceController.polygons
+
+                            QGCButton {
+                                text:               qsTr("200m")
+                                Layout.alignment:   Qt.AlignHCenter
+                                onClicked:
+                                {
+                                    console.log("Nút Co nhỏ tại index", index, "đã được nhấn!")
+                                    console.log("--- Đọc từ các giá trị đã lưu ---");
+                                    console.log("TopLeft đã lưu:", lastPolygonTopLeft.latitude.toFixed(6), ",", lastPolygonTopLeft.longitude.toFixed(6));
+                                    console.log("BottomRight đã lưu:", lastPolygonBottomRight.latitude.toFixed(6), ",", lastPolygonBottomRight.longitude.toFixed(6));
+
+                                    var topLeft = lastPolygonTopLeft;
+                                    var bottomRight = lastPolygonBottomRight;
+
+                                    var centerLat = (topLeft.latitude + bottomRight.latitude) / 2;
+                                    var centerLon = (topLeft.longitude + bottomRight.longitude) / 2;
+                                    var centerCoord = QtPositioning.coordinate(centerLat, centerLon);
+
+                                    var shrinkDistanceMeters = 200.0;
+
+                                    var newTopLeft = topLeft.atDistanceAndAzimuth(shrinkDistanceMeters, 135); // Hướng Đông Nam
+
+                                    // Di chuyển điểm bottomRight vào trong (tăng lat, giảm lon)
+                                    var newBottomRight = bottomRight.atDistanceAndAzimuth(shrinkDistanceMeters, 315); // Hướng Tây Bắc
+
+                                    // 4. In ra tọa độ mới
+                                    console.log("--- Tọa độ mới (Đã co nhỏ) ---");
+                                    console.log("TopLeft mới:", newTopLeft.latitude.toFixed(6), "Lon", newTopLeft.longitude.toFixed(6));
+                                    console.log("BottomRight mới:", newBottomRight.latitude.toFixed(6), "Lon", newBottomRight.longitude.toFixed(6));
+
+                                    // 5. Gọi hàm của QGC để tạo đa giác thứ hai
+                                    myGeoFenceController.addInclusionPolygon(newTopLeft, newBottomRight);
+                                }
+                            }
+                        }
+
+                        QGCLabel {
+                            text:               qsTr("Delete")
+                            Layout.column:      3
                             Layout.alignment:   Qt.AlignHCenter
                         }
 

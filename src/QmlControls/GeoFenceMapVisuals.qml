@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * (c) 2009-2024 QGROUNDCONTROL PROJECT <http://www.qgroundcontrol.org>
+ * (c) 2009-2020 QGROUNDCONTROL PROJECT <http://www.qgroundcontrol.org>
  *
  * QGroundControl is licensed according to the terms in the file
  * COPYING.md in the root of the source code directory.
@@ -13,7 +13,7 @@ import QtLocation
 import QtPositioning
 
 import QGroundControl
-import QGroundControl.ScreenTools
+
 
 import QGroundControl.Controls
 import QGroundControl.FlightMap
@@ -25,8 +25,8 @@ Item {
 
     property var    map
     property var    myGeoFenceController
-    property bool   interactive:            false
-    property bool   planView:               false
+    property bool   interactive:            false   ///< true: user can interact with items
+    property bool   planView:               false   ///< true: visuals showing in plan view
     property var    homePosition
 
     property var    _breachReturnPointComponent
@@ -42,66 +42,32 @@ Item {
     property real   _interiorOpacityExclusion:  0.2 * opacity
     property real   _interiorOpacityInclusion:  1 * opacity
 
-    // >>> BẮT ĐẦU MÃ GIAI ĐOẠN 2 <<<
-
-    // 1. Tạo một thuộc tính để LƯU TRỮ danh sách tọa độ của hàng rào an toàn
-    property var safePolygonPath: []
-
-    // 2. Tạo một đối tượng QML đơn giản để TRUYỀN dữ liệu cho khối hiển thị
-    QtObject {
-        id: safePolygonDataObject
-        property var path: _root.safePolygonPath
-    }
-
-    // 3. Hàm JavaScript được nâng cấp để cập nhật thuộc tính 'safePolygonPath'
-    function processAndBuildSafePolygon(polygon) {
-        if (!polygon || !polygon.path || polygon.path.length < 3) {
-            safePolygonPath = []; // Xóa đường đi cũ nếu đa giác không hợp lệ
-            return;
-        }
-
-        var oldPath = polygon.path;
-        var totalLat = 0.0, totalLon = 0.0;
-        for (var i = 0; i < oldPath.length; i++) {
-            totalLat += oldPath[i].latitude;
-            totalLon += oldPath[i].longitude;
-        }
-        var centroid = QtPositioning.coordinate(totalLat / oldPath.length, totalLon / oldPath.length);
-
-        var newCoords = [];
-        var shrinkFactor = 0.8;
-        for (var j = 0; j < oldPath.length; j++) {
-            var originalVertex = oldPath[j];
-            var vecLat = originalVertex.latitude - centroid.latitude;
-            var vecLon = originalVertex.longitude - centroid.longitude;
-            var newLat = centroid.latitude + vecLat * shrinkFactor;
-            var newLon = centroid.longitude + vecLon * shrinkFactor;
-            newCoords.push(QtPositioning.coordinate(newLat, newLon));
-        }
-
-        // Cập nhật thuộc tính lưu trữ đường đi của chúng ta, điều này sẽ tự động cập nhật giao diện
-        safePolygonPath = newCoords;
-    }
-
-    // >>> KẾT THÚC MÃ GIAI ĐOẠN 2 <<<
-
     function addPolygon(inclusionPolygon) {
+        // Initial polygon is inset to take 2/3rds space
         var rect = Qt.rect(map.centerViewport.x, map.centerViewport.y, map.centerViewport.width, map.centerViewport.height)
         rect.x += (rect.width * 0.25) / 2
         rect.y += (rect.height * 0.25) / 2
         rect.width *= 0.75
         rect.height *= 0.75
-        var centerCoord = map.toCoordinate(Qt.point(rect.x + (rect.width / 2), rect.y + (rect.height / 2)), false)
-        var topLeftCoord = map.toCoordinate(Qt.point(rect.x, rect.y), false)
-        var topRightCoord = map.toCoordinate(Qt.point(rect.x + rect.width, rect.y), false)
-        var bottomLeftCoord = map.toCoordinate(Qt.point(rect.x, rect.y + rect.height), false)
-        var bottomRightCoord = map.toCoordinate(Qt.point(rect.x + rect.width, rect.y + rect.height), false)
-        var halfWidthMeters = Math.min(topLeftCoord.distanceTo(topRightCoord), 3000) / 2
-        var halfHeightMeters = Math.min(topLeftCoord.distanceTo(bottomLeftCoord), 3000) / 2
-        topLeftCoord = centerCoord.atDistanceAndAzimuth(halfWidthMeters, -90).atDistanceAndAzimuth(halfHeightMeters, 0)
-        topRightCoord = centerCoord.atDistanceAndAzimuth(halfWidthMeters, 90).atDistanceAndAzimuth(halfHeightMeters, 0)
-        bottomLeftCoord = centerCoord.atDistanceAndAzimuth(halfWidthMeters, -90).atDistanceAndAzimuth(halfHeightMeters, 180)
-        bottomRightCoord = centerCoord.atDistanceAndAzimuth(halfWidthMeters, 90).atDistanceAndAzimuth(halfHeightMeters, 180)
+
+        var centerCoord =       map.toCoordinate(Qt.point(rect.x + (rect.width / 2), rect.y + (rect.height / 2)),   false /* clipToViewPort */)
+        var topLeftCoord =      map.toCoordinate(Qt.point(rect.x, rect.y),                                          false /* clipToViewPort */)
+        var topRightCoord =     map.toCoordinate(Qt.point(rect.x + rect.width, rect.y),                             false /* clipToViewPort */)
+        var bottomLeftCoord =   map.toCoordinate(Qt.point(rect.x, rect.y + rect.height),                            false /* clipToViewPort */)
+        var bottomRightCoord =  map.toCoordinate(Qt.point(rect.x + rect.width, rect.y + rect.height),               false /* clipToViewPort */)
+
+        // Initial polygon has max width and height of 3000 meters
+        var halfWidthMeters =   Math.min(topLeftCoord.distanceTo(topRightCoord), 3000) / 2
+        var halfHeightMeters =  Math.min(topLeftCoord.distanceTo(bottomLeftCoord), 3000) / 2
+        topLeftCoord =      centerCoord.atDistanceAndAzimuth(halfWidthMeters, -90).atDistanceAndAzimuth(halfHeightMeters, 0)
+        topRightCoord =     centerCoord.atDistanceAndAzimuth(halfWidthMeters, 90).atDistanceAndAzimuth(halfHeightMeters, 0)
+        bottomLeftCoord =   centerCoord.atDistanceAndAzimuth(halfWidthMeters, -90).atDistanceAndAzimuth(halfHeightMeters, 180)
+        bottomRightCoord =  centerCoord.atDistanceAndAzimuth(halfWidthMeters, 90).atDistanceAndAzimuth(halfHeightMeters, 180)
+
+        console.log(map.center)
+        console.log(topLeftCoord)
+        console.log(bottomRightCoord)
+
         if (inclusionPolygon) {
             myGeoFenceController.addInclusion(topLeftCoord, bottomRightCoord)
         } else {
@@ -118,14 +84,18 @@ Item {
     }
 
     Component.onDestruction: {
-        if (_breachReturnPointComponent) _breachReturnPointComponent.destroy()
-        if (_breachReturnDragComponent) _breachReturnDragComponent.destroy()
-        if (_paramCircleFenceComponent) _paramCircleFenceComponent.destroy()
+        _breachReturnPointComponent.destroy()
+        _breachReturnDragComponent.destroy()
+        _paramCircleFenceComponent.destroy()
     }
 
-    // Instantiator để vẽ đa giác GỐC (màu cam)
+    // By default the parent for Instantiator.delegate item is the Instatiator itself. By there is a bug
+    // in Qt which will cause a crash if this delete item has Menu item within it. Since the Menu item
+    // doesn't like having a non-visual item as parent. This is likely related to hybrid QQuickWidtget+QML
+    // Hence Qt folks are going to care. In order to workaround you have to parent the item to _root Item instead.
     Instantiator {
         model: _polygons
+
         delegate : QGCMapPolygonVisuals {
             parent:             _root
             mapControl:         map
@@ -134,34 +104,13 @@ Item {
             borderColor:        _borderColor
             interiorColor:      object.inclusion ? _interiorColorInclusion : _interiorColorExclusion
             interiorOpacity:    object.inclusion ? _interiorOpacityInclusion : _interiorOpacityExclusion
-            interactive:        _root.interactive && object && object.interactive
-
-            Connections {
-                target: object
-                onPathChanged: {
-                    _root.processAndBuildSafePolygon(object);
-                }
-            }
-            Component.onCompleted: {
-                Qt.callLater(function() {
-                    _root.processAndBuildSafePolygon(object);
-                })
-            }
+            interactive:        _root.interactive && mapPolygon && mapPolygon.interactive
         }
-    }
-
-    // Khối hiển thị mới để vẽ đa giác AN TOÀN (màu đỏ)
-    QGCMapPolygonVisuals {
-        mapControl:         map
-        mapPolygon:         safePolygonDataObject
-        borderColor:        "red"
-        borderWidth:        2
-        interactive:        false
-        visible:            safePolygonPath.length > 0
     }
 
     Instantiator {
         model: _circles
+
         delegate : QGCMapCircleVisuals {
             parent:             _root
             mapControl:         map
@@ -174,8 +123,10 @@ Item {
         }
     }
 
+    // Circular geofence specified from parameter
     Component {
         id: paramCircleFenceComponent
+
         MapCircle {
             color:          _interiorColorInclusion
             opacity:        _interiorOpacityInclusion
@@ -184,32 +135,37 @@ Item {
             center:         homePosition
             radius:         _radius
             visible:        homePosition.isValid && _radius > 0
-            property real _radius: myGeoFenceController ? myGeoFenceController.paramCircularFence : 0
+
+            property real _radius: myGeoFenceController.paramCircularFence
+
+            on_RadiusChanged: console.log("_radius", _radius, homePosition.isValid, homePosition)
         }
     }
 
     Component {
         id: breachReturnDragComponent
+
         MissionItemIndicatorDrag {
             mapControl:     map
-            itemCoordinate: myGeoFenceController ? myGeoFenceController.breachReturnPoint : undefined
+            itemCoordinate: myGeoFenceController.breachReturnPoint
             visible:        _root.interactive
-            onItemCoordinateChanged: {
-                if(myGeoFenceController) {
-                    myGeoFenceController.breachReturnPoint = itemCoordinate
-                }
-            }
+
+            onItemCoordinateChanged: myGeoFenceController.breachReturnPoint = itemCoordinate
         }
     }
 
+
+    // Breach return point
     Component {
         id: breachReturnPointComponent
+
         MapQuickItem {
             anchorPoint.x:  sourceItem.anchorPointX
             anchorPoint.y:  sourceItem.anchorPointY
             z:              QGroundControl.zOrderMapItems
-            coordinate:     myGeoFenceController ? myGeoFenceController.breachReturnPoint : undefined
+            coordinate:     myGeoFenceController.breachReturnPoint
             opacity:        _root.opacity
+
             sourceItem: MissionItemIndexLabel {
                 label:      qsTr("B", "Breach Return Point item indicator")
                 checked:    true

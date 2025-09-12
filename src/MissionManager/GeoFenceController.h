@@ -32,7 +32,7 @@ class GeoFenceController : public PlanElementController
     Q_MOC_INCLUDE("QGCFencePolygon.h")
     Q_MOC_INCLUDE("QGCFenceCircle.h")
 
-public:
+   public:
     GeoFenceController(PlanMasterController* masterController, QObject* parent = nullptr);
     ~GeoFenceController();
 
@@ -41,28 +41,28 @@ public:
     Q_PROPERTY(QGeoCoordinate       breachReturnPoint       READ breachReturnPoint      WRITE setBreachReturnPoint  NOTIFY breachReturnPointChanged)
     Q_PROPERTY(Fact*                breachReturnAltitude    READ breachReturnAltitude                               CONSTANT)
 
-    // Radius of the "paramCircularFence" which is called the "Geofence Failsafe" in PX4 and the "Circular Geofence" on ArduPilot
+            // Radius of the "paramCircularFence" which is called the "Geofence Failsafe" in PX4 and the "Circular Geofence" on ArduPilot
     Q_PROPERTY(double               paramCircularFence      READ paramCircularFence                                 NOTIFY paramCircularFenceChanged)
 
-    /// Add a new inclusion polygon to the fence
-    ///     @param topLeft: Top left coordinate or map viewport
-    ///     @param bottomRight: Bottom right left coordinate or map viewport
+            /// Add a new inclusion polygon to the fence
+            ///     @param topLeft: Top left coordinate or map viewport
+            ///     @param bottomRight: Bottom right left coordinate or map viewport
     Q_INVOKABLE void addInclusionPolygon(QGeoCoordinate topLeft, QGeoCoordinate bottomRight);
 
-    /// Add a new inclusion circle to the fence
-    ///     @param topLeft: Top left coordinate or map viewport
-    ///     @param bottomRight: Bottom right left coordinate or map viewport
+            /// Add a new inclusion circle to the fence
+            ///     @param topLeft: Top left coordinate or map viewport
+            ///     @param bottomRight: Bottom right left coordinate or map viewport
     Q_INVOKABLE void addInclusionCircle(QGeoCoordinate topLeft, QGeoCoordinate bottomRight);
 
-    /// Deletes the specified polygon from the polygon list
-    ///     @param index: Index of poygon to delete
+            /// Deletes the specified polygon from the polygon list
+            ///     @param index: Index of poygon to delete
     Q_INVOKABLE void deletePolygon(int index);
 
-    /// Deletes the specified circle from the circle list
-    ///     @param index: Index of circle to delete
+            /// Deletes the specified circle from the circle list
+            ///     @param index: Index of circle to delete
     Q_INVOKABLE void deleteCircle(int index);
 
-    /// Clears the interactive bit from all fence items
+            /// Clears the interactive bit from all fence items
     Q_INVOKABLE void clearAllInteractive(void);
 
 #ifdef QGC_UTM_ADAPTER
@@ -72,7 +72,7 @@ public:
     double  paramCircularFence  (void);
     Fact*   breachReturnAltitude(void) { return &_breachReturnAltitudeFact; }
 
-    // Overrides from PlanElementController
+            // Overrides from PlanElementController
     bool supported                  (void) const final;
     void start                      (bool flyView) final;
     void save                       (QJsonObject& json) final;
@@ -94,7 +94,7 @@ public:
     void setBreachReturnPoint   (const QGeoCoordinate& breachReturnPoint);
     bool isEmpty                (void) const;
 
-signals:
+   signals:
     void breachReturnPointChanged       (QGeoCoordinate breachReturnPoint);
     void editorQmlChanged               (QString editorQml);
     void loadComplete                   (void);
@@ -105,7 +105,7 @@ signals:
     void polygonBoundarySent    (QList<QGeoCoordinate> coords);
 #endif
 
-private slots:
+   private slots:
     void _polygonDirtyChanged       (bool dirty);
     void _setDirty                  (void);
     void _setFenceFromManager       (const QList<QGCFencePolygon>& polygons, const QList<QGCFenceCircle>&  circles);
@@ -117,7 +117,7 @@ private slots:
     void _parametersReady           (void);
     void _managerVehicleChanged      (Vehicle* managerVehicle);
 
-private:
+   private:
     void _init(void);
 
     Vehicle*            _managerVehicle =               nullptr;

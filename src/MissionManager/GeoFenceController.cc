@@ -32,10 +32,10 @@ QMap<QString, FactMetaData*> GeoFenceController::_metaDataMap;
 
 GeoFenceController::GeoFenceController(PlanMasterController* masterController, QObject* parent)
     : PlanElementController         (masterController, parent)
-    , _managerVehicle               (masterController->managerVehicle())
-    , _geoFenceManager              (masterController->managerVehicle()->geoFenceManager())
-    , _breachReturnAltitudeFact     (0, _breachReturnAltitudeFactName, FactMetaData::valueTypeDouble)
-    , _breachReturnDefaultAltitude  (SettingsManager::instance()->appSettings()->defaultMissionItemAltitude()->rawValue().toDouble())
+      , _managerVehicle               (masterController->managerVehicle())
+      , _geoFenceManager              (masterController->managerVehicle()->geoFenceManager())
+      , _breachReturnAltitudeFact     (0, _breachReturnAltitudeFactName, FactMetaData::valueTypeDouble)
+      , _breachReturnDefaultAltitude  (SettingsManager::instance()->appSettings()->defaultMissionItemAltitude()->rawValue().toDouble())
 {
     if (_metaDataMap.isEmpty()) {
         _metaDataMap = FactMetaData::createMapFromJsonFile(QStringLiteral(":/json/BreachReturn.FactMetaData.json"), nullptr /* metaDataParent */);
@@ -105,7 +105,7 @@ void GeoFenceController::_managerVehicleChanged(Vehicle* managerVehicle)
     connect(_geoFenceManager, &GeoFenceManager::removeAllComplete,              this, &GeoFenceController::_managerRemoveAllComplete);
     connect(_geoFenceManager, &GeoFenceManager::inProgressChanged,              this, &GeoFenceController::syncInProgressChanged);
 
-    //-- GeoFenceController::supported() tests both the capability bit AND the protocol version.
+            //-- GeoFenceController::supported() tests both the capability bit AND the protocol version.
     (void) connect(_managerVehicle, &Vehicle::capabilityBitsChanged, this, [this](uint64_t capabilityBits) {
         Q_UNUSED(capabilityBits);
         emit supportedChanged(supported());
@@ -129,17 +129,17 @@ bool GeoFenceController::load(const QJsonObject& json, QString& errorString)
     errorString.clear();
 
     if (!json.contains(JsonHelper::jsonVersionKey) ||
-            (json.contains(JsonHelper::jsonVersionKey) && json[JsonHelper::jsonVersionKey].toInt() == 1)) {
+        (json.contains(JsonHelper::jsonVersionKey) && json[JsonHelper::jsonVersionKey].toInt() == 1)) {
         // We just ignore old version 1 or prior data
         return true;
     }
 
     QList<JsonHelper::KeyValidateInfo> keyInfoList = {
-        { JsonHelper::jsonVersionKey,   QJsonValue::Double, true },
-        { _jsonCirclesKey,              QJsonValue::Array,  true },
-        { _jsonPolygonsKey,             QJsonValue::Array,  true },
-        { _jsonBreachReturnKey,         QJsonValue::Array,  false },
-    };
+                                                      { JsonHelper::jsonVersionKey,   QJsonValue::Double, true },
+                                                      { _jsonCirclesKey,              QJsonValue::Array,  true },
+                                                      { _jsonPolygonsKey,             QJsonValue::Array,  true },
+                                                      { _jsonBreachReturnKey,         QJsonValue::Array,  false },
+                                                      };
     if (!JsonHelper::validateKeys(json, keyInfoList, errorString)) {
         return false;
     }
@@ -225,7 +225,7 @@ void GeoFenceController::save(QJsonObject& json)
 }
 
 void GeoFenceController::removeAll(void)
-{    
+{
     setBreachReturnPoint(QGeoCoordinate());
     _polygons.clearAndDeleteContents();
     _circles.clearAndDeleteContents();
@@ -415,11 +415,11 @@ void GeoFenceController::addInclusionPolygon(QGeoCoordinate topLeft, QGeoCoordin
     QGeoCoordinate centerTopEdge = topLeft.atDistanceAndAzimuth(halfWidthMeters, 90);
     QGeoCoordinate center(centerLeftEdge.latitude(), centerTopEdge.longitude());
 
-    // Initial polygon is inset to take 3/4s of viewport with max width/height of 3000 meters
+            // Initial polygon is inset to take 3/4s of viewport with max width/height of 3000 meters
     halfWidthMeters =   qMin(halfWidthMeters * 0.75, 1500.0);
     halfHeightMeters =  qMin(halfHeightMeters * 0.75, 1500.0);
 
-    // Initial polygon has max width and height of 3000 meters
+            // Initial polygon has max width and height of 3000 meters
     topLeft =           center.atDistanceAndAzimuth(halfWidthMeters, -90).atDistanceAndAzimuth(halfHeightMeters, 0);
     topRight =          center.atDistanceAndAzimuth(halfWidthMeters, 90).atDistanceAndAzimuth(halfHeightMeters, 0);
     bottomLeft =        center.atDistanceAndAzimuth(halfWidthMeters, -90).atDistanceAndAzimuth(halfHeightMeters, 180);
@@ -441,7 +441,7 @@ void GeoFenceController::addInclusionCircle(QGeoCoordinate topLeft, QGeoCoordina
     QGeoCoordinate topRight(topLeft.latitude(), bottomRight.longitude());
     QGeoCoordinate bottomLeft(bottomRight.latitude(), topLeft.longitude());
 
-    // Initial radius is inset to take 3/4s of viewport and max of 1500 meters
+            // Initial radius is inset to take 3/4s of viewport and max of 1500 meters
     double halfWidthMeters = topLeft.distanceTo(topRight) / 2.0;
     double halfHeightMeters = topLeft.distanceTo(bottomLeft) / 2.0;
     double radius = qMin(qMin(halfWidthMeters, halfHeightMeters) * 0.75, 1500.0);
@@ -535,7 +535,7 @@ void GeoFenceController::_parametersReady(void)
      * so that if a param changes we can emit paramCircularFenceChanged
      * and trigger an update to the UI */
 
-    // First disconnect from any existing facts
+            // First disconnect from any existing facts
     if (_px4ParamCircularFenceFact) {
         _px4ParamCircularFenceFact->disconnect(this);
         _px4ParamCircularFenceFact = nullptr;
@@ -553,8 +553,8 @@ void GeoFenceController::_parametersReady(void)
         _apmParamCircularFenceTypeFact = nullptr;
     }
 
-    // then connect to needed paremters
-    // While checking they exist to avoid errors
+            // then connect to needed paremters
+            // While checking they exist to avoid errors
     ParameterManager* _paramManager = _managerVehicle->parameterManager();
 
     if(_managerVehicle->isOfflineEditingVehicle()){
@@ -621,7 +621,7 @@ void GeoFenceController::loadFlightPlanData()
         geoCoordinates.append(geoCoordinate);
     }
 
-    // Append the first coordinate again to the end of the list
+            // Append the first coordinate again to the end of the list
     if (!geoCoordinates.isEmpty()) {
         geoCoordinates.append(geoCoordinates.first());
     }
