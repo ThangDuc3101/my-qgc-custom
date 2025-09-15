@@ -597,6 +597,40 @@ bool GeoFenceController::isEmpty(void) const
 
 }
 
+// hàm mới => adaptive geo-fence
+void GeoFenceController::addInclusionPolygonFromVertices(QVariantList vertices)
+{
+    // Bước 1: Kiểm tra tính hợp lệ của đầu vào
+    if (vertices.count() < 3) {
+        qCWarning(GeoFenceControllerLog) << "addInclusionPolygonFromVertices: Not enough vertices to create a polygon.";
+        return;
+    }
+
+            // Bước 2: Tạo một đối tượng đa giác mới
+    QGCFencePolygon* newPolygon = new QGCFencePolygon(true /* inclusion */, this);
+
+            // Bước 3: Chuyển đổi và thêm các đỉnh
+    QList<QGeoCoordinate> path;
+    for (const QVariant& v : vertices) {
+        if (v.canConvert<QGeoCoordinate>()) {
+            path.append(v.value<QGeoCoordinate>());
+        } else {
+            qCWarning(GeoFenceControllerLog) << "addInclusionPolygonFromVertices: Invalid data in vertex list.";
+            newPolygon->deleteLater(); // Dọn dẹp đối tượng đã tạo
+            return;
+        }
+    }
+    newPolygon->setPath(path);
+
+            // Bước 4: Thêm đa giác mới vào danh sách chính
+    _polygons.append(newPolygon);
+
+            // Bước 5: Đặt trạng thái tương tác và đánh dấu là đã thay đổi
+    clearAllInteractive();
+    newPolygon->setInteractive(true);
+    setDirty(true);
+}
+
 #ifdef QGC_UTM_ADAPTER
 void GeoFenceController::loadFlightPlanData()
 {

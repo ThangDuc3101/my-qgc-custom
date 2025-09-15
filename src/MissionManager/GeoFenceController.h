@@ -12,6 +12,7 @@
 #include <QtCore/QLoggingCategory>
 #include <QtPositioning/QGeoCoordinate>
 #include <QtQmlIntegration/QtQmlIntegration>
+#include <QtCore/QVariantList> // >>> THÊM MỚI <<<
 
 #include "PlanElementController.h"
 #include "QmlObjectListModel.h"
@@ -40,30 +41,16 @@ class GeoFenceController : public PlanElementController
     Q_PROPERTY(QmlObjectListModel*  circles                 READ circles                                            CONSTANT)
     Q_PROPERTY(QGeoCoordinate       breachReturnPoint       READ breachReturnPoint      WRITE setBreachReturnPoint  NOTIFY breachReturnPointChanged)
     Q_PROPERTY(Fact*                breachReturnAltitude    READ breachReturnAltitude                               CONSTANT)
-
-            // Radius of the "paramCircularFence" which is called the "Geofence Failsafe" in PX4 and the "Circular Geofence" on ArduPilot
     Q_PROPERTY(double               paramCircularFence      READ paramCircularFence                                 NOTIFY paramCircularFenceChanged)
 
-            /// Add a new inclusion polygon to the fence
-            ///     @param topLeft: Top left coordinate or map viewport
-            ///     @param bottomRight: Bottom right left coordinate or map viewport
     Q_INVOKABLE void addInclusionPolygon(QGeoCoordinate topLeft, QGeoCoordinate bottomRight);
-
-            /// Add a new inclusion circle to the fence
-            ///     @param topLeft: Top left coordinate or map viewport
-            ///     @param bottomRight: Bottom right left coordinate or map viewport
     Q_INVOKABLE void addInclusionCircle(QGeoCoordinate topLeft, QGeoCoordinate bottomRight);
-
-            /// Deletes the specified polygon from the polygon list
-            ///     @param index: Index of poygon to delete
     Q_INVOKABLE void deletePolygon(int index);
-
-            /// Deletes the specified circle from the circle list
-            ///     @param index: Index of circle to delete
     Q_INVOKABLE void deleteCircle(int index);
-
-            /// Clears the interactive bit from all fence items
     Q_INVOKABLE void clearAllInteractive(void);
+
+            // >>> THÊM MỚI: Hàm helper để QML gọi đến <<<
+    Q_INVOKABLE void addInclusionPolygonFromVertices(QVariantList vertices);
 
 #ifdef QGC_UTM_ADAPTER
     Q_INVOKABLE void loadFlightPlanData(void);
@@ -72,7 +59,7 @@ class GeoFenceController : public PlanElementController
     double  paramCircularFence  (void);
     Fact*   breachReturnAltitude(void) { return &_breachReturnAltitudeFact; }
 
-            // Overrides from PlanElementController
+            // Ghi đè các hàm của lớp cha
     bool supported                  (void) const final;
     void start                      (bool flyView) final;
     void save                       (QJsonObject& json) final;
@@ -136,16 +123,12 @@ class GeoFenceController : public PlanElementController
     Fact*               _apmParamCircularFenceTypeFact =    nullptr;
 
     static QMap<QString, FactMetaData*> _metaDataMap;
-
     static constexpr int _jsonCurrentVersion = 2;
-
     static constexpr const char* _jsonFileTypeValue =        "GeoFence";
     static constexpr const char* _jsonBreachReturnKey =      "breachReturn";
     static constexpr const char* _jsonPolygonsKey =          "polygons";
     static constexpr const char* _jsonCirclesKey =           "circles";
-
     static constexpr const char* _breachReturnAltitudeFactName = "Altitude";
-
     static constexpr const char* _px4ParamCircularFence =    "GF_MAX_HOR_DIST";
     static constexpr const char* _apmParamCircularFenceRadius =    "FENCE_RADIUS";
     static constexpr const char* _apmParamCircularFenceEnabled =    "FENCE_ENABLE";
