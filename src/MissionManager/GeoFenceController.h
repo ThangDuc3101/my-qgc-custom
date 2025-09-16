@@ -12,7 +12,7 @@
 #include <QtCore/QLoggingCategory>
 #include <QtPositioning/QGeoCoordinate>
 #include <QtQmlIntegration/QtQmlIntegration>
-#include <QtCore/QVariantList> // >>> THÊM MỚI <<<
+#include <QtCore/QVariantList>
 
 #include "PlanElementController.h"
 #include "QmlObjectListModel.h"
