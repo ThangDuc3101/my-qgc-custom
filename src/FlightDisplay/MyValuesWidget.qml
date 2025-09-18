@@ -22,27 +22,22 @@ Rectangle {
     property var pitchFact:      (_activeVehicle && _activeVehicle.vehicle) ? _activeVehicle.vehicle.getFact("Pitch") : null
     property var rollFact:       (_activeVehicle && _activeVehicle.vehicle) ? _activeVehicle.vehicle.getFact("Roll") : null
 
+    // >>> THÊM MỚI: Tạo thuộc tính cho Fact AirSpeed <<<
+    property var airSpeedFact:   (_activeVehicle && _activeVehicle.vehicle) ? _activeVehicle.vehicle.getFact("AirSpeed") : null
+
     // Lấy các thành phần N và E của tốc độ gió
     property var windSpeedNFact: (_activeVehicle && _activeVehicle.vehicle) ? _activeVehicle.vehicle.getFact("windSpeedN") : null
     property var windSpeedEFact: (_activeVehicle && _activeVehicle.vehicle) ? _activeVehicle.vehicle.getFact("windSpeedE") : null
 
     // Thuộc tính để tính toán và định dạng chuỗi tốc độ gió
     property string calculatedWindSpeedString: {
-        // Chỉ tính toán nếu cả hai Fact đều tồn tại
         if (windSpeedNFact && windSpeedEFact) {
             var n = windSpeedNFact.rawValue;
             var e = windSpeedEFact.rawValue;
-
-            // Tính toán độ lớn (tốc độ)
             var speed = Math.sqrt(n*n + e*e);
-
-            // Lấy đơn vị từ một trong các Fact thành phần
             var units = windSpeedNFact.units;
-
-            // Định dạng chuỗi kết quả với 1 chữ số thập phân
             return speed.toFixed(1) + " " + units;
         }
-        // Trả về "--" nếu không có dữ liệu
         return "--,-- m/s";
     }
     // >>> KẾT THÚC SỬA LỖI <<<
@@ -75,6 +70,16 @@ Rectangle {
                 font.bold: true; color: "white"; Layout.alignment: Qt.AlignHCenter
             }
         }
+
+        ColumnLayout {
+            spacing: _margins / 4
+            QGCLabel { text: qsTr("Air speed"); color: "lightgrey"; Layout.alignment: Qt.AlignHCenter }
+            QGCLabel {
+                text: airSpeedFact ? (airSpeedFact.valueString + " " + airSpeedFact.units) : "--"
+                font.bold: true; color: "white"; Layout.alignment: Qt.AlignHCenter
+            }
+        }
+
         ColumnLayout {
             spacing: _margins / 4
             QGCLabel { text: qsTr("Độ cao"); color: "lightgrey"; Layout.alignment: Qt.AlignHCenter }
@@ -113,17 +118,14 @@ Rectangle {
             }
         }
 
-        // >>> BẮT ĐẦU SỬA LỖI: Cập nhật cột Tốc độ gió <<<
         ColumnLayout {
             spacing: _margins / 4
-            QGCLabel { text: qsTr("Tốc độ gió"); color: "lightgrey"; Layout.alignment: Qt.AlignHCenter }
+            QGCLabel { text: qsTr("Wind Speed"); color: "lightgrey"; Layout.alignment: Qt.AlignHCenter }
             QGCLabel {
-                // Liên kết với thuộc tính đã được tính toán
                 text: calculatedWindSpeedString
                 font.bold: true; color: "white"; Layout.alignment: Qt.AlignHCenter
             }
         }
-        // >>> KẾT THÚC SỬA LỖI <<<
 
         ColumnLayout {
             spacing: _margins / 4

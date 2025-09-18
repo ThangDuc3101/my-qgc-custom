@@ -171,7 +171,7 @@ Item {
                 _planMasterController.upload();
             }
         }
-
+/*
         QGCButton {
             id:          serialToggleButton
             text:        _planMasterController.isSerialActive ? "Dừng Serial" : "Nhận Serial"
@@ -195,7 +195,7 @@ Item {
                 }
             }
         }
-
+*/
         GridLayout {
             columns:                8
             rowSpacing:             _rowSpacing
