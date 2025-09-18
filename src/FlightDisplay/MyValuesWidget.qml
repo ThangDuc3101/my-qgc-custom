@@ -16,9 +16,36 @@ Rectangle {
     property var _activeVehicle: QGroundControl.multiVehicleManager.activeVehicle
     property var _missionController: globals.planMasterControllerFlyView.missionController
 
-    // Tạo một thuộc tính để giữ tham chiếu đến Fact thời gian bay cho sạch sẽ
-    // Nó sẽ tự động được cập nhật khi _activeVehicle thay đổi
+    // >>> BẮT ĐẦU SỬA LỖI: Sử dụng getFact cho tất cả các thuộc tính <<<
+    // Tạo thuộc tính để giữ tham chiếu đến các Fact một cách nhất quán.
     property var flightTimeFact: (_activeVehicle && _activeVehicle.vehicle) ? _activeVehicle.vehicle.getFact("FlightTime") : null
+    property var pitchFact:      (_activeVehicle && _activeVehicle.vehicle) ? _activeVehicle.vehicle.getFact("Pitch") : null
+    property var rollFact:       (_activeVehicle && _activeVehicle.vehicle) ? _activeVehicle.vehicle.getFact("Roll") : null
+
+    // Lấy các thành phần N và E của tốc độ gió
+    property var windSpeedNFact: (_activeVehicle && _activeVehicle.vehicle) ? _activeVehicle.vehicle.getFact("windSpeedN") : null
+    property var windSpeedEFact: (_activeVehicle && _activeVehicle.vehicle) ? _activeVehicle.vehicle.getFact("windSpeedE") : null
+
+    // Thuộc tính để tính toán và định dạng chuỗi tốc độ gió
+    property string calculatedWindSpeedString: {
+        // Chỉ tính toán nếu cả hai Fact đều tồn tại
+        if (windSpeedNFact && windSpeedEFact) {
+            var n = windSpeedNFact.rawValue;
+            var e = windSpeedEFact.rawValue;
+
+            // Tính toán độ lớn (tốc độ)
+            var speed = Math.sqrt(n*n + e*e);
+
+            // Lấy đơn vị từ một trong các Fact thành phần
+            var units = windSpeedNFact.units;
+
+            // Định dạng chuỗi kết quả với 1 chữ số thập phân
+            return speed.toFixed(1) + " " + units;
+        }
+        // Trả về "--" nếu không có dữ liệu
+        return "--,-- m/s";
+    }
+    // >>> KẾT THÚC SỬA LỖI <<<
 
     property real distanceToTarget: {
         if (_activeVehicle && _missionController && _missionController.visualItems.count > 1) {
@@ -39,7 +66,7 @@ Rectangle {
         anchors.centerIn: parent
         spacing: _margins * 1.5
 
-        // --- CÁC CỘT DỮ LIỆU (SỬ DỤNG PHƯƠNG PHÁP TRUY CẬP ĐÚNG) ---
+        // --- CÁC CỘT DỮ LIỆU ---
         ColumnLayout {
             spacing: _margins / 4
             QGCLabel { text: qsTr("Tốc độ"); color: "lightgrey"; Layout.alignment: Qt.AlignHCenter }
@@ -73,7 +100,7 @@ Rectangle {
             spacing: _margins / 4
             QGCLabel { text: qsTr("Pitch"); color: "lightgrey"; Layout.alignment: Qt.AlignHCenter }
             QGCLabel {
-                text: (_activeVehicle && _activeVehicle.pitch) ? _activeVehicle.pitch.valueString + _activeVehicle.pitch.units : "--"
+                text: pitchFact ? (pitchFact.valueString + pitchFact.units) : "--"
                 font.bold: true; color: "white"; Layout.alignment: Qt.AlignHCenter
             }
         }
@@ -81,15 +108,27 @@ Rectangle {
             spacing: _margins / 4
             QGCLabel { text: qsTr("Roll"); color: "lightgrey"; Layout.alignment: Qt.AlignHCenter }
             QGCLabel {
-                text: (_activeVehicle && _activeVehicle.roll) ? _activeVehicle.roll.valueString + _activeVehicle.roll.units : "--"
+                text: rollFact ? (rollFact.valueString + rollFact.units) : "--"
                 font.bold: true; color: "white"; Layout.alignment: Qt.AlignHCenter
             }
         }
+
+        // >>> BẮT ĐẦU SỬA LỖI: Cập nhật cột Tốc độ gió <<<
+        ColumnLayout {
+            spacing: _margins / 4
+            QGCLabel { text: qsTr("Tốc độ gió"); color: "lightgrey"; Layout.alignment: Qt.AlignHCenter }
+            QGCLabel {
+                // Liên kết với thuộc tính đã được tính toán
+                text: calculatedWindSpeedString
+                font.bold: true; color: "white"; Layout.alignment: Qt.AlignHCenter
+            }
+        }
+        // >>> KẾT THÚC SỬA LỖI <<<
+
         ColumnLayout {
             spacing: _margins / 4
             QGCLabel { text: qsTr("T.gian bay"); color: "lightgrey"; Layout.alignment: Qt.AlignHCenter }
             QGCLabel {
-                // Liên kết trực tiếp với 'valueString' của Fact đã được tìm thấy
                 text: flightTimeFact ? flightTimeFact.valueString : "00:00:00"
                 font.bold: true; color: "white"; Layout.alignment: Qt.AlignHCenter
             }

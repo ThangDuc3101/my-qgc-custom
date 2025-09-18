@@ -195,7 +195,7 @@ Item {
         }
 
         function upload() {
-            if (!checkReadyForSaveUpload(false /* save */)) {
+            if (!checkReadyForSaveUpload(false)) {
                 return
             }
             switch (_missionController.sendToVehiclePreCheck()) {
