@@ -85,6 +85,67 @@ Item {
             onSetHomeModeToggled: {
                 _root.isSettingHome = !_root.isSettingHome;
             }
+            // >>> SỬA ĐỔI: Phóng to kích thước message <<<
+            Rectangle {
+                id: uavMessageContainer
+
+                anchors.top: toolbar.bottom
+                anchors.topMargin: ScreenTools.defaultFontPixelHeight * 0.5
+                anchors.right: parent.right
+                anchors.rightMargin: ScreenTools.defaultFontPixelWidth
+
+                // Kích thước tự động theo nội dung
+                width: uavMessageLabel.implicitWidth + (_margins * 4)   // Tăng khoảng đệm ngang
+                height: uavMessageLabel.implicitHeight + (_margins * 2) // Tăng khoảng đệm dọc
+
+                color: Qt.rgba(0, 0, 0, 0.7)
+                radius: 8 // Tăng bo góc cho hợp với kích thước mới
+
+                z: QGroundControl.zOrderWidgets
+
+                visible: uavMessageLabel.text !== ""
+
+                QGCLabel {
+                    id: uavMessageLabel
+                    anchors.centerIn: parent
+
+                    // Tăng kích thước font chữ lên khoảng 3 lần
+                    font.pointSize: ScreenTools.defaultFontPointSize * 3
+                    font.bold: true // Thêm in đậm cho dễ nhìn hơn
+                    color: "white"
+                    text: ""
+
+                    property var _activeVehicle: QGroundControl.multiVehicleManager.activeVehicle
+
+                    Connections {
+                        target: _activeVehicle
+                        ignoreUnknownSignals: true
+
+                        function onUavInfoReceived(boardStatus, message) {
+                            if (message) {
+                                uavMessageLabel.text = message
+                            }
+                        }
+                    }
+
+                    Timer {
+                        id: hideMessageTimer
+                        interval: 5000
+                        running: uavMessageLabel.text !== ""
+                        repeat: false
+                        onTriggered: {
+                            uavMessageLabel.text = ""
+                        }
+                    }
+
+                    onTextChanged: {
+                        if (text !== "") {
+                            hideMessageTimer.restart()
+                        }
+                    }
+                }
+            }
+            // >>> KẾT THÚC SỬA ĐỔI <<<
         }
 
         FlyViewCustomLayer { id: customOverlay; anchors.fill: widgetLayer; z: _fullItemZorder + 2; parentToolInsets: widgetLayer.totalToolInsets; mapControl: _mapControl; visible: !QGroundControl.videoManager.fullScreen }
