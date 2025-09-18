@@ -2701,9 +2701,9 @@ MissionController::SendToVehiclePreCheckState MissionController::sendToVehiclePr
     if (_managerVehicle->isOfflineEditingVehicle()) {
         return SendToVehiclePreCheckStateNoActiveVehicle;
     }
-    if (_managerVehicle->armed() && _managerVehicle->flightMode() == _managerVehicle->missionFlightMode()) {
-        return SendToVehiclePreCheckStateActiveMission;
-    }
+    // if (_managerVehicle->armed() && _managerVehicle->flightMode() == _managerVehicle->missionFlightMode()) {
+    //     return SendToVehiclePreCheckStateActiveMission;
+    // }
     if (_controllerVehicle->firmwareType() != _managerVehicle->firmwareType() || QGCMAVLink::vehicleClass(_controllerVehicle->vehicleType()) != QGCMAVLink::vehicleClass(_managerVehicle->vehicleType())) {
         return SendToVehiclePreCheckStateFirwmareVehicleMismatch;
     }
