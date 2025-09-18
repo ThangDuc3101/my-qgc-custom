@@ -16,6 +16,20 @@ Rectangle {
     property var _activeVehicle: QGroundControl.multiVehicleManager.activeVehicle
     property var _missionController: globals.planMasterControllerFlyView.missionController
 
+    // >>> THÊM MỚI: Thuộc tính và Connections để xử lý dữ liệu từ C++ <<<
+    property string currentBoardStatus: "Đang kết nối..."
+
+    Connections {
+        target: _activeVehicle
+        ignoreUnknownSignals: true
+
+        function onUavInfoReceived(boardStatus, message) {
+            _root.currentBoardStatus = boardStatus
+            // message sẽ được dùng sau
+        }
+    }
+    // >>> KẾT THÚC <<<
+
     // >>> BẮT ĐẦU SỬA LỖI: Sử dụng getFact cho tất cả các thuộc tính <<<
     // Tạo thuộc tính để giữ tham chiếu đến các Fact một cách nhất quán.
     property var flightTimeFact: (_activeVehicle && _activeVehicle.vehicle) ? _activeVehicle.vehicle.getFact("FlightTime") : null
@@ -135,5 +149,43 @@ Rectangle {
                 font.bold: true; color: "white"; Layout.alignment: Qt.AlignHCenter
             }
         }
+
+        // >>> SỬA ĐỔI: Cột hiển thị trạng thái Ngòi <<<
+        ColumnLayout {
+            spacing: _margins / 4
+
+            // 1. Đổi tiêu đề thành "Ngòi"
+            QGCLabel { text: qsTr("Ngòi"); color: "lightgrey"; Layout.alignment: Qt.AlignHCenter }
+
+            QGCLabel {
+                // 2. Dùng biểu thức điều kiện để hiển thị văn bản
+                text: {
+                    if (_root.currentBoardStatus === "True") {
+                        return "Đã mở";
+                    } else if (_root.currentBoardStatus === "False") {
+                        return "Chưa mở";
+                    } else {
+                        return _root.currentBoardStatus; // Hiển thị lỗi như "N/A", "Lỗi JSON", ...
+                    }
+                }
+
+                font.bold: true
+
+                // 3. Dùng biểu thức điều kiện để thay đổi màu sắc
+                color: {
+                    if (_root.currentBoardStatus === "True") {
+                        return "red"; // Màu đỏ
+                    } else if (_root.currentBoardStatus === "False") {
+                        return "lime"; // Màu xanh lá (lime sáng hơn green)
+                    } else {
+                        return "white"; // Màu trắng cho các trạng thái khác
+                    }
+                }
+
+                Layout.alignment: Qt.AlignHCenter
+            }
+        }
+        // >>> KẾT THÚC SỬA ĐỔI <<<
+        // >>> KẾT THÚC <<<
     }
 }

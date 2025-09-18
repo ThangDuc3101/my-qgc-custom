@@ -839,6 +839,9 @@ public slots:
 
 signals:
     void coordinateChanged              (QGeoCoordinate coordinate);
+
+    void uavInfoReceived(QString boardStatus, QString message);
+
     void joystickEnabledChanged         (bool enabled);
     void mavlinkMessageReceived         (const mavlink_message_t& message);
     void homePositionChanged            (const QGeoCoordinate& homePosition);

@@ -69,6 +69,9 @@
 
 #include <QtCore/QDateTime>
 
+#include <QJsonDocument>
+#include <QJsonObject>
+
 QGC_LOGGING_CATEGORY(VehicleLog, "VehicleLog")
 
 #define UPDATE_TIMER 50
@@ -4443,12 +4446,46 @@ void Vehicle::_sendRequest(void)
 
 void Vehicle::_requestFinished(QNetworkReply* reply)
 {
+    QString boardStatus = "Lỗi Mạng";
+    QString message = "";
+
     if (reply->error() == QNetworkReply::NoError) {
         QByteArray response_data = reply->readAll();
         qDebug() << "Phan hoi tu Server:" << response_data;
+
+        QJsonParseError parseError;
+        QJsonDocument jsonDoc = QJsonDocument::fromJson(response_data, &parseError);
+
+        if (parseError.error == QJsonParseError::NoError && jsonDoc.isObject()) {
+            QJsonObject jsonObj = jsonDoc.object();
+
+                    // >>> SỬA LỖI Ở ĐÂY <<<
+                    // 1. Dùng đúng key "board_status" (chữ thường)
+                    // 2. Xử lý giá trị kiểu boolean (true/false)
+            if (jsonObj.contains("board_status")) {
+                QJsonValue statusValue = jsonObj.value("board_status");
+                if (statusValue.isBool()) {
+                    boardStatus = statusValue.toBool() ? "True" : "False";
+                } else {
+                    boardStatus = "Kiểu DL sai"; // Dữ liệu không phải boolean
+                }
+            } else {
+                boardStatus = "Không có key"; // Không tìm thấy key trong JSON
+            }
+
+            if (jsonObj.contains("message")) {
+                message = jsonObj.value("message").toString();
+            }
+
+        } else {
+            boardStatus = "Lỗi JSON";
+        }
     } else {
         qDebug() << "Loi Request:" << reply->errorString();
     }
+
+            // Phát tín hiệu mang dữ liệu về cho QML
+    emit uavInfoReceived(boardStatus, message);
 
     reply->deleteLater();
 }
