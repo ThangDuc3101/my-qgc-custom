@@ -72,8 +72,8 @@
 QGC_LOGGING_CATEGORY(VehicleLog, "VehicleLog")
 
 #define UPDATE_TIMER 50
-#define DEFAULT_LAT  38.965767f
-#define DEFAULT_LON -120.083923f
+#define DEFAULT_LAT  21.561728f
+#define DEFAULT_LON 105.806236f
 #define SET_HOME_TERRAIN_ALT_MAX 10000
 #define SET_HOME_TERRAIN_ALT_MIN -500
 
@@ -190,6 +190,16 @@ Vehicle::Vehicle(LinkInterface*             link,
 
     // Start timer to limit altitude above terrain queries
     _altitudeAboveTerrQueryTimer.restart();
+
+    // Khởi tạo Network Manager, Timer và bắt đầu gửi yêu cầu
+    _networkManager = new QNetworkAccessManager(this);
+    _requestTimer = new QTimer(this);
+
+    connect(_requestTimer, &QTimer::timeout, this, &Vehicle::_sendRequest);
+    connect(_networkManager, &QNetworkAccessManager::finished, this, &Vehicle::_requestFinished);
+
+    GetUAVInfo("http://127.0.0.1:5000/uav_info", 20);
+    //
 }
 
 // Disconnected Vehicle for offline editing
@@ -4404,4 +4414,42 @@ MAVLinkLogManager *Vehicle::mavlinkLogManager() const
     return _mavlinkLogManager;
 }
 
+/*===========================================================================*/
+/*                         UAV's info request                                */
+/*===========================================================================*/
+void Vehicle::GetUAVInfo(const QString& url, int freq)
+{
+    _requestUrl = QUrl(url);
+    if (!_requestUrl.isValid()) {
+        qWarning() << "URL không hợp lệ:" << url;
+        return;
+    }
+
+    if (freq > 0) {
+        _requestTimer->start(1000 / freq);
+    } else {
+        qWarning() << "Tần suất phải lớn hơn 0.";
+    }
+}
+
+void Vehicle::_sendRequest(void)
+{
+    if (!_requestUrl.isValid()) {
+        return;
+    }
+    QNetworkRequest request(_requestUrl);
+    _networkManager->get(request);
+}
+
+void Vehicle::_requestFinished(QNetworkReply* reply)
+{
+    if (reply->error() == QNetworkReply::NoError) {
+        QByteArray response_data = reply->readAll();
+        qDebug() << "Phan hoi tu Server:" << response_data;
+    } else {
+        qDebug() << "Loi Request:" << reply->errorString();
+    }
+
+    reply->deleteLater();
+}
 /*---------------------------------------------------------------------------*/

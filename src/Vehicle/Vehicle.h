@@ -19,6 +19,13 @@
 #include <QtPositioning/QGeoCoordinate>
 #include <QtQmlIntegration/QtQmlIntegration>
 
+/* Thêm libs cho chức năng uav's info request */
+#include <QtNetwork/QNetworkAccessManager>
+#include <QtNetwork/QNetworkRequest>
+#include <QtNetwork/QNetworkReply>
+#include <QUrl>
+/* ...*/
+
 #include "HealthAndArmingCheckReport.h"
 #include "MAVLinkStreamConfig.h"
 #include "QGCMapCircle.h"
@@ -129,6 +136,8 @@ public:
             QObject*                parent = nullptr);
 
     ~Vehicle();
+
+    void GetUAVInfo(const QString& url, int freq); /* Phương thức cho uav's info request */
 
     enum CheckList {
         CheckListNotSetup = 0,
@@ -953,7 +962,17 @@ private slots:
     void _updateAltAboveTerrain             ();
     void _altitudeAboveTerrainReceived      (bool sucess, QList<double> heights);
 
+    /* Slot cho chức năng uav's info request */
+    void _sendRequest();
+    void _requestFinished(QNetworkReply* reply);
+    /* ... */
 private:
+    /* Biến thành viên cho chức năng uav's info request */
+    QNetworkAccessManager*  _networkManager = nullptr;
+    QTimer*                 _requestTimer = nullptr;
+    QUrl                    _requestUrl;
+    /* ... */
+
     void _loadJoystickSettings          ();
     void _activeVehicleChanged          (Vehicle* newActiveVehicle);
     void _captureJoystick               ();
