@@ -201,7 +201,10 @@ Vehicle::Vehicle(LinkInterface*             link,
     connect(_requestTimer, &QTimer::timeout, this, &Vehicle::_sendRequest);
     connect(_networkManager, &QNetworkAccessManager::finished, this, &Vehicle::_requestFinished);
 
-    GetUAVInfo("http://127.0.0.1:5000/uav_info", 1);
+    // GetUAVInfo("http://127.0.0.1:5000/uav_info", 1);
+
+    GetUAVInfo("http://192.168.144.30:5000/uav_info", 1);
+
     //
 }
 
