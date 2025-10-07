@@ -32,6 +32,8 @@ Item {
     property real   interiorOpacity:    1
     property int    borderWidth:        0
     property color  borderColor:        "black"
+    property bool   isLast:             false   // <-- Phải có dòng này
+
 
     property bool   _circleMode:                false
     property real   _circleRadius
@@ -284,7 +286,9 @@ Item {
         MapPolygon {
             color:          mapPolygon.showAltColor ? altColor : interiorColor
             opacity:        interiorOpacity
-            border.color:   borderColor
+            // border.color:   borderColor
+            border.color:   _root.isLast ? "yellow" : borderColor // <-- Và dùng nó ở đây
+
             border.width:   borderWidth
             path:           mapPolygon.path
         }

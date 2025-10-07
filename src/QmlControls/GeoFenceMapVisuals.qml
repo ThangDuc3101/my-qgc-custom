@@ -34,10 +34,10 @@ Item {
     property var    _paramCircleFenceComponent
     property var    _polygons:                  myGeoFenceController.polygons
     property var    _circles:                   myGeoFenceController.circles
-    property color  _borderColor:               "orange"
-    property int    _borderWidthInclusion:      2
+    property color  _borderColor:               "blue"
+    property int    _borderWidthInclusion:      4
     property int    _borderWidthExclusion:      0
-    property color  _interiorColorExclusion:    "orange"
+    property color  _interiorColorExclusion:    "blue"
     property color  _interiorColorInclusion:    "transparent"
     property real   _interiorOpacityExclusion:  0.2 * opacity
     property real   _interiorOpacityInclusion:  1 * opacity
@@ -94,6 +94,8 @@ Item {
     // doesn't like having a non-visual item as parent. This is likely related to hybrid QQuickWidtget+QML
     // Hence Qt folks are going to care. In order to workaround you have to parent the item to _root Item instead.
     Instantiator {
+        id: polygonInstantiator // <-- Thêm ID nếu chưa có
+
         model: _polygons
 
         delegate : QGCMapPolygonVisuals {
@@ -105,6 +107,21 @@ Item {
             interiorColor:      object.inclusion ? _interiorColorInclusion : _interiorColorExclusion
             interiorOpacity:    object.inclusion ? _interiorOpacityInclusion : _interiorOpacityExclusion
             interactive:        _root.interactive && mapPolygon && mapPolygon.interactive
+
+            Component.onCompleted: {
+                isLast = (index === polygonInstantiator.model.count - 1);
+            }
+            Connections {
+                // target: Chính là danh sách _polygons mà Instantiator đang dùng
+                target: polygonInstantiator.model
+
+                // function on<TínHiệu>Changed(): Tín hiệu khi số lượng phần tử thay đổi
+                // Đối với các ListModel trong QML/C++, tín hiệu này thường là 'countChanged'
+                function onCountChanged() {
+                // Buộc đối tượng này phải kiểm tra lại xem nó có còn là cuối cùng hay không
+                    isLast = (index === polygonInstantiator.model.count - 1);
+                }
+            }
         }
     }
 
