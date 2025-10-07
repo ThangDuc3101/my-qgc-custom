@@ -107,7 +107,7 @@ Item {
         anchors.leftMargin:     _margins
         anchors.left:           parent.left
         spacing:                ScreenTools.defaultFontPixelWidth * 2
-/*
+
         QGCButton {
             id:          uploadButton
             text:        _controllerDirty ? "Cần Tải lên" : "Tải lên"
@@ -133,7 +133,7 @@ Item {
                 duration:       2000
             }
         }
-*/
+
         QGCButton {
             id:          savePlanButton
             text:        "Lưu Kế Hoạch"
@@ -162,13 +162,13 @@ Item {
             onClicked: {
                 _planMasterController.sendSavedPlanToServer()
 
-                // Updtae mission - ui
-                if (_utmspEnabled) {
-                    QGroundControl.utmspManager.utmspVehicle.triggerActivationStatusBar(true);
-                    UTMSPStateStorage.removeFlightPlanState = true
-                    UTMSPStateStorage.indicatorDisplayStatus = true
-                }
-                _planMasterController.upload();
+                // // Updtae mission - ui
+                // if (_utmspEnabled) {
+                //     QGroundControl.utmspManager.utmspVehicle.triggerActivationStatusBar(true);
+                //     UTMSPStateStorage.removeFlightPlanState = true
+                //     UTMSPStateStorage.indicatorDisplayStatus = true
+                // }
+                // _planMasterController.upload();
             }
         }
 /*

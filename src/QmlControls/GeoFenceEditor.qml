@@ -190,11 +190,11 @@ QGCFlickable {
                             }
                         }
 
-                        QGCLabel { text: qsTr("Co nhỏ"); Layout.column: 2; Layout.alignment: Qt.AlignHCenter }
+                        QGCLabel { text: qsTr("H.Chỉnh"); Layout.column: 2; Layout.alignment: Qt.AlignHCenter }
                         Repeater {
                             model: myGeoFenceController.polygons
                             QGCButton {
-                                text: qsTr("200m")
+                                text: qsTr("300m")
                                 Layout.alignment: Qt.AlignHCenter
                                 enabled: model.object.path.length >= 3
                                 onClicked: {
@@ -207,7 +207,7 @@ QGCFlickable {
                                     }
                                     var centroid = QtPositioning.coordinate(totalLat / oldPath.length, totalLon / oldPath.length);
                                     var newCoords = [];
-                                    var shrinkDistanceMeters = 200.0;
+                                    var shrinkDistanceMeters = 300.0;
                                     for (var j = 0; j < oldPath.length; j++) {
                                         var vertex = oldPath[j];
                                         var distanceToCentroid = centroid.distanceTo(vertex);

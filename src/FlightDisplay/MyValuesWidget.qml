@@ -39,21 +39,6 @@ Rectangle {
     // >>> THÊM MỚI: Tạo thuộc tính cho Fact AirSpeed <<<
     property var airSpeedFact:   (_activeVehicle && _activeVehicle.vehicle) ? _activeVehicle.vehicle.getFact("AirSpeed") : null
 
-    // Lấy các thành phần N và E của tốc độ gió
-    property var windSpeedNFact: (_activeVehicle && _activeVehicle.vehicle) ? _activeVehicle.vehicle.getFact("windSpeedN") : null
-    property var windSpeedEFact: (_activeVehicle && _activeVehicle.vehicle) ? _activeVehicle.vehicle.getFact("windSpeedE") : null
-
-    // Thuộc tính để tính toán và định dạng chuỗi tốc độ gió
-    property string calculatedWindSpeedString: {
-        if (windSpeedNFact && windSpeedEFact) {
-            var n = windSpeedNFact.rawValue;
-            var e = windSpeedEFact.rawValue;
-            var speed = Math.sqrt(n*n + e*e);
-            var units = windSpeedNFact.units;
-            return speed.toFixed(1) + " " + units;
-        }
-        return "--,-- m/s";
-    }
     // >>> KẾT THÚC SỬA LỖI <<<
 
     property real distanceToTarget: {
@@ -128,15 +113,6 @@ Rectangle {
             QGCLabel { text: qsTr("Roll"); color: "lightgrey"; Layout.alignment: Qt.AlignHCenter }
             QGCLabel {
                 text: rollFact ? (rollFact.valueString + rollFact.units) : "--"
-                font.bold: true; color: "white"; Layout.alignment: Qt.AlignHCenter
-            }
-        }
-
-        ColumnLayout {
-            spacing: _margins / 4
-            QGCLabel { text: qsTr("Wind Speed"); color: "lightgrey"; Layout.alignment: Qt.AlignHCenter }
-            QGCLabel {
-                text: calculatedWindSpeedString
                 font.bold: true; color: "white"; Layout.alignment: Qt.AlignHCenter
             }
         }
