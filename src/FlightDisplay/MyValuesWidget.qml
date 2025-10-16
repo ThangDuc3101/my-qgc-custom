@@ -72,7 +72,7 @@ Rectangle {
 
         ColumnLayout {
             spacing: _margins / 4
-            QGCLabel { text: qsTr("Air speed"); color: "lightgrey"; Layout.alignment: Qt.AlignHCenter }
+            QGCLabel { text: qsTr("Gió"); color: "lightgrey"; Layout.alignment: Qt.AlignHCenter }
             QGCLabel {
                 text: airSpeedFact ? (airSpeedFact.valueString + " " + airSpeedFact.units) : "--"
                 font.bold: true; color: "white"; Layout.alignment: Qt.AlignHCenter
@@ -102,7 +102,7 @@ Rectangle {
         }
         ColumnLayout {
             spacing: _margins / 4
-            QGCLabel { text: qsTr("Pitch"); color: "lightgrey"; Layout.alignment: Qt.AlignHCenter }
+            QGCLabel { text: qsTr("Chúc ngóc"); color: "lightgrey"; Layout.alignment: Qt.AlignHCenter }
             QGCLabel {
                 text: pitchFact ? (pitchFact.valueString + pitchFact.units) : "--"
                 font.bold: true; color: "white"; Layout.alignment: Qt.AlignHCenter
@@ -110,7 +110,7 @@ Rectangle {
         }
         ColumnLayout {
             spacing: _margins / 4
-            QGCLabel { text: qsTr("Roll"); color: "lightgrey"; Layout.alignment: Qt.AlignHCenter }
+            QGCLabel { text: qsTr("Nghiêng ngang"); color: "lightgrey"; Layout.alignment: Qt.AlignHCenter }
             QGCLabel {
                 text: rollFact ? (rollFact.valueString + rollFact.units) : "--"
                 font.bold: true; color: "white"; Layout.alignment: Qt.AlignHCenter
@@ -119,7 +119,7 @@ Rectangle {
 
         ColumnLayout {
             spacing: _margins / 4
-            QGCLabel { text: qsTr("T.gian bay"); color: "lightgrey"; Layout.alignment: Qt.AlignHCenter }
+            QGCLabel { text: qsTr("T.g bay"); color: "lightgrey"; Layout.alignment: Qt.AlignHCenter }
             QGCLabel {
                 text: flightTimeFact ? flightTimeFact.valueString : "00:00:00"
                 font.bold: true; color: "white"; Layout.alignment: Qt.AlignHCenter
