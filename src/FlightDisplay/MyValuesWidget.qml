@@ -7,8 +7,9 @@ import QGroundControl.ScreenTools
 Rectangle {
     id: _root
 
-    implicitWidth: mainRowLayout.implicitWidth + (_margins * 2)
-    implicitHeight: mainRowLayout.implicitHeight + (_margins * 2)
+    // implicitWidth và implicitHeight giờ sẽ tham chiếu đến gridLayout
+    implicitWidth: gridLayout.implicitWidth + (_margins * 2)
+    implicitHeight: gridLayout.implicitHeight + (_margins * 2)
     color:          Qt.rgba(0, 0, 0, 0.75)
     radius:         ScreenTools.defaultFontPixelWidth / 2
 
@@ -55,12 +56,16 @@ Rectangle {
 
     visible: _activeVehicle !== null
 
-    RowLayout {
-        id: mainRowLayout
+    // >>> THAY ĐỔI: Sử dụng GridLayout thay cho RowLayout <<<
+    GridLayout {
+        id: gridLayout
         anchors.centerIn: parent
-        spacing: _margins * 1.5
+        rows: 3
+        columns: 3
+        columnSpacing: _margins * 1.5
+        rowSpacing: _margins / 2
 
-        // --- CÁC CỘT DỮ LIỆU ---
+        // --- HÀNG 1 ---
         ColumnLayout {
             spacing: _margins / 4
             QGCLabel { text: qsTr("Tốc độ"); color: "lightgrey"; Layout.alignment: Qt.AlignHCenter }
@@ -83,10 +88,12 @@ Rectangle {
             spacing: _margins / 4
             QGCLabel { text: qsTr("Độ cao"); color: "lightgrey"; Layout.alignment: Qt.AlignHCenter }
             QGCLabel {
-                text: (_activeVehicle && _activeVehicle.altitudeRelative) ? _activeVehicle.altitudeRelative.valueString + " " + _activeVehicle.altitudeRelative.units : "--"
+                text: (_activeVehicle && _activeVehicle.altitudeAMSL) ? _activeVehicle.altitudeAMSL.valueString + " " + _activeVehicle.altitudeRelative.units : "--"
                 font.bold: true; color: "white"; Layout.alignment: Qt.AlignHCenter
             }
         }
+
+        // --- HÀNG 2 ---
         ColumnLayout {
             spacing: _margins / 4
             QGCLabel { text: qsTr("Q.đường"); color: "lightgrey"; Layout.alignment: Qt.AlignHCenter }
@@ -95,26 +102,11 @@ Rectangle {
                 font.bold: true; color: "white"; Layout.alignment: Qt.AlignHCenter
             }
         }
+
         ColumnLayout {
             spacing: _margins / 4
             QGCLabel { text: qsTr("Mục tiêu"); color: "lightgrey"; Layout.alignment: Qt.AlignHCenter }
             QGCLabel { text: distanceToTarget >= 0 ? distanceToTarget.toFixed(0) + " m" : "--"; font.bold: true; color: "white"; Layout.alignment: Qt.AlignHCenter }
-        }
-        ColumnLayout {
-            spacing: _margins / 4
-            QGCLabel { text: qsTr("Chúc ngóc"); color: "lightgrey"; Layout.alignment: Qt.AlignHCenter }
-            QGCLabel {
-                text: pitchFact ? (pitchFact.valueString + pitchFact.units) : "--"
-                font.bold: true; color: "white"; Layout.alignment: Qt.AlignHCenter
-            }
-        }
-        ColumnLayout {
-            spacing: _margins / 4
-            QGCLabel { text: qsTr("Nghiêng ngang"); color: "lightgrey"; Layout.alignment: Qt.AlignHCenter }
-            QGCLabel {
-                text: rollFact ? (rollFact.valueString + rollFact.units) : "--"
-                font.bold: true; color: "white"; Layout.alignment: Qt.AlignHCenter
-            }
         }
 
         ColumnLayout {
@@ -126,42 +118,50 @@ Rectangle {
             }
         }
 
-        // >>> SỬA ĐỔI: Cột hiển thị trạng thái Ngòi <<<
+        // --- HÀNG 3 ---
         ColumnLayout {
             spacing: _margins / 4
-
-            // 1. Đổi tiêu đề thành "Ngòi"
-            QGCLabel { text: qsTr("Ngòi"); color: "lightgrey"; Layout.alignment: Qt.AlignHCenter }
-
+            QGCLabel { text: qsTr("Góc hướng"); color: "lightgrey"; Layout.alignment: Qt.AlignHCenter }
             QGCLabel {
-                // 2. Dùng biểu thức điều kiện để hiển thị văn bản
+                text: pitchFact ? (pitchFact.valueString + "độ") : "--"
+                font.bold: true; color: "white"; Layout.alignment: Qt.AlignHCenter
+            }
+        }
+
+        ColumnLayout {
+            spacing: _margins / 4
+            QGCLabel { text: qsTr("Góc liệng"); color: "lightgrey"; Layout.alignment: Qt.AlignHCenter }
+            QGCLabel {
+                text: rollFact ? (rollFact.valueString + "độ") : "--"
+                font.bold: true; color: "white"; Layout.alignment: Qt.AlignHCenter
+            }
+        }
+
+        ColumnLayout {
+            spacing: _margins / 4
+            QGCLabel { text: qsTr("Ngòi"); color: "lightgrey"; Layout.alignment: Qt.AlignHCenter }
+            QGCLabel {
                 text: {
                     if (_root.currentBoardStatus === "True") {
                         return "Đã mở";
                     } else if (_root.currentBoardStatus === "False") {
                         return "Chưa mở";
                     } else {
-                        return _root.currentBoardStatus; // Hiển thị lỗi như "N/A", "Lỗi JSON", ...
+                        return _root.currentBoardStatus;
                     }
                 }
-
                 font.bold: true
-
-                // 3. Dùng biểu thức điều kiện để thay đổi màu sắc
                 color: {
                     if (_root.currentBoardStatus === "True") {
-                        return "red"; // Màu đỏ
+                        return "red";
                     } else if (_root.currentBoardStatus === "False") {
-                        return "lime"; // Màu xanh lá (lime sáng hơn green)
+                        return "lime";
                     } else {
-                        return "white"; // Màu trắng cho các trạng thái khác
+                        return "white";
                     }
                 }
-
                 Layout.alignment: Qt.AlignHCenter
             }
         }
-        // >>> KẾT THÚC SỬA ĐỔI <<<
-        // >>> KẾT THÚC <<<
     }
 }

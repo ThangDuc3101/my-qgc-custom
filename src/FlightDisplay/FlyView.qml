@@ -110,7 +110,7 @@ Item {
                     anchors.centerIn: parent
 
                     // Tăng kích thước font chữ lên khoảng 3 lần
-                    font.pointSize: ScreenTools.defaultFontPointSize * 3
+                    font.pointSize: ScreenTools.defaultFontPointSize * 2
                     font.bold: true // Thêm in đậm cho dễ nhìn hơn
                     color: "white"
                     text: ""

@@ -287,7 +287,7 @@ Item {
             color:          mapPolygon.showAltColor ? altColor : interiorColor
             opacity:        interiorOpacity
             // border.color:   borderColor
-            border.color:   _root.isLast ? "yellow" : borderColor // <-- Và dùng nó ở đây
+            border.color:   _root.isLast ? "cyan" : borderColor // <-- Và dùng nó ở đây
 
             border.width:   borderWidth
             path:           mapPolygon.path

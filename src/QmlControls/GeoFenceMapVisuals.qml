@@ -34,10 +34,10 @@ Item {
     property var    _paramCircleFenceComponent
     property var    _polygons:                  myGeoFenceController.polygons
     property var    _circles:                   myGeoFenceController.circles
-    property color  _borderColor:               "blue"
+    property color  _borderColor:               "yellow"
     property int    _borderWidthInclusion:      4
     property int    _borderWidthExclusion:      0
-    property color  _interiorColorExclusion:    "blue"
+    property color  _interiorColorExclusion:    "yellow"
     property color  _interiorColorInclusion:    "transparent"
     property real   _interiorOpacityExclusion:  0.2 * opacity
     property real   _interiorOpacityInclusion:  1 * opacity
