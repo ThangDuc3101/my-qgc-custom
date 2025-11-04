@@ -52,6 +52,33 @@ Item {
 
     property bool utmspActTrigger
 
+    // Data properties for telemetry - AT ROOT LEVEL
+    property string currentBoardStatus: "Đang kết nối..."
+    property var flightTimeFact: (_activeVehicle && _activeVehicle.vehicle) ? _activeVehicle.vehicle.getFact("FlightTime") : null
+    property var pitchFact: (_activeVehicle && _activeVehicle.vehicle) ? _activeVehicle.vehicle.getFact("Pitch") : null
+    property var rollFact: (_activeVehicle && _activeVehicle.vehicle) ? _activeVehicle.vehicle.getFact("Roll") : null
+    property var airSpeedFact: (_activeVehicle && _activeVehicle.vehicle) ? _activeVehicle.vehicle.getFact("AirSpeed") : null
+
+    property real distanceToTarget: {
+        if (_activeVehicle && _missionController && _missionController.visualItems.count > 1) {
+            for (var i = _missionController.visualItems.count - 1; i >= 0; i--) {
+                var item = _missionController.visualItems.get(i);
+                if (item && item.specifiesCoordinate) {
+                    return _activeVehicle.coordinate.distanceTo(item.coordinate);
+                }
+            }
+        }
+        return -1;
+    }
+
+    Connections {
+        target: _activeVehicle
+        ignoreUnknownSignals: true
+        function onUavInfoReceived(boardStatus, message) {
+            _root.currentBoardStatus = boardStatus
+        }
+    }
+
     QGCToolInsets {
         id:                     _totalToolInsets
         leftEdgeTopInset:       0
@@ -193,8 +220,6 @@ Item {
         z:                      QGroundControl.zOrderWidgets
         visible:                !QGroundControl.videoManager.fullScreen
 
-        // Không override height, để QML tự tính
-
         // Military styled button component
         component MilitaryButton: QGCButton {
             property string buttonText: ""
@@ -275,10 +300,13 @@ Item {
             buttonIcon: "📷"
             visible: _activeVehicle
             onClicked: {
-                // Open Application Settings > Video page
-                mainWindow.showSettingsDialog()
-                // Note: Cần thêm logic để tự động chọn Video tab
-                // Có thể cần modify SettingsDialog để nhận parameter
+                if (typeof mainWindow !== 'undefined' && mainWindow.showSettingsDialog) {
+                    mainWindow.showSettingsDialog()
+                } else if (typeof QGroundControl !== 'undefined' && QGroundControl.settingsManager) {
+                    QGroundControl.settingsManager.appSettings.showSettings()
+                } else {
+                    console.log("Opening camera/video settings")
+                }
             }
         }
 
@@ -307,22 +335,571 @@ Item {
         id: gripperOptions
     }
 
-    //---------- VIDEO FEED (TOP LEFT) ----------
-    Rectangle {
-        id:                 videoFeedContainer
-        anchors.left:       parent.left
-        anchors.top:        parent.top
-        anchors.margins:    _layoutMargin
-        width:              ScreenTools.defaultFontPixelWidth * 45  // Tăng lên 45 để rộng đến "Hold"
-        height:             width * 0.56  // 16:9 aspect ratio (thay vì 4:3)
-        color:              Qt.rgba(0, 0, 0, 0.9)
-        border.color:       "#00bfff"
-        border.width:       3
-        radius:             8
-        z:                  QGroundControl.zOrderWidgets
-        visible:            QGroundControl.videoManager.hasVideo && !QGroundControl.videoManager.fullScreen
+    //---------- VIDEO FEED & TELEMETRY CONTAINER (TOP LEFT) ----------
+    Column {
+        id: leftPanelContainer
+        anchors.left: parent.left
+        anchors.top: parent.top
+        anchors.margins: _layoutMargin
+        width: ScreenTools.defaultFontPixelWidth * 75
+        spacing: _layoutMargin
+        z: QGroundControl.zOrderWidgets
 
-        // Glow effect
+        // VIDEO FEED
+        Rectangle {
+            id: videoFeedContainer
+            width: parent.width
+            height: parent.parent.height * 0.4
+            color: Qt.rgba(0, 0, 0, 0.9)
+            border.color: "#00bfff"
+            border.width: 3
+            radius: 8
+            visible: QGroundControl.videoManager.hasVideo && !QGroundControl.videoManager.fullScreen
+
+            Rectangle {
+                anchors.fill: parent
+                anchors.margins: -4
+                color: "transparent"
+                border.color: "#00bfff"
+                border.width: 1
+                radius: parent.radius + 2
+                opacity: 0.3
+                z: -1
+            }
+
+            Rectangle {
+                anchors.fill: parent
+                anchors.margins: -8
+                color: "transparent"
+                border.color: "#00bfff"
+                border.width: 1
+                radius: parent.radius + 4
+                opacity: 0.1
+                z: -2
+            }
+
+            QGCLabel {
+                anchors.centerIn: parent
+                text: qsTr("📹 VIDEO FEED\n(Waiting for video)")
+                font.bold: true
+                font.family: "Monospace"
+                color: "#00bfff"
+                horizontalAlignment: Text.AlignHCenter
+                visible: !QGroundControl.videoManager.videoRunning
+            }
+
+            QGCLabel {
+                anchors.left: parent.left
+                anchors.top: parent.top
+                anchors.margins: 5
+                text: qsTr("📹 LIVE")
+                font.bold: true
+                font.family: "Monospace"
+                font.pointSize: ScreenTools.smallFontPointSize
+                color: "#ff0000"
+                visible: QGroundControl.videoManager.videoRunning
+
+                SequentialAnimation on opacity {
+                    running: QGroundControl.videoManager.videoRunning
+                    loops: Animation.Infinite
+                    NumberAnimation { from: 1.0; to: 0.3; duration: 500 }
+                    NumberAnimation { from: 0.3; to: 1.0; duration: 500 }
+                }
+            }
+        }
+
+        // TELEMETRY PANEL - IMPROVED DESIGN
+        Rectangle {
+            id: telemetryContainer
+            width: parent.width
+            height: parent.parent.height * 0.6 - _layoutMargin * 3
+            color: Qt.rgba(0, 0, 0, 0.95)
+            border.color: "#00bfff"
+            border.width: 3
+            radius: 8
+            visible: _activeVehicle
+
+            Rectangle {
+                anchors.fill: parent
+                anchors.margins: -4
+                color: "transparent"
+                border.color: "#00bfff"
+                border.width: 1
+                radius: parent.radius + 2
+                opacity: 0.3
+                z: -1
+            }
+
+            Rectangle {
+                anchors.fill: parent
+                anchors.margins: -8
+                color: "transparent"
+                border.color: "#00bfff"
+                border.width: 1
+                radius: parent.radius + 4
+                opacity: 0.1
+                z: -2
+            }
+
+            // Header bar
+            Rectangle {
+                id: telemetryHeader
+                anchors.top: parent.top
+                anchors.left: parent.left
+                anchors.right: parent.right
+                height: ScreenTools.defaultFontPixelHeight * 2.5
+                color: Qt.rgba(0, 0.75, 1, 0.2)
+                border.color: "#00bfff"
+                border.width: 2
+                radius: 6
+
+                Row {
+                    anchors.centerIn: parent
+                    spacing: 8
+
+                    QGCLabel {
+                        text: "⚡"
+                        font.pointSize: ScreenTools.mediumFontPointSize
+                        color: "#00ff00"
+
+                        SequentialAnimation on opacity {
+                            running: true
+                            loops: Animation.Infinite
+                            NumberAnimation { from: 0.3; to: 1.0; duration: 800 }
+                            NumberAnimation { from: 1.0; to: 0.3; duration: 800 }
+                        }
+                    }
+
+                    QGCLabel {
+                        text: qsTr("FLIGHT TELEMETRY SYSTEM")
+                        font.pointSize: ScreenTools.mediumFontPointSize
+                        font.bold: true
+                        font.family: "Monospace"
+                        color: "#00bfff"
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    QGCLabel {
+                        text: "⚡"
+                        font.pointSize: ScreenTools.mediumFontPointSize
+                        color: "#00ff00"
+
+                        SequentialAnimation on opacity {
+                            running: true
+                            loops: Animation.Infinite
+                            NumberAnimation { from: 1.0; to: 0.3; duration: 800 }
+                            NumberAnimation { from: 0.3; to: 1.0; duration: 800 }
+                        }
+                    }
+                }
+            }
+
+            // Main content
+            ColumnLayout {
+                anchors.top: telemetryHeader.bottom
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.bottom: parent.bottom
+                anchors.margins: _layoutMargin
+                spacing: _layoutMargin
+
+                // Large telemetry card component
+                component LargeTelemetryCard: Rectangle {
+                    property string label: ""
+                    property string value: "--"
+                    property string unit: ""
+                    property color valueColor: "#00ff00"
+                    property string icon: ""
+                    property bool critical: false
+
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: ScreenTools.defaultFontPixelHeight * 5
+                    color: Qt.rgba(0.05, 0.05, 0.05, 0.98)
+                    border.color: critical ? "#ff0000" : valueColor
+                    border.width: critical ? 3 : 2
+                    radius: 8
+
+                    Rectangle {
+                        anchors.fill: parent
+                        anchors.margins: -2
+                        color: "transparent"
+                        border.color: parent.border.color
+                        border.width: 1
+                        radius: parent.radius + 1
+                        opacity: 0.5
+                        visible: critical
+
+                        SequentialAnimation on opacity {
+                            running: critical
+                            loops: Animation.Infinite
+                            NumberAnimation { from: 0.2; to: 0.8; duration: 600 }
+                            NumberAnimation { from: 0.8; to: 0.2; duration: 600 }
+                        }
+                    }
+
+                    Rectangle {
+                        width: 12
+                        height: 2
+                        color: parent.border.color
+                        anchors.left: parent.left
+                        anchors.top: parent.top
+                        anchors.margins: 4
+                    }
+                    Rectangle {
+                        width: 2
+                        height: 12
+                        color: parent.border.color
+                        anchors.left: parent.left
+                        anchors.top: parent.top
+                        anchors.margins: 4
+                    }
+                    Rectangle {
+                        width: 12
+                        height: 2
+                        color: parent.border.color
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        anchors.margins: 4
+                    }
+                    Rectangle {
+                        width: 2
+                        height: 12
+                        color: parent.border.color
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        anchors.margins: 4
+                    }
+
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.margins: 8
+                        spacing: 12
+
+                        Rectangle {
+                            Layout.preferredWidth: ScreenTools.defaultFontPixelHeight * 3.5
+                            Layout.fillHeight: true
+                            color: Qt.rgba(0.1, 0.1, 0.1, 0.5)
+                            border.color: valueColor
+                            border.width: 1
+                            radius: 4
+
+                            QGCLabel {
+                                anchors.centerIn: parent
+                                text: icon
+                                font.pointSize: ScreenTools.largeFontPointSize * 1.5
+                            }
+                        }
+
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            spacing: 2
+
+                            QGCLabel {
+                                text: label
+                                color: "#888888"
+                                font.pointSize: ScreenTools.smallFontPointSize
+                                font.family: "Monospace"
+                                font.letterSpacing: 1
+                            }
+
+                            QGCLabel {
+                                text: value + (unit !== "" ? " " + unit : "")
+                                color: valueColor
+                                font.bold: true
+                                font.pointSize: ScreenTools.largeFontPointSize * 1.3
+                                font.family: "Monospace"
+                                Layout.fillWidth: true
+                            }
+                        }
+
+                        Rectangle {
+                            Layout.preferredWidth: 8
+                            Layout.preferredHeight: 8
+                            radius: 4
+                            color: valueColor
+
+                            SequentialAnimation on opacity {
+                                running: true
+                                loops: Animation.Infinite
+                                NumberAnimation { from: 0.4; to: 1.0; duration: 1000 }
+                                NumberAnimation { from: 1.0; to: 0.4; duration: 1000 }
+                            }
+                        }
+                    }
+                }
+
+                // Compact telemetry card component
+                component CompactTelemetryCard: Rectangle {
+                    property string label: ""
+                    property string value: "--"
+                    property string unit: ""
+                    property color valueColor: "#00ff00"
+                    property string icon: ""
+
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    Layout.minimumHeight: ScreenTools.defaultFontPixelHeight * 3.5
+                    color: Qt.rgba(0.05, 0.05, 0.05, 0.98)
+                    border.color: valueColor
+                    border.width: 2
+                    radius: 6
+
+                    ColumnLayout {
+                        anchors.fill: parent
+                        anchors.margins: 6
+                        spacing: 2
+
+                        Row {
+                            Layout.alignment: Qt.AlignHCenter
+                            spacing: 4
+
+                            QGCLabel {
+                                text: icon
+                                font.pointSize: ScreenTools.smallFontPointSize
+                                visible: icon !== ""
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+
+                            QGCLabel {
+                                text: label
+                                color: "#888888"
+                                font.pointSize: ScreenTools.smallFontPointSize - 1
+                                font.family: "Monospace"
+                                font.letterSpacing: 0.5
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+                        }
+
+                        QGCLabel {
+                            Layout.alignment: Qt.AlignHCenter
+                            text: value + (unit !== "" ? " " + unit : "")
+                            color: valueColor
+                            font.bold: true
+                            font.pointSize: ScreenTools.mediumFontPointSize * 1.2
+                            font.family: "Monospace"
+                        }
+
+                        Rectangle {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 2
+                            color: Qt.rgba(0.1, 0.1, 0.1, 0.5)
+                            radius: 1
+
+                            Rectangle {
+                                width: parent.width * 0.7
+                                height: parent.height
+                                color: valueColor
+                                radius: parent.radius
+                                opacity: 0.6
+                            }
+                        }
+                    }
+                }
+
+                // PRIMARY METRICS
+                LargeTelemetryCard {
+                    label: "TỐC ĐỘ MẶT ĐẤT"
+                    icon: "➡"
+                    value: (_activeVehicle && _activeVehicle.groundSpeed) ? _activeVehicle.groundSpeed.valueString : "--"
+                    unit: (_activeVehicle && _activeVehicle.groundSpeed) ? _activeVehicle.groundSpeed.units : ""
+                    valueColor: "#00ff00"
+                }
+
+                LargeTelemetryCard {
+                    label: "ĐỘ CAO TUYỆT ĐỐI"
+                    icon: "⬆"
+                    value: (_activeVehicle && _activeVehicle.altitudeAMSL) ? _activeVehicle.altitudeAMSL.valueString : "--"
+                    unit: (_activeVehicle && _activeVehicle.altitudeRelative) ? _activeVehicle.altitudeRelative.units : ""
+                    valueColor: "#ffaa00"
+                    critical: (_activeVehicle && _activeVehicle.altitudeAMSL) ? (_activeVehicle.altitudeAMSL.rawValue < 10) : false
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 1
+                    color: "#00bfff"
+                    opacity: 0.3
+                }
+
+                // SECONDARY METRICS
+                GridLayout {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    columns: 2
+                    rowSpacing: _layoutMargin * 0.8
+                    columnSpacing: _layoutMargin * 0.8
+
+                    CompactTelemetryCard {
+                        label: "GIÓ"
+                        icon: "💨"
+                        value: _root.airSpeedFact ? _root.airSpeedFact.valueString : "--"
+                        unit: _root.airSpeedFact ? _root.airSpeedFact.units : ""
+                        valueColor: "#00bfff"
+                    }
+
+                    CompactTelemetryCard {
+                        label: "Q.ĐƯỜNG"
+                        icon: "📏"
+                        value: (_activeVehicle && _activeVehicle.flightDistance) ? _activeVehicle.flightDistance.valueString : "--"
+                        unit: (_activeVehicle && _activeVehicle.flightDistance) ? _activeVehicle.flightDistance.units : ""
+                        valueColor: "#00ff00"
+                    }
+
+                    CompactTelemetryCard {
+                        label: "MỤC TIÊU"
+                        icon: "🎯"
+                        value: _root.distanceToTarget >= 0 ? _root.distanceToTarget.toFixed(0) : "--"
+                        unit: "m"
+                        valueColor: "#ff00ff"
+                    }
+
+                    CompactTelemetryCard {
+                        label: "T.G BAY"
+                        icon: "⏱"
+                        value: _root.flightTimeFact ? _root.flightTimeFact.valueString : "00:00:00"
+                        unit: ""
+                        valueColor: "#00bfff"
+                    }
+
+                    CompactTelemetryCard {
+                        label: "GÓC HƯỚNG"
+                        icon: "↕"
+                        value: _root.pitchFact ? _root.pitchFact.valueString : "--"
+                        unit: "°"
+                        valueColor: "#00ff00"
+                    }
+
+                    CompactTelemetryCard {
+                        label: "GÓC LIỆNG"
+                        icon: "↔"
+                        value: _root.rollFact ? _root.rollFact.valueString : "--"
+                        unit: "°"
+                        valueColor: "#00bfff"
+                    }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 1
+                    color: "#00bfff"
+                    opacity: 0.3
+                }
+
+                // CRITICAL STATUS
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: ScreenTools.defaultFontPixelHeight * 4
+                    color: _root.currentBoardStatus === "True" ? Qt.rgba(1, 0, 0, 0.15) : Qt.rgba(0, 0.5, 0, 0.15)
+                    border.color: _root.currentBoardStatus === "True" ? "#ff0000" : "#00ff00"
+                    border.width: 3
+                    radius: 8
+
+                    SequentialAnimation on border.color {
+                        running: _root.currentBoardStatus === "True"
+                        loops: Animation.Infinite
+                        ColorAnimation { from: "#ff0000"; to: "#ff6666"; duration: 500 }
+                        ColorAnimation { from: "#ff6666"; to: "#ff0000"; duration: 500 }
+                    }
+
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.margins: 8
+                        spacing: 12
+
+                        Rectangle {
+                            Layout.preferredWidth: ScreenTools.defaultFontPixelHeight * 3
+                            Layout.fillHeight: true
+                            color: _root.currentBoardStatus === "True" ? Qt.rgba(1, 0, 0, 0.3) : Qt.rgba(0, 0.5, 0, 0.3)
+                            border.color: parent.parent.border.color
+                            border.width: 2
+                            radius: 6
+
+                            QGCLabel {
+                                anchors.centerIn: parent
+                                text: "⚡"
+                                font.pointSize: ScreenTools.largeFontPointSize * 1.5
+                                color: parent.parent.parent.border.color
+
+                                SequentialAnimation on scale {
+                                    running: _root.currentBoardStatus === "True"
+                                    loops: Animation.Infinite
+                                    NumberAnimation { from: 1.0; to: 1.3; duration: 400 }
+                                    NumberAnimation { from: 1.3; to: 1.0; duration: 400 }
+                                }
+                            }
+                        }
+
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            spacing: 4
+
+                            QGCLabel {
+                                text: qsTr("TRẠNG THÁI NGÒI NỔ")
+                                color: "#888888"
+                                font.pointSize: ScreenTools.smallFontPointSize
+                                font.family: "Monospace"
+                                font.bold: true
+                                font.letterSpacing: 1.5
+                            }
+
+                            QGCLabel {
+                                text: {
+                                    if (_root.currentBoardStatus === "True") return "⚠ ĐÃ MỞ - NGUY HIỂM";
+                                    else if (_root.currentBoardStatus === "False") return "✓ CHƯA MỞ - AN TOÀN";
+                                    else return "◆ " + _root.currentBoardStatus;
+                                }
+                                color: parent.parent.parent.border.color
+                                font.bold: true
+                                font.pointSize: ScreenTools.mediumFontPointSize * 1.2
+                                font.family: "Monospace"
+                                Layout.fillWidth: true
+                            }
+
+                            Rectangle {
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: 4
+                                color: Qt.rgba(0.1, 0.1, 0.1, 0.5)
+                                radius: 2
+
+                                Rectangle {
+                                    width: parent.width
+                                    height: parent.height
+                                    color: parent.parent.parent.parent.border.color
+                                    radius: parent.radius
+
+                                    SequentialAnimation on opacity {
+                                        running: _root.currentBoardStatus === "True"
+                                        loops: Animation.Infinite
+                                        NumberAnimation { from: 0.3; to: 1.0; duration: 500 }
+                                        NumberAnimation { from: 1.0; to: 0.3; duration: 500 }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    //---------- COMPASS (TOP RIGHT) ----------
+    Rectangle {
+        id: compassContainer
+        anchors.right: parent.right
+        anchors.rightMargin: _layoutMargin
+        anchors.top: parent.top
+        anchors.topMargin: ScreenTools.defaultFontPixelHeight * 25
+        width: ScreenTools.defaultFontPixelWidth * 18
+        height: width
+        color: Qt.rgba(0, 0, 0, 0.95)
+        border.color: "#00bfff"
+        border.width: 3
+        radius: width / 2
+        visible: _activeVehicle !== null
+        z: QGroundControl.zOrderWidgets
+
         Rectangle {
             anchors.fill: parent
             anchors.margins: -4
@@ -345,50 +922,174 @@ Item {
             z: -2
         }
 
-        QGCLabel {
-            anchors.centerIn: parent
-            text: qsTr("📹 VIDEO FEED\n(Waiting for video)")
-            font.bold: true
-            font.family: "Monospace"
-            color: "#00bfff"
-            horizontalAlignment: Text.AlignHCenter
-            visible: !QGroundControl.videoManager.videoRunning
+        Item {
+            id: compassRose
+            anchors.fill: parent
+            anchors.margins: 12
+            rotation: _activeVehicle ? -_activeVehicle.heading.rawValue : 0
+
+            Behavior on rotation {
+                RotationAnimation {
+                    duration: 250
+                    direction: RotationAnimation.Shortest
+                }
+            }
+
+            QGCLabel {
+                anchors.horizontalCenter: parent.horizontalCenter
+                y: 2
+                text: "N"
+                color: "#ff0000"
+                font.bold: true
+                font.pointSize: ScreenTools.mediumFontPointSize
+                font.family: "Monospace"
+            }
+
+            QGCLabel {
+                anchors.verticalCenter: parent.verticalCenter
+                x: parent.width - width - 2
+                text: "E"
+                color: "#00bfff"
+                font.bold: true
+                font.pointSize: ScreenTools.mediumFontPointSize
+                font.family: "Monospace"
+            }
+
+            QGCLabel {
+                anchors.horizontalCenter: parent.horizontalCenter
+                y: parent.height - height - 2
+                text: "S"
+                color: "#00bfff"
+                font.bold: true
+                font.pointSize: ScreenTools.mediumFontPointSize
+                font.family: "Monospace"
+            }
+
+            QGCLabel {
+                anchors.verticalCenter: parent.verticalCenter
+                x: 2
+                text: "W"
+                color: "#00bfff"
+                font.bold: true
+                font.pointSize: ScreenTools.mediumFontPointSize
+                font.family: "Monospace"
+            }
+
+            Repeater {
+                model: 36
+                Rectangle {
+                    property real angle: index * 10
+                    property bool isMajor: index % 3 === 0
+                    property real distance: parent.width / 2 - (isMajor ? 8 : 4)
+
+                    x: parent.width / 2 + Math.cos((angle - 90) * Math.PI / 180) * distance - width / 2
+                    y: parent.height / 2 + Math.sin((angle - 90) * Math.PI / 180) * distance - height / 2
+                    width: isMajor ? 2 : 1
+                    height: isMajor ? 8 : 4
+                    color: "#00bfff"
+                    opacity: isMajor ? 0.8 : 0.4
+                    rotation: angle
+                }
+            }
         }
 
-        QGCLabel {
-            anchors.left: parent.left
-            anchors.top: parent.top
-            anchors.margins: 5
-            text: qsTr("📹 LIVE")
-            font.bold: true
-            font.family: "Monospace"
-            font.pointSize: ScreenTools.smallFontPointSize
-            color: "#ff0000"
-            visible: QGroundControl.videoManager.videoRunning
+        Rectangle {
+            anchors.centerIn: parent
+            width: parent.width * 0.35
+            height: parent.height * 0.35
+            color: Qt.rgba(0, 0, 0, 0.9)
+            border.color: "#00ff00"
+            border.width: 2
+            radius: width / 2
+            z: 100
 
-            // Blinking effect
-            SequentialAnimation on opacity {
-                running: QGroundControl.videoManager.videoRunning
-                loops: Animation.Infinite
-                NumberAnimation { from: 1.0; to: 0.3; duration: 500 }
-                NumberAnimation { from: 0.3; to: 1.0; duration: 500 }
+            ColumnLayout {
+                anchors.centerIn: parent
+                spacing: 0
+
+                QGCLabel {
+                    Layout.alignment: Qt.AlignHCenter
+                    text: _activeVehicle ? Math.round(_activeVehicle.heading.rawValue).toString() : "---"
+                    color: "#00ff00"
+                    font.bold: true
+                    font.pointSize: ScreenTools.largeFontPointSize
+                    font.family: "Monospace"
+                }
+
+                QGCLabel {
+                    Layout.alignment: Qt.AlignHCenter
+                    text: "°"
+                    color: "#888888"
+                    font.pointSize: ScreenTools.smallFontPointSize
+                    font.family: "Monospace"
+                }
+            }
+        }
+
+        Canvas {
+            id: northPointer
+            anchors.centerIn: parent
+            width: parent.width
+            height: parent.height
+            z: 50
+
+            onPaint: {
+                var ctx = getContext("2d");
+                ctx.reset();
+
+                var centerX = width / 2;
+                var centerY = height / 2;
+                var pointerLength = height / 2 - 14;
+
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY - pointerLength);
+                ctx.lineTo(centerX - 6, centerY - pointerLength + 12);
+                ctx.lineTo(centerX + 6, centerY - pointerLength + 12);
+                ctx.closePath();
+
+                ctx.fillStyle = "#ff0000";
+                ctx.fill();
+                ctx.strokeStyle = "#ffffff";
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+        }
+
+        Rectangle {
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.bottom: parent.bottom
+            anchors.bottomMargin: -ScreenTools.defaultFontPixelHeight * 1.8
+            width: ScreenTools.defaultFontPixelWidth * 12
+            height: ScreenTools.defaultFontPixelHeight * 1.5
+            color: Qt.rgba(0, 0.75, 1, 0.2)
+            border.color: "#00bfff"
+            border.width: 2
+            radius: 4
+
+            QGCLabel {
+                anchors.centerIn: parent
+                text: qsTr("COMPASS")
+                color: "#00bfff"
+                font.bold: true
+                font.pointSize: ScreenTools.smallFontPointSize
+                font.family: "Monospace"
             }
         }
     }
 
     VehicleWarnings {
-        anchors.centerIn:   parent
-        z:                  QGroundControl.zOrderTopMost
+        anchors.centerIn: parent
+        z: QGroundControl.zOrderTopMost
     }
 
     MapScale {
-        id:                 mapScale
-        anchors.margins:    _toolsMargin
-        anchors.left:       parent.left
-        anchors.top:        parent.top
-        mapControl:         _mapControl
-        buttonsOnLeft:      false
-        visible:            !ScreenTools.isTinyScreen && QGroundControl.corePlugin.options.flyView.showMapScale && !isViewer3DOpen && mapControl.pipState.state === mapControl.pipState.fullState
+        id: mapScale
+        anchors.margins: _toolsMargin
+        anchors.left: parent.left
+        anchors.top: parent.top
+        mapControl: _mapControl
+        buttonsOnLeft: false
+        visible: !ScreenTools.isTinyScreen && QGroundControl.corePlugin.options.flyView.showMapScale && !isViewer3DOpen && mapControl.pipState.state === mapControl.pipState.fullState
 
         property real topEdgeCenterInset: visible ? y + height : 0
     }
