@@ -19,7 +19,7 @@ import QGroundControl.ScreenTools
 Rectangle {
     id:     _root
     width:  parent.width
-    height: ScreenTools.toolbarHeight * 1.4  // TĂNG CHIỀU CAO 40%
+    height: ScreenTools.toolbarHeight * 1.4
     color:  Qt.rgba(0.05, 0.05, 0.05, 0.95)
 
     property var    _activeVehicle:     QGroundControl.multiVehicleManager.activeVehicle
@@ -90,7 +90,7 @@ Rectangle {
             MouseArea {
                 anchors.fill: parent
                 cursorShape: Qt.PointingHandCursor
-                onClicked: mainWindow.showToolSelectDialog()
+                // onClicked: mainWindow.showToolSelectDialog()
             }
         }
 
@@ -107,7 +107,7 @@ Rectangle {
                 signal clicked()
 
                 width: ScreenTools.defaultFontPixelWidth * 14
-                height: ScreenTools.defaultFontPixelHeight * 3.5  // TĂNG CHIỀU CAO
+                height: ScreenTools.defaultFontPixelHeight * 3.5
                 color: isActive ? Qt.rgba(0, 0.75, 1, 0.25) : Qt.rgba(0.1, 0.1, 0.1, 0.6)
                 border.color: isActive ? "#00ff00" : "#00bfff"
                 border.width: isActive ? 2 : 1
@@ -168,9 +168,8 @@ Rectangle {
                 tabIcon: "📊"
                 isActive: false
                 onClicked: {
-                    // FIX: Mở Analyze Tools
                     if (mainWindow.allowViewSwitch()) {
-                        mainWindow.showAnalyzeView()
+                        mainWindow.showAnalyzeTool()
                     }
                 }
             }
@@ -187,7 +186,69 @@ Rectangle {
             }
         }
 
-        //---------- SPACER ----------
+        //---------- SPACER LEFT ----------
+        Item {
+            Layout.fillWidth: true
+        }
+
+        //---------- ĐỒNG HỒ (CHÍNH GIỮA) ----------
+        Rectangle {
+            Layout.preferredWidth: ScreenTools.defaultFontPixelWidth * 20
+            Layout.preferredHeight: ScreenTools.defaultFontPixelHeight * 3.5
+            Layout.alignment: Qt.AlignVCenter
+            color: Qt.rgba(0.1, 0.1, 0.1, 0.7)
+            border.color: "#00bfff"
+            border.width: 2
+            radius: 6
+
+            Column {
+                anchors.centerIn: parent
+                spacing: 2
+
+                Row {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    spacing: 6
+
+                    QGCLabel {
+                        text: "🕐"
+                        font.pointSize: ScreenTools.mediumFontPointSize * 1.2
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    QGCLabel {
+                        id: timeLabel
+                        text: Qt.formatTime(new Date(), "hh:mm:ss")
+                        color: "#00bfff"
+                        font.bold: true
+                        font.family: "Monospace"
+                        font.pointSize: ScreenTools.defaultFontPointSize * 1.1
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+                }
+
+                QGCLabel {
+                    id: dateLabel
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text: Qt.formatDate(new Date(), "dd/MM/yyyy")
+                    color: "#888888"
+                    font.family: "Monospace"
+                    font.pointSize: ScreenTools.smallFontPointSize * 0.9
+                }
+            }
+
+            Timer {
+                interval: 1000
+                running: true
+                repeat: true
+                onTriggered: {
+                    var currentTime = new Date()
+                    timeLabel.text = Qt.formatTime(currentTime, "hh:mm:ss")
+                    dateLabel.text = Qt.formatDate(currentTime, "dd/MM/yyyy")
+                }
+            }
+        }
+
+        //---------- SPACER RIGHT ----------
         Item {
             Layout.fillWidth: true
         }
@@ -195,7 +256,7 @@ Rectangle {
         //---------- 6. CONNECTION STATUS ----------
         Rectangle {
             Layout.preferredWidth: ScreenTools.defaultFontPixelWidth * 16
-            Layout.preferredHeight: ScreenTools.defaultFontPixelHeight * 3.5  // TĂNG CHIỀU CAO
+            Layout.preferredHeight: ScreenTools.defaultFontPixelHeight * 3.5
             Layout.alignment: Qt.AlignVCenter
             color: getStatusBGColor()
             border.color: getStatusBorderColor()
@@ -264,7 +325,7 @@ Rectangle {
         Rectangle {
             id: flightModeButton
             Layout.preferredWidth: ScreenTools.defaultFontPixelWidth * 16
-            Layout.preferredHeight: ScreenTools.defaultFontPixelHeight * 3.5  // TĂNG CHIỀU CAO
+            Layout.preferredHeight: ScreenTools.defaultFontPixelHeight * 3.5
             Layout.alignment: Qt.AlignVCenter
             color: flightModeMouseArea.containsMouse ? Qt.rgba(0.2, 0.6, 0.9, 0.3) : Qt.rgba(0.1, 0.5, 0.8, 0.2)
             border.color: "#00bfff"
@@ -397,7 +458,7 @@ Rectangle {
         //---------- 8. GPS STATUS ----------
         Rectangle {
             Layout.preferredWidth: ScreenTools.defaultFontPixelWidth * 13
-            Layout.preferredHeight: ScreenTools.defaultFontPixelHeight * 3.5  // TĂNG CHIỀU CAO
+            Layout.preferredHeight: ScreenTools.defaultFontPixelHeight * 3.5
             Layout.alignment: Qt.AlignVCenter
             color: Qt.rgba(0.1, 0.8, 0.1, 0.15)
             border.color: getGPSColor()
@@ -445,7 +506,7 @@ Rectangle {
         //---------- 9. BATTERY STATUS ----------
         Rectangle {
             Layout.preferredWidth: ScreenTools.defaultFontPixelWidth * 18
-            Layout.preferredHeight: ScreenTools.defaultFontPixelHeight * 3.5  // TĂNG CHIỀU CAO
+            Layout.preferredHeight: ScreenTools.defaultFontPixelHeight * 3.5
             Layout.alignment: Qt.AlignVCenter
             color: Qt.rgba(0.2, 0.2, 0.2, 0.3)
             border.color: getBatteryColor()
@@ -495,7 +556,7 @@ Rectangle {
         //---------- 10. TRẠNG THÁI NGÒI (RIGHT CORNER) ----------
         Rectangle {
             Layout.preferredWidth: ScreenTools.defaultFontPixelWidth * 18
-            Layout.preferredHeight: ScreenTools.defaultFontPixelHeight * 3.5  // TĂNG CHIỀU CAO
+            Layout.preferredHeight: ScreenTools.defaultFontPixelHeight * 3.5
             Layout.alignment: Qt.AlignVCenter
             color: currentBoardStatus === "True" ? Qt.rgba(1, 0, 0, 0.25) : Qt.rgba(0, 0.5, 0, 0.2)
             border.color: currentBoardStatus === "True" ? "#ff0000" : "#00ff00"

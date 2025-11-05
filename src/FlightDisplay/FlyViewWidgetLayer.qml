@@ -90,8 +90,8 @@ Item {
         topEdgeLeftInset:       0
         topEdgeCenterInset:     mapScale.topEdgeCenterInset
         topEdgeRightInset:      topRightPanel.topEdgeRightInset
-        bottomEdgeLeftInset:    virtualJoystickMultiTouch.visible ? virtualJoystickMultiTouch.bottomEdgeLeftInset : (horizontalToolStrip.visible ? ScreenTools.defaultFontPixelHeight * 5 : parentToolInsets.bottomEdgeLeftInset)
-        bottomEdgeCenterInset:  horizontalToolStrip.visible ? ScreenTools.defaultFontPixelHeight * 5 : 0
+        bottomEdgeLeftInset:    virtualJoystickMultiTouch.visible ? virtualJoystickMultiTouch.bottomEdgeLeftInset : parentToolInsets.bottomEdgeLeftInset
+        bottomEdgeCenterInset:  0
         bottomEdgeRightInset:   virtualJoystickMultiTouch.visible ? virtualJoystickMultiTouch.bottomEdgeRightInset : 0
     }
 
@@ -210,12 +210,12 @@ Item {
         onSetHomeModeToggled: _root.setHomeModeToggled()
     }
 
-    // HORIZONTAL TOOLSTRIP
+    // HORIZONTAL TOOLSTRIP - NGANG HÀNG VỚI VIDEO (BỎ NÚT CAMERA)
     Row {
         id:                     horizontalToolStrip
         anchors.horizontalCenter: parent.horizontalCenter
-        anchors.bottom:         parent.bottom
-        anchors.bottomMargin:   _toolsMargin * 2
+        anchors.top:            parent.top
+        anchors.topMargin:      _layoutMargin
         spacing:                _margins * 2
         z:                      QGroundControl.zOrderWidgets
         visible:                !QGroundControl.videoManager.fullScreen
@@ -296,21 +296,6 @@ Item {
         }
 
         MilitaryButton {
-            buttonText: qsTr("CAMERA")
-            buttonIcon: "📷"
-            visible: _activeVehicle
-            onClicked: {
-                if (typeof mainWindow !== 'undefined' && mainWindow.showSettingsDialog) {
-                    mainWindow.showSettingsDialog()
-                } else if (typeof QGroundControl !== 'undefined' && QGroundControl.settingsManager) {
-                    QGroundControl.settingsManager.appSettings.showSettings()
-                } else {
-                    console.log("Opening camera/video settings")
-                }
-            }
-        }
-
-        MilitaryButton {
             buttonText: qsTr("SET HOME")
             buttonIcon: "📍"
             visible: _activeVehicle
@@ -335,21 +320,21 @@ Item {
         id: gripperOptions
     }
 
-    //---------- VIDEO FEED & TELEMETRY CONTAINER (TOP LEFT) ----------
+    //---------- LEFT BAR: VIDEO FEED + 2 METRICS ----------
     Column {
         id: leftPanelContainer
         anchors.left: parent.left
         anchors.top: parent.top
         anchors.margins: _layoutMargin
-        width: ScreenTools.defaultFontPixelWidth * 75
+        width: ScreenTools.defaultFontPixelWidth * 60  // GẤP RƯỠI (40 → 60)
         spacing: _layoutMargin
         z: QGroundControl.zOrderWidgets
 
-        // VIDEO FEED
+        // VIDEO FEED - RỘNG HỚN, THẤP HƠN
         Rectangle {
             id: videoFeedContainer
             width: parent.width
-            height: parent.parent.height * 0.4
+            height: ScreenTools.defaultFontPixelHeight * 15
             color: Qt.rgba(0, 0, 0, 0.9)
             border.color: "#00bfff"
             border.width: 3
@@ -365,17 +350,6 @@ Item {
                 radius: parent.radius + 2
                 opacity: 0.3
                 z: -1
-            }
-
-            Rectangle {
-                anchors.fill: parent
-                anchors.margins: -8
-                color: "transparent"
-                border.color: "#00bfff"
-                border.width: 1
-                radius: parent.radius + 4
-                opacity: 0.1
-                z: -2
             }
 
             QGCLabel {
@@ -408,16 +382,196 @@ Item {
             }
         }
 
-        // TELEMETRY PANEL - IMPROVED DESIGN
-        Rectangle {
-            id: telemetryContainer
+        // 2 METRICS: GIÓ & QUÃNG ĐƯỜNG
+        component CompactMetric: Rectangle {
+            property string label: ""
+            property string value: "--"
+            property string unit: ""
+            property color valueColor: "#00ff00"
+            property string icon: ""
+
             width: parent.width
-            height: parent.parent.height * 0.6 - _layoutMargin * 3
-            color: Qt.rgba(0, 0, 0, 0.95)
+            height: ScreenTools.defaultFontPixelHeight * 3
+            color: Qt.rgba(0.05, 0.05, 0.05, 0.98)
+            border.color: valueColor
+            border.width: 2
+            radius: 6
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.margins: 8
+                spacing: 8
+
+                Rectangle {
+                    Layout.preferredWidth: ScreenTools.defaultFontPixelHeight * 2
+                    Layout.fillHeight: true
+                    color: Qt.rgba(0.1, 0.1, 0.1, 0.5)
+                    border.color: valueColor
+                    border.width: 1
+                    radius: 4
+
+                    QGCLabel {
+                        anchors.centerIn: parent
+                        text: icon
+                        font.pointSize: ScreenTools.largeFontPointSize
+                    }
+                }
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    spacing: 2
+
+                    QGCLabel {
+                        text: label
+                        color: "#888888"
+                        font.pointSize: ScreenTools.smallFontPointSize - 1
+                        font.family: "Monospace"
+                    }
+
+                    QGCLabel {
+                        text: value + (unit !== "" ? " " + unit : "")
+                        color: valueColor
+                        font.bold: true
+                        font.pointSize: ScreenTools.mediumFontPointSize
+                        font.family: "Monospace"
+                    }
+                }
+            }
+        }
+
+        CompactMetric {
+            label: "GIÓ"
+            icon: "💨"
+            value: _root.airSpeedFact ? _root.airSpeedFact.valueString : "--"
+            unit: _root.airSpeedFact ? _root.airSpeedFact.units : ""
+            valueColor: "#00bfff"
+        }
+
+        CompactMetric {
+            label: "QUÃNG ĐƯỜNG"
+            icon: "📏"
+            value: (_activeVehicle && _activeVehicle.flightDistance) ? _activeVehicle.flightDistance.valueString : "--"
+            unit: (_activeVehicle && _activeVehicle.flightDistance) ? _activeVehicle.flightDistance.units : ""
+            valueColor: "#00ff00"
+        }
+    }
+
+    //---------- BOTTOM BAR: 4 MAIN METRICS ----------
+    Row {
+        id: bottomBar
+        anchors.bottom: parent.bottom
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.bottomMargin: _layoutMargin
+        width: parent.width * 0.6
+        height: ScreenTools.defaultFontPixelHeight * 5
+        spacing: _layoutMargin
+        z: QGroundControl.zOrderWidgets
+        visible: _activeVehicle
+
+        component BottomMetric: Rectangle {
+            property string label: ""
+            property string value: "--"
+            property string unit: ""
+            property color valueColor: "#00ff00"
+            property string icon: ""
+
+            width: (parent.width - _layoutMargin * 3) / 4
+            height: parent.height
+            color: Qt.rgba(0.05, 0.05, 0.05, 0.95)
+            border.color: valueColor
+            border.width: 2
+            radius: 6
+
+            ColumnLayout {
+                anchors.fill: parent
+                anchors.margins: 6
+                spacing: 2
+
+                Row {
+                    Layout.alignment: Qt.AlignHCenter
+                    spacing: 4
+
+                    QGCLabel {
+                        text: icon
+                        font.pointSize: ScreenTools.smallFontPointSize
+                        visible: icon !== ""
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    QGCLabel {
+                        text: label
+                        color: "#888888"
+                        font.pointSize: ScreenTools.smallFontPointSize - 1
+                        font.family: "Monospace"
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+                }
+
+                QGCLabel {
+                    Layout.alignment: Qt.AlignHCenter
+                    text: value + (unit !== "" ? " " + unit : "")
+                    color: valueColor
+                    font.bold: true
+                    font.pointSize: ScreenTools.mediumFontPointSize
+                    font.family: "Monospace"
+                }
+            }
+        }
+
+        BottomMetric {
+            label: "TỐC ĐỘ"
+            icon: "➡"
+            value: (_activeVehicle && _activeVehicle.groundSpeed) ? _activeVehicle.groundSpeed.valueString : "--"
+            unit: (_activeVehicle && _activeVehicle.groundSpeed) ? _activeVehicle.groundSpeed.units : ""
+            valueColor: "#00ff00"
+        }
+
+        BottomMetric {
+            label: "ĐỘ CAO"
+            icon: "⬆"
+            value: (_activeVehicle && _activeVehicle.altitudeAMSL) ? _activeVehicle.altitudeAMSL.valueString : "--"
+            unit: (_activeVehicle && _activeVehicle.altitudeRelative) ? _activeVehicle.altitudeRelative.units : ""
+            valueColor: "#ffaa00"
+        }
+
+        BottomMetric {
+            label: "MỤC TIÊU"
+            icon: "🎯"
+            value: _root.distanceToTarget >= 0 ? _root.distanceToTarget.toFixed(0) : "--"
+            unit: "m"
+            valueColor: "#ff00ff"
+        }
+
+        BottomMetric {
+            label: "THỜI GIAN BAY"
+            icon: "⏱"
+            value: _root.flightTimeFact ? _root.flightTimeFact.valueString : "00:00:00"
+            unit: ""
+            valueColor: "#00bfff"
+        }
+    }
+
+    //---------- RIGHT BAR: ARTIFICIAL HORIZON + COMPASS + PITCH + ROLL ----------
+    Column {
+        id: rightInstrumentColumn
+        anchors.right: parent.right
+        anchors.rightMargin: _layoutMargin
+        anchors.top: parent.top
+        // anchors.topMargin: ScreenTools.toolbarHeight * 1.4 + _layoutMargin
+        width: ScreenTools.defaultFontPixelWidth * 18
+        spacing: _layoutMargin
+        z: QGroundControl.zOrderWidgets
+
+        // ARTIFICIAL HORIZON (THAM KHẢO TỪ FLYVIEW)
+        Rectangle {
+            id: attitudeIndicator
+            width: parent.width
+            height: width
+            color: Qt.rgba(0, 0, 0, 0.9)
             border.color: "#00bfff"
             border.width: 3
             radius: 8
-            visible: _activeVehicle
 
             Rectangle {
                 anchors.fill: parent
@@ -430,649 +584,437 @@ Item {
                 z: -1
             }
 
-            Rectangle {
+            Item {
+                id: horizonClip
                 anchors.fill: parent
-                anchors.margins: -8
-                color: "transparent"
-                border.color: "#00bfff"
-                border.width: 1
-                radius: parent.radius + 4
-                opacity: 0.1
-                z: -2
+                anchors.margins: 10
+                clip: true
+
+                Rectangle {
+                    id: horizon
+                    width: parent.width * 2
+                    height: parent.height * 2
+                    anchors.centerIn: parent
+
+                    rotation: _activeVehicle ? -_activeVehicle.roll.value : 0
+
+                    transform: Translate {
+                        y: _activeVehicle ? _activeVehicle.pitch.value * 2 : 0
+                    }
+
+                    Rectangle {
+                        anchors.top: parent.top
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        height: parent.height / 2
+                        gradient: Gradient {
+                            GradientStop { position: 0.0; color: "#004080" }
+                            GradientStop { position: 1.0; color: "#0066cc" }
+                        }
+                    }
+
+                    Rectangle {
+                        anchors.bottom: parent.bottom
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        height: parent.height / 2
+                        gradient: Gradient {
+                            GradientStop { position: 0.0; color: "#4d3319" }
+                            GradientStop { position: 1.0; color: "#2d1f0f" }
+                        }
+                    }
+
+                    Rectangle {
+                        anchors.centerIn: parent
+                        width: parent.width
+                        height: 2
+                        color: "#ffffff"
+                    }
+
+                    Repeater {
+                        model: [-30, -20, -10, 10, 20, 30]
+
+                        Row {
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            y: parent.height / 2 - modelData * 2
+                            spacing: 5
+
+                            Rectangle {
+                                width: 30
+                                height: 2
+                                color: "#ffffff"
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+
+                            QGCLabel {
+                                text: Math.abs(modelData)
+                                font.pointSize: ScreenTools.smallFontPointSize
+                                font.family: "Monospace"
+                                color: "#ffffff"
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+
+                            Rectangle {
+                                width: 30
+                                height: 2
+                                color: "#ffffff"
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+                        }
+                    }
+                }
+
+                Item {
+                    anchors.centerIn: parent
+                    width: 80
+                    height: 80
+
+                    Rectangle {
+                        anchors.centerIn: parent
+                        width: 60
+                        height: 3
+                        color: "#ff0000"
+                    }
+
+                    Rectangle {
+                        anchors.centerIn: parent
+                        width: 8
+                        height: 8
+                        radius: 4
+                        color: "#ff0000"
+                        border.color: "#ffffff"
+                        border.width: 1
+                    }
+                }
             }
 
-            // Header bar
+            Canvas {
+                id: rollCanvas
+                anchors.fill: parent
+
+                onPaint: {
+                    var ctx = getContext("2d");
+                    ctx.clearRect(0, 0, width, height);
+
+                    var centerX = width / 2;
+                    var centerY = height / 2;
+                    var radius = Math.min(width, height) / 2 - 20;
+
+                    ctx.strokeStyle = "#e0e0e0";
+                    ctx.lineWidth = 2;
+
+                    for (var angle = -60; angle <= 60; angle += 10) {
+                        var rad = (angle - 90) * Math.PI / 180;
+                        var startRadius = radius - (angle % 30 === 0 ? 15 : 10);
+
+                        ctx.beginPath();
+                        ctx.moveTo(centerX + startRadius * Math.cos(rad), centerY + startRadius * Math.sin(rad));
+                        ctx.lineTo(centerX + radius * Math.cos(rad), centerY + radius * Math.sin(rad));
+                        ctx.stroke();
+                    }
+                }
+            }
+
             Rectangle {
-                id: telemetryHeader
-                anchors.top: parent.top
-                anchors.left: parent.left
-                anchors.right: parent.right
-                height: ScreenTools.defaultFontPixelHeight * 2.5
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.bottom: parent.bottom
+                anchors.bottomMargin: -ScreenTools.defaultFontPixelHeight * 1.5
+                width: ScreenTools.defaultFontPixelWidth * 15
+                height: ScreenTools.defaultFontPixelHeight * 1.2
                 color: Qt.rgba(0, 0.75, 1, 0.2)
                 border.color: "#00bfff"
                 border.width: 2
-                radius: 6
-
-                Row {
-                    anchors.centerIn: parent
-                    spacing: 8
-
-                    QGCLabel {
-                        text: "⚡"
-                        font.pointSize: ScreenTools.mediumFontPointSize
-                        color: "#00ff00"
-
-                        SequentialAnimation on opacity {
-                            running: true
-                            loops: Animation.Infinite
-                            NumberAnimation { from: 0.3; to: 1.0; duration: 800 }
-                            NumberAnimation { from: 1.0; to: 0.3; duration: 800 }
-                        }
-                    }
-
-                    QGCLabel {
-                        text: qsTr("FLIGHT TELEMETRY SYSTEM")
-                        font.pointSize: ScreenTools.mediumFontPointSize
-                        font.bold: true
-                        font.family: "Monospace"
-                        color: "#00bfff"
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
-
-                    QGCLabel {
-                        text: "⚡"
-                        font.pointSize: ScreenTools.mediumFontPointSize
-                        color: "#00ff00"
-
-                        SequentialAnimation on opacity {
-                            running: true
-                            loops: Animation.Infinite
-                            NumberAnimation { from: 1.0; to: 0.3; duration: 800 }
-                            NumberAnimation { from: 0.3; to: 1.0; duration: 800 }
-                        }
-                    }
-                }
-            }
-
-            // Main content
-            ColumnLayout {
-                anchors.top: telemetryHeader.bottom
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.bottom: parent.bottom
-                anchors.margins: _layoutMargin
-                spacing: _layoutMargin
-
-                // Large telemetry card component
-                component LargeTelemetryCard: Rectangle {
-                    property string label: ""
-                    property string value: "--"
-                    property string unit: ""
-                    property color valueColor: "#00ff00"
-                    property string icon: ""
-                    property bool critical: false
-
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: ScreenTools.defaultFontPixelHeight * 5
-                    color: Qt.rgba(0.05, 0.05, 0.05, 0.98)
-                    border.color: critical ? "#ff0000" : valueColor
-                    border.width: critical ? 3 : 2
-                    radius: 8
-
-                    Rectangle {
-                        anchors.fill: parent
-                        anchors.margins: -2
-                        color: "transparent"
-                        border.color: parent.border.color
-                        border.width: 1
-                        radius: parent.radius + 1
-                        opacity: 0.5
-                        visible: critical
-
-                        SequentialAnimation on opacity {
-                            running: critical
-                            loops: Animation.Infinite
-                            NumberAnimation { from: 0.2; to: 0.8; duration: 600 }
-                            NumberAnimation { from: 0.8; to: 0.2; duration: 600 }
-                        }
-                    }
-
-                    Rectangle {
-                        width: 12
-                        height: 2
-                        color: parent.border.color
-                        anchors.left: parent.left
-                        anchors.top: parent.top
-                        anchors.margins: 4
-                    }
-                    Rectangle {
-                        width: 2
-                        height: 12
-                        color: parent.border.color
-                        anchors.left: parent.left
-                        anchors.top: parent.top
-                        anchors.margins: 4
-                    }
-                    Rectangle {
-                        width: 12
-                        height: 2
-                        color: parent.border.color
-                        anchors.right: parent.right
-                        anchors.top: parent.top
-                        anchors.margins: 4
-                    }
-                    Rectangle {
-                        width: 2
-                        height: 12
-                        color: parent.border.color
-                        anchors.right: parent.right
-                        anchors.top: parent.top
-                        anchors.margins: 4
-                    }
-
-                    RowLayout {
-                        anchors.fill: parent
-                        anchors.margins: 8
-                        spacing: 12
-
-                        Rectangle {
-                            Layout.preferredWidth: ScreenTools.defaultFontPixelHeight * 3.5
-                            Layout.fillHeight: true
-                            color: Qt.rgba(0.1, 0.1, 0.1, 0.5)
-                            border.color: valueColor
-                            border.width: 1
-                            radius: 4
-
-                            QGCLabel {
-                                anchors.centerIn: parent
-                                text: icon
-                                font.pointSize: ScreenTools.largeFontPointSize * 1.5
-                            }
-                        }
-
-                        ColumnLayout {
-                            Layout.fillWidth: true
-                            Layout.fillHeight: true
-                            spacing: 2
-
-                            QGCLabel {
-                                text: label
-                                color: "#888888"
-                                font.pointSize: ScreenTools.smallFontPointSize
-                                font.family: "Monospace"
-                                font.letterSpacing: 1
-                            }
-
-                            QGCLabel {
-                                text: value + (unit !== "" ? " " + unit : "")
-                                color: valueColor
-                                font.bold: true
-                                font.pointSize: ScreenTools.largeFontPointSize * 1.3
-                                font.family: "Monospace"
-                                Layout.fillWidth: true
-                            }
-                        }
-
-                        Rectangle {
-                            Layout.preferredWidth: 8
-                            Layout.preferredHeight: 8
-                            radius: 4
-                            color: valueColor
-
-                            SequentialAnimation on opacity {
-                                running: true
-                                loops: Animation.Infinite
-                                NumberAnimation { from: 0.4; to: 1.0; duration: 1000 }
-                                NumberAnimation { from: 1.0; to: 0.4; duration: 1000 }
-                            }
-                        }
-                    }
-                }
-
-                // Compact telemetry card component
-                component CompactTelemetryCard: Rectangle {
-                    property string label: ""
-                    property string value: "--"
-                    property string unit: ""
-                    property color valueColor: "#00ff00"
-                    property string icon: ""
-
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    Layout.minimumHeight: ScreenTools.defaultFontPixelHeight * 3.5
-                    color: Qt.rgba(0.05, 0.05, 0.05, 0.98)
-                    border.color: valueColor
-                    border.width: 2
-                    radius: 6
-
-                    ColumnLayout {
-                        anchors.fill: parent
-                        anchors.margins: 6
-                        spacing: 2
-
-                        Row {
-                            Layout.alignment: Qt.AlignHCenter
-                            spacing: 4
-
-                            QGCLabel {
-                                text: icon
-                                font.pointSize: ScreenTools.smallFontPointSize
-                                visible: icon !== ""
-                                anchors.verticalCenter: parent.verticalCenter
-                            }
-
-                            QGCLabel {
-                                text: label
-                                color: "#888888"
-                                font.pointSize: ScreenTools.smallFontPointSize - 1
-                                font.family: "Monospace"
-                                font.letterSpacing: 0.5
-                                anchors.verticalCenter: parent.verticalCenter
-                            }
-                        }
-
-                        QGCLabel {
-                            Layout.alignment: Qt.AlignHCenter
-                            text: value + (unit !== "" ? " " + unit : "")
-                            color: valueColor
-                            font.bold: true
-                            font.pointSize: ScreenTools.mediumFontPointSize * 1.2
-                            font.family: "Monospace"
-                        }
-
-                        Rectangle {
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 2
-                            color: Qt.rgba(0.1, 0.1, 0.1, 0.5)
-                            radius: 1
-
-                            Rectangle {
-                                width: parent.width * 0.7
-                                height: parent.height
-                                color: valueColor
-                                radius: parent.radius
-                                opacity: 0.6
-                            }
-                        }
-                    }
-                }
-
-                // PRIMARY METRICS
-                LargeTelemetryCard {
-                    label: "TỐC ĐỘ MẶT ĐẤT"
-                    icon: "➡"
-                    value: (_activeVehicle && _activeVehicle.groundSpeed) ? _activeVehicle.groundSpeed.valueString : "--"
-                    unit: (_activeVehicle && _activeVehicle.groundSpeed) ? _activeVehicle.groundSpeed.units : ""
-                    valueColor: "#00ff00"
-                }
-
-                LargeTelemetryCard {
-                    label: "ĐỘ CAO TUYỆT ĐỐI"
-                    icon: "⬆"
-                    value: (_activeVehicle && _activeVehicle.altitudeAMSL) ? _activeVehicle.altitudeAMSL.valueString : "--"
-                    unit: (_activeVehicle && _activeVehicle.altitudeRelative) ? _activeVehicle.altitudeRelative.units : ""
-                    valueColor: "#ffaa00"
-                    critical: (_activeVehicle && _activeVehicle.altitudeAMSL) ? (_activeVehicle.altitudeAMSL.rawValue < 10) : false
-                }
-
-                Rectangle {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 1
-                    color: "#00bfff"
-                    opacity: 0.3
-                }
-
-                // SECONDARY METRICS
-                GridLayout {
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    columns: 2
-                    rowSpacing: _layoutMargin * 0.8
-                    columnSpacing: _layoutMargin * 0.8
-
-                    CompactTelemetryCard {
-                        label: "GIÓ"
-                        icon: "💨"
-                        value: _root.airSpeedFact ? _root.airSpeedFact.valueString : "--"
-                        unit: _root.airSpeedFact ? _root.airSpeedFact.units : ""
-                        valueColor: "#00bfff"
-                    }
-
-                    CompactTelemetryCard {
-                        label: "Q.ĐƯỜNG"
-                        icon: "📏"
-                        value: (_activeVehicle && _activeVehicle.flightDistance) ? _activeVehicle.flightDistance.valueString : "--"
-                        unit: (_activeVehicle && _activeVehicle.flightDistance) ? _activeVehicle.flightDistance.units : ""
-                        valueColor: "#00ff00"
-                    }
-
-                    CompactTelemetryCard {
-                        label: "MỤC TIÊU"
-                        icon: "🎯"
-                        value: _root.distanceToTarget >= 0 ? _root.distanceToTarget.toFixed(0) : "--"
-                        unit: "m"
-                        valueColor: "#ff00ff"
-                    }
-
-                    CompactTelemetryCard {
-                        label: "T.G BAY"
-                        icon: "⏱"
-                        value: _root.flightTimeFact ? _root.flightTimeFact.valueString : "00:00:00"
-                        unit: ""
-                        valueColor: "#00bfff"
-                    }
-
-                    CompactTelemetryCard {
-                        label: "GÓC HƯỚNG"
-                        icon: "↕"
-                        value: _root.pitchFact ? _root.pitchFact.valueString : "--"
-                        unit: "°"
-                        valueColor: "#00ff00"
-                    }
-
-                    CompactTelemetryCard {
-                        label: "GÓC LIỆNG"
-                        icon: "↔"
-                        value: _root.rollFact ? _root.rollFact.valueString : "--"
-                        unit: "°"
-                        valueColor: "#00bfff"
-                    }
-                }
-
-                Rectangle {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 1
-                    color: "#00bfff"
-                    opacity: 0.3
-                }
-
-                // CRITICAL STATUS
-                Rectangle {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: ScreenTools.defaultFontPixelHeight * 4
-                    color: _root.currentBoardStatus === "True" ? Qt.rgba(1, 0, 0, 0.15) : Qt.rgba(0, 0.5, 0, 0.15)
-                    border.color: _root.currentBoardStatus === "True" ? "#ff0000" : "#00ff00"
-                    border.width: 3
-                    radius: 8
-
-                    SequentialAnimation on border.color {
-                        running: _root.currentBoardStatus === "True"
-                        loops: Animation.Infinite
-                        ColorAnimation { from: "#ff0000"; to: "#ff6666"; duration: 500 }
-                        ColorAnimation { from: "#ff6666"; to: "#ff0000"; duration: 500 }
-                    }
-
-                    RowLayout {
-                        anchors.fill: parent
-                        anchors.margins: 8
-                        spacing: 12
-
-                        Rectangle {
-                            Layout.preferredWidth: ScreenTools.defaultFontPixelHeight * 3
-                            Layout.fillHeight: true
-                            color: _root.currentBoardStatus === "True" ? Qt.rgba(1, 0, 0, 0.3) : Qt.rgba(0, 0.5, 0, 0.3)
-                            border.color: parent.parent.border.color
-                            border.width: 2
-                            radius: 6
-
-                            QGCLabel {
-                                anchors.centerIn: parent
-                                text: "⚡"
-                                font.pointSize: ScreenTools.largeFontPointSize * 1.5
-                                color: parent.parent.parent.border.color
-
-                                SequentialAnimation on scale {
-                                    running: _root.currentBoardStatus === "True"
-                                    loops: Animation.Infinite
-                                    NumberAnimation { from: 1.0; to: 1.3; duration: 400 }
-                                    NumberAnimation { from: 1.3; to: 1.0; duration: 400 }
-                                }
-                            }
-                        }
-
-                        ColumnLayout {
-                            Layout.fillWidth: true
-                            Layout.fillHeight: true
-                            spacing: 4
-
-                            QGCLabel {
-                                text: qsTr("TRẠNG THÁI NGÒI NỔ")
-                                color: "#888888"
-                                font.pointSize: ScreenTools.smallFontPointSize
-                                font.family: "Monospace"
-                                font.bold: true
-                                font.letterSpacing: 1.5
-                            }
-
-                            QGCLabel {
-                                text: {
-                                    if (_root.currentBoardStatus === "True") return "⚠ ĐÃ MỞ - NGUY HIỂM";
-                                    else if (_root.currentBoardStatus === "False") return "✓ CHƯA MỞ - AN TOÀN";
-                                    else return "◆ " + _root.currentBoardStatus;
-                                }
-                                color: parent.parent.parent.border.color
-                                font.bold: true
-                                font.pointSize: ScreenTools.mediumFontPointSize * 1.2
-                                font.family: "Monospace"
-                                Layout.fillWidth: true
-                            }
-
-                            Rectangle {
-                                Layout.fillWidth: true
-                                Layout.preferredHeight: 4
-                                color: Qt.rgba(0.1, 0.1, 0.1, 0.5)
-                                radius: 2
-
-                                Rectangle {
-                                    width: parent.width
-                                    height: parent.height
-                                    color: parent.parent.parent.parent.border.color
-                                    radius: parent.radius
-
-                                    SequentialAnimation on opacity {
-                                        running: _root.currentBoardStatus === "True"
-                                        loops: Animation.Infinite
-                                        NumberAnimation { from: 0.3; to: 1.0; duration: 500 }
-                                        NumberAnimation { from: 1.0; to: 0.3; duration: 500 }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    //---------- COMPASS (TOP RIGHT) ----------
-    Rectangle {
-        id: compassContainer
-        anchors.right: parent.right
-        anchors.rightMargin: _layoutMargin
-        anchors.top: parent.top
-        anchors.topMargin: ScreenTools.defaultFontPixelHeight * 25
-        width: ScreenTools.defaultFontPixelWidth * 18
-        height: width
-        color: Qt.rgba(0, 0, 0, 0.95)
-        border.color: "#00bfff"
-        border.width: 3
-        radius: width / 2
-        visible: _activeVehicle !== null
-        z: QGroundControl.zOrderWidgets
-
-        Rectangle {
-            anchors.fill: parent
-            anchors.margins: -4
-            color: "transparent"
-            border.color: "#00bfff"
-            border.width: 1
-            radius: parent.radius + 2
-            opacity: 0.3
-            z: -1
-        }
-
-        Rectangle {
-            anchors.fill: parent
-            anchors.margins: -8
-            color: "transparent"
-            border.color: "#00bfff"
-            border.width: 1
-            radius: parent.radius + 4
-            opacity: 0.1
-            z: -2
-        }
-
-        Item {
-            id: compassRose
-            anchors.fill: parent
-            anchors.margins: 12
-            rotation: _activeVehicle ? -_activeVehicle.heading.rawValue : 0
-
-            Behavior on rotation {
-                RotationAnimation {
-                    duration: 250
-                    direction: RotationAnimation.Shortest
-                }
-            }
-
-            QGCLabel {
-                anchors.horizontalCenter: parent.horizontalCenter
-                y: 2
-                text: "N"
-                color: "#ff0000"
-                font.bold: true
-                font.pointSize: ScreenTools.mediumFontPointSize
-                font.family: "Monospace"
-            }
-
-            QGCLabel {
-                anchors.verticalCenter: parent.verticalCenter
-                x: parent.width - width - 2
-                text: "E"
-                color: "#00bfff"
-                font.bold: true
-                font.pointSize: ScreenTools.mediumFontPointSize
-                font.family: "Monospace"
-            }
-
-            QGCLabel {
-                anchors.horizontalCenter: parent.horizontalCenter
-                y: parent.height - height - 2
-                text: "S"
-                color: "#00bfff"
-                font.bold: true
-                font.pointSize: ScreenTools.mediumFontPointSize
-                font.family: "Monospace"
-            }
-
-            QGCLabel {
-                anchors.verticalCenter: parent.verticalCenter
-                x: 2
-                text: "W"
-                color: "#00bfff"
-                font.bold: true
-                font.pointSize: ScreenTools.mediumFontPointSize
-                font.family: "Monospace"
-            }
-
-            Repeater {
-                model: 36
-                Rectangle {
-                    property real angle: index * 10
-                    property bool isMajor: index % 3 === 0
-                    property real distance: parent.width / 2 - (isMajor ? 8 : 4)
-
-                    x: parent.width / 2 + Math.cos((angle - 90) * Math.PI / 180) * distance - width / 2
-                    y: parent.height / 2 + Math.sin((angle - 90) * Math.PI / 180) * distance - height / 2
-                    width: isMajor ? 2 : 1
-                    height: isMajor ? 8 : 4
-                    color: "#00bfff"
-                    opacity: isMajor ? 0.8 : 0.4
-                    rotation: angle
-                }
-            }
-        }
-
-        Rectangle {
-            anchors.centerIn: parent
-            width: parent.width * 0.35
-            height: parent.height * 0.35
-            color: Qt.rgba(0, 0, 0, 0.9)
-            border.color: "#00ff00"
-            border.width: 2
-            radius: width / 2
-            z: 100
-
-            ColumnLayout {
-                anchors.centerIn: parent
-                spacing: 0
+                radius: 4
 
                 QGCLabel {
-                    Layout.alignment: Qt.AlignHCenter
-                    text: _activeVehicle ? Math.round(_activeVehicle.heading.rawValue).toString() : "---"
-                    color: "#00ff00"
+                    anchors.centerIn: parent
+                    text: qsTr("ARTIFICIAL HORIZON")
+                    color: "#00bfff"
                     font.bold: true
-                    font.pointSize: ScreenTools.largeFontPointSize
+                    font.pointSize: ScreenTools.smallFontPointSize - 2
+                    font.family: "Monospace"
+                }
+            }
+        }
+
+        // COMPASS
+        Rectangle {
+            id: compassContainer
+            width: parent.width
+            height: width
+            color: Qt.rgba(0, 0, 0, 0.95)
+            border.color: "#00bfff"
+            border.width: 3
+            radius: width / 2
+            visible: _activeVehicle !== null
+
+            Rectangle {
+                anchors.fill: parent
+                anchors.margins: -4
+                color: "transparent"
+                border.color: "#00bfff"
+                border.width: 1
+                radius: parent.radius + 2
+                opacity: 0.3
+                z: -1
+            }
+
+            Item {
+                id: compassRose
+                anchors.fill: parent
+                anchors.margins: 12
+                rotation: _activeVehicle ? -_activeVehicle.heading.rawValue : 0
+
+                Behavior on rotation {
+                    RotationAnimation {
+                        duration: 250
+                        direction: RotationAnimation.Shortest
+                    }
+                }
+
+                QGCLabel {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    y: 2
+                    text: "N"
+                    color: "#ff0000"
+                    font.bold: true
+                    font.pointSize: ScreenTools.mediumFontPointSize
                     font.family: "Monospace"
                 }
 
                 QGCLabel {
-                    Layout.alignment: Qt.AlignHCenter
-                    text: "°"
-                    color: "#888888"
+                    anchors.verticalCenter: parent.verticalCenter
+                    x: parent.width - width - 2
+                    text: "E"
+                    color: "#00bfff"
+                    font.bold: true
+                    font.pointSize: ScreenTools.mediumFontPointSize
+                    font.family: "Monospace"
+                }
+
+                QGCLabel {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    y: parent.height - height - 2
+                    text: "S"
+                    color: "#00bfff"
+                    font.bold: true
+                    font.pointSize: ScreenTools.mediumFontPointSize
+                    font.family: "Monospace"
+                }
+
+                QGCLabel {
+                    anchors.verticalCenter: parent.verticalCenter
+                    x: 2
+                    text: "W"
+                    color: "#00bfff"
+                    font.bold: true
+                    font.pointSize: ScreenTools.mediumFontPointSize
+                    font.family: "Monospace"
+                }
+
+                Repeater {
+                    model: 36
+                    Rectangle {
+                        property real angle: index * 10
+                        property bool isMajor: index % 3 === 0
+                        property real distance: parent.width / 2 - (isMajor ? 8 : 4)
+
+                        x: parent.width / 2 + Math.cos((angle - 90) * Math.PI / 180) * distance - width / 2
+                        y: parent.height / 2 + Math.sin((angle - 90) * Math.PI / 180) * distance - height / 2
+                        width: isMajor ? 2 : 1
+                        height: isMajor ? 8 : 4
+                        color: "#00bfff"
+                        opacity: isMajor ? 0.8 : 0.4
+                        rotation: angle
+                    }
+                }
+            }
+
+            Rectangle {
+                anchors.centerIn: parent
+                width: parent.width * 0.35
+                height: parent.height * 0.35
+                color: Qt.rgba(0, 0, 0, 0.9)
+                border.color: "#00ff00"
+                border.width: 2
+                radius: width / 2
+                z: 100
+
+                ColumnLayout {
+                    anchors.centerIn: parent
+                    spacing: 0
+
+                    QGCLabel {
+                        Layout.alignment: Qt.AlignHCenter
+                        text: _activeVehicle ? Math.round(_activeVehicle.heading.rawValue).toString() : "---"
+                        color: "#00ff00"
+                        font.bold: true
+                        font.pointSize: ScreenTools.largeFontPointSize
+                        font.family: "Monospace"
+                    }
+
+                    QGCLabel {
+                        Layout.alignment: Qt.AlignHCenter
+                        text: "°"
+                        color: "#888888"
+                        font.pointSize: ScreenTools.smallFontPointSize
+                        font.family: "Monospace"
+                    }
+                }
+            }
+
+            Canvas {
+                id: northPointer
+                anchors.centerIn: parent
+                width: parent.width
+                height: parent.height
+                z: 50
+
+                onPaint: {
+                    var ctx = getContext("2d");
+                    ctx.reset();
+
+                    var centerX = width / 2;
+                    var centerY = height / 2;
+                    var pointerLength = height / 2 - 14;
+
+                    ctx.beginPath();
+                    ctx.moveTo(centerX, centerY - pointerLength);
+                    ctx.lineTo(centerX - 6, centerY - pointerLength + 12);
+                    ctx.lineTo(centerX + 6, centerY - pointerLength + 12);
+                    ctx.closePath();
+
+                    ctx.fillStyle = "#ff0000";
+                    ctx.fill();
+                    ctx.strokeStyle = "#ffffff";
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                }
+            }
+
+            Rectangle {
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.bottom: parent.bottom
+                anchors.bottomMargin: -ScreenTools.defaultFontPixelHeight * 1.8
+                width: ScreenTools.defaultFontPixelWidth * 12
+                height: ScreenTools.defaultFontPixelHeight * 1.5
+                color: Qt.rgba(0, 0.75, 1, 0.2)
+                border.color: "#00bfff"
+                border.width: 2
+                radius: 4
+
+                QGCLabel {
+                    anchors.centerIn: parent
+                    text: qsTr("COMPASS")
+                    color: "#00bfff"
+                    font.bold: true
                     font.pointSize: ScreenTools.smallFontPointSize
                     font.family: "Monospace"
                 }
             }
         }
 
-        Canvas {
-            id: northPointer
-            anchors.centerIn: parent
+        // PITCH
+        Rectangle {
             width: parent.width
-            height: parent.height
-            z: 50
+            height: ScreenTools.defaultFontPixelHeight * 4
+            color: Qt.rgba(0.05, 0.05, 0.05, 0.98)
+            border.color: "#00ff00"
+            border.width: 2
+            radius: 6
 
-            onPaint: {
-                var ctx = getContext("2d");
-                ctx.reset();
+            RowLayout {
+                anchors.fill: parent
+                anchors.margins: 8
+                spacing: 8
 
-                var centerX = width / 2;
-                var centerY = height / 2;
-                var pointerLength = height / 2 - 14;
+                Rectangle {
+                    Layout.preferredWidth: ScreenTools.defaultFontPixelHeight * 2.5
+                    Layout.fillHeight: true
+                    color: Qt.rgba(0.1, 0.1, 0.1, 0.5)
+                    border.color: "#00ff00"
+                    border.width: 1
+                    radius: 4
 
-                ctx.beginPath();
-                ctx.moveTo(centerX, centerY - pointerLength);
-                ctx.lineTo(centerX - 6, centerY - pointerLength + 12);
-                ctx.lineTo(centerX + 6, centerY - pointerLength + 12);
-                ctx.closePath();
+                    QGCLabel {
+                        anchors.centerIn: parent
+                        text: "↕"
+                        font.pointSize: ScreenTools.largeFontPointSize
+                    }
+                }
 
-                ctx.fillStyle = "#ff0000";
-                ctx.fill();
-                ctx.strokeStyle = "#ffffff";
-                ctx.lineWidth = 1;
-                ctx.stroke();
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    spacing: 2
+
+                    QGCLabel {
+                        text: "GÓC HƯỚNG"
+                        color: "#888888"
+                        font.pointSize: ScreenTools.smallFontPointSize - 2
+                        font.family: "Monospace"
+                    }
+
+                    QGCLabel {
+                        text: (_root.pitchFact ? _root.pitchFact.valueString : "--") + " °"
+                        color: "#00ff00"
+                        font.bold: true
+                        font.pointSize: ScreenTools.mediumFontPointSize
+                        font.family: "Monospace"
+                    }
+                }
             }
         }
 
+        // ROLL
         Rectangle {
-            anchors.horizontalCenter: parent.horizontalCenter
-            anchors.bottom: parent.bottom
-            anchors.bottomMargin: -ScreenTools.defaultFontPixelHeight * 1.8
-            width: ScreenTools.defaultFontPixelWidth * 12
-            height: ScreenTools.defaultFontPixelHeight * 1.5
-            color: Qt.rgba(0, 0.75, 1, 0.2)
+            width: parent.width
+            height: ScreenTools.defaultFontPixelHeight * 4
+            color: Qt.rgba(0.05, 0.05, 0.05, 0.98)
             border.color: "#00bfff"
             border.width: 2
-            radius: 4
+            radius: 6
 
-            QGCLabel {
-                anchors.centerIn: parent
-                text: qsTr("COMPASS")
-                color: "#00bfff"
-                font.bold: true
-                font.pointSize: ScreenTools.smallFontPointSize
-                font.family: "Monospace"
+            RowLayout {
+                anchors.fill: parent
+                anchors.margins: 8
+                spacing: 8
+
+                Rectangle {
+                    Layout.preferredWidth: ScreenTools.defaultFontPixelHeight * 2.5
+                    Layout.fillHeight: true
+                    color: Qt.rgba(0.1, 0.1, 0.1, 0.5)
+                    border.color: "#00bfff"
+                    border.width: 1
+                    radius: 4
+
+                    QGCLabel {
+                        anchors.centerIn: parent
+                        text: "↔"
+                        font.pointSize: ScreenTools.largeFontPointSize
+                    }
+                }
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    spacing: 2
+
+                    QGCLabel {
+                        text: "GÓC LIỆNG"
+                        color: "#888888"
+                        font.pointSize: ScreenTools.smallFontPointSize - 2
+                        font.family: "Monospace"
+                    }
+
+                    QGCLabel {
+                        text: (_root.rollFact ? _root.rollFact.valueString : "--") + " °"
+                        color: "#00bfff"
+                        font.bold: true
+                        font.pointSize: ScreenTools.mediumFontPointSize
+                        font.family: "Monospace"
+                    }
+                }
             }
         }
     }

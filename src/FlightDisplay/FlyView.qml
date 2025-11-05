@@ -102,7 +102,7 @@ Item {
             property real leftEdgeBottomInset: 0
             property real bottomEdgeLeftInset: 0
         }
-
+        /*
         //---------- ATTITUDE INDICATOR (ARTIFICIAL HORIZON) - MOVED TO RIGHT ----------
         Rectangle {
             id: attitudeIndicator
@@ -328,7 +328,7 @@ Item {
                 color: militaryTextSecondary
             }
         }
-
+        */
         FlyViewWidgetLayer {
             id:                     widgetLayer
             anchors.fill:           parent
