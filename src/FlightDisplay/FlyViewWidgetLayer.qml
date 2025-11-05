@@ -373,7 +373,7 @@ Item {
 
                     QGCLabel {
                         text: label
-                        color: "#888888"
+                        color: "#ffffff" // <--- ĐÃ SỬA
                         font.pointSize: ScreenTools.smallFontPointSize - 1
                         font.family: "Monospace"
                     }
@@ -382,7 +382,7 @@ Item {
                         text: value + (unit !== "" ? " " + unit : "")
                         color: valueColor
                         font.bold: true
-                        font.pointSize: ScreenTools.mediumFontPointSize
+                        font.pointSize: ScreenTools.largeFontPointSize // <--- ĐÃ SỬA
                         font.family: "Monospace"
                     }
                 }
@@ -450,7 +450,7 @@ Item {
 
                     QGCLabel {
                         text: label
-                        color: "#888888"
+                        color: "#ffffff" // <--- ĐÃ SỬA
                         font.pointSize: ScreenTools.smallFontPointSize - 1
                         font.family: "Monospace"
                         anchors.verticalCenter: parent.verticalCenter
@@ -462,7 +462,7 @@ Item {
                     text: value + (unit !== "" ? " " + unit : "")
                     color: valueColor
                     font.bold: true
-                    font.pointSize: ScreenTools.mediumFontPointSize
+                    font.pointSize: ScreenTools.largeFontPointSize // <--- ĐÃ SỬA
                     font.family: "Monospace"
                 }
             }
