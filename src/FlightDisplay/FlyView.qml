@@ -47,7 +47,13 @@ Item {
     property var planController:    _planController
     property var guidedController:  _guidedController
     property bool utmspSendActTrigger: false
-    PlanMasterController { id: _planController; flyView: true; Component.onCompleted: start() }
+
+    PlanMasterController {
+        id: _planController
+        flyView: true
+        Component.onCompleted: start()
+    }
+
     property bool   _mainWindowIsMap:       mapControl.pipState.state === mapControl.pipState.fullState
     property bool   _isFullWindowItemDark:  _mainWindowIsMap ? mapControl.isSatelliteMap : true
     property var    _activeVehicle:         QGroundControl.multiVehicleManager.activeVehicle
@@ -62,8 +68,8 @@ Item {
     property rect   _centerViewport:        Qt.rect(0, 0, width, height)
     property real   _rightPanelWidth:       ScreenTools.defaultFontPixelWidth * 30
     property var    _mapControl:            mapControl
-    property real   _fullItemZorder:    0
-    property real   _pipItemZorder:     QGroundControl.zOrderWidgets
+    property real   _fullItemZorder:        0
+    property real   _pipItemZorder:         QGroundControl.zOrderWidgets
 
     function dropMainStatusIndicatorTool() {
         toolbar.dropMainStatusIndicatorTool();
@@ -76,8 +82,16 @@ Item {
         z: -1
     }
 
-    QGCToolInsets { id: _toolInsets; leftEdgeBottomInset: _pipView.leftEdgeBottomInset; bottomEdgeLeftInset: _pipView.bottomEdgeLeftInset }
-    FlyViewToolBar { id: toolbar; visible: !QGroundControl.videoManager.fullScreen }
+    QGCToolInsets {
+        id: _toolInsets
+        leftEdgeBottomInset: _pipView.leftEdgeBottomInset
+        bottomEdgeLeftInset: _pipView.bottomEdgeLeftInset
+    }
+
+    FlyViewToolBar {
+        id: toolbar
+        visible: !QGroundControl.videoManager.fullScreen
+    }
 
     Item {
         id:                 mapHolder
@@ -86,249 +100,85 @@ Item {
         anchors.left:       parent.left
         anchors.right:      parent.right
 
-        FlyViewMap { id: mapControl; planMasterController: _planController; rightPanelWidth: ScreenTools.defaultFontPixelHeight * 9; pipView: _pipView; pipMode: !_mainWindowIsMap; toolInsets: customOverlay.totalToolInsets; mapName: "FlightDisplayView"; enabled: !viewer3DWindow.isOpen }
-        FlyViewVideo { id: videoControl; pipView: _pipView }
+        // MAP - Luôn tồn tại
+        FlyViewMap {
+            id: mapControl
+            planMasterController: _planController
+            rightPanelWidth: ScreenTools.defaultFontPixelHeight * 9
+            pipView: _pipView
+            pipMode: !_mainWindowIsMap
+            toolInsets: customOverlay.totalToolInsets
+            mapName: "FlightDisplayView"
+            enabled: !viewer3DWindow.isOpen
+        }
+
+        // VIDEO - Luôn tồn tại
+        FlyViewVideo {
+            id: videoControl
+            pipView: _pipView
+        }
+
+        // PIP VIEW - Quản lý swap giữa Map và Video
+        /*
         PipView {
             id: _pipView
-            visible: false  // ẨN VIDEO FEED MẶC ĐỊNH
             anchors.left: parent.left
             anchors.bottom: parent.bottom
             anchors.margins: _toolsMargin
             item1IsFullSettingsKey: "MainFlyWindowIsMap"
             item1: mapControl
             item2: QGroundControl.videoManager.hasVideo ? videoControl : null
-            show: false  // ẨN LUÔN
-            z: QGroundControl.zOrderWidgets
-            property real leftEdgeBottomInset: 0
-            property real bottomEdgeLeftInset: 0
-        }
-        /*
-        //---------- ATTITUDE INDICATOR (ARTIFICIAL HORIZON) - MOVED TO RIGHT ----------
-        Rectangle {
-            id: attitudeIndicator
-            anchors.right: parent.right  // Đổi từ left sang right
-            anchors.top: parent.top
-            anchors.margins: _toolsMargin * 2
-            width: ScreenTools.defaultFontPixelHeight * 15
-            height: width
-            color: militaryBgPanel
-            border.color: militaryAccentBlue
-            border.width: 3
-            radius: 8
+            show: QGroundControl.videoManager.hasVideo &&
+                  !QGroundControl.videoManager.fullScreen &&
+                  (videoControl.pipState.state === videoControl.pipState.pipState ||
+                   mapControl.pipState.state === mapControl.pipState.pipState)
             z: QGroundControl.zOrderWidgets
 
-            Rectangle {
-                anchors.fill: parent
-                anchors.margins: -4
-                color: "transparent"
-                border.color: militaryAccentBlue
-                border.width: 1
-                radius: parent.radius + 2
-                opacity: 0.3
-                z: -1
-            }
-
-            Rectangle {
-                anchors.fill: parent
-                anchors.margins: -8
-                color: "transparent"
-                border.color: militaryAccentBlue
-                border.width: 1
-                radius: parent.radius + 4
-                opacity: 0.1
-                z: -2
-            }
-
-            Item {
-                id: horizonClip
-                anchors.fill: parent
-                anchors.margins: 10
-                clip: true
-
-                Rectangle {
-                    id: horizon
-                    width: parent.width * 2
-                    height: parent.height * 2
-                    anchors.centerIn: parent
-
-                    rotation: _activeVehicle ? -_activeVehicle.roll.value : 0
-
-                    transform: Translate {
-                        y: _activeVehicle ? _activeVehicle.pitch.value * 2 : 0
-                    }
-
-                    Rectangle {
-                        anchors.top: parent.top
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        height: parent.height / 2
-                        gradient: Gradient {
-                            GradientStop { position: 0.0; color: "#004080" }
-                            GradientStop { position: 1.0; color: "#0066cc" }
-                        }
-                    }
-
-                    Rectangle {
-                        anchors.bottom: parent.bottom
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        height: parent.height / 2
-                        gradient: Gradient {
-                            GradientStop { position: 0.0; color: "#4d3319" }
-                            GradientStop { position: 1.0; color: "#2d1f0f" }
-                        }
-                    }
-
-                    Rectangle {
-                        anchors.centerIn: parent
-                        width: parent.width
-                        height: 2
-                        color: militaryTextPrimary
-                    }
-
-                    Repeater {
-                        model: [-30, -20, -10, 10, 20, 30]
-
-                        Row {
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            y: parent.height / 2 - modelData * 2
-                            spacing: 5
-
-                            Rectangle {
-                                width: 30
-                                height: 2
-                                color: militaryTextPrimary
-                                anchors.verticalCenter: parent.verticalCenter
-                            }
-
-                            QGCLabel {
-                                text: Math.abs(modelData)
-                                font.pointSize: ScreenTools.smallFontPointSize
-                                font.family: "Monospace"
-                                color: militaryTextPrimary
-                                anchors.verticalCenter: parent.verticalCenter
-                            }
-
-                            Rectangle {
-                                width: 30
-                                height: 2
-                                color: militaryTextPrimary
-                                anchors.verticalCenter: parent.verticalCenter
-                            }
-                        }
-                    }
-                }
-
-                Item {
-                    anchors.centerIn: parent
-                    width: 80
-                    height: 80
-
-                    Rectangle {
-                        anchors.centerIn: parent
-                        width: 60
-                        height: 3
-                        color: militaryAccentRed
-                    }
-
-                    Rectangle {
-                        anchors.centerIn: parent
-                        width: 8
-                        height: 8
-                        radius: 4
-                        color: militaryAccentRed
-                        border.color: militaryTextPrimary
-                        border.width: 1
-                    }
-                }
-            }
-
-            Canvas {
-                id: rollCanvas
-                anchors.fill: parent
-
-                onPaint: {
-                    var ctx = getContext("2d");
-                    ctx.clearRect(0, 0, width, height);
-
-                    var centerX = width / 2;
-                    var centerY = height / 2;
-                    var radius = Math.min(width, height) / 2 - 20;
-
-                    ctx.strokeStyle = militaryTextSecondary;
-                    ctx.lineWidth = 2;
-
-                    for (var angle = -60; angle <= 60; angle += 10) {
-                        var rad = (angle - 90) * Math.PI / 180;
-                        var startRadius = radius - (angle % 30 === 0 ? 15 : 10);
-
-                        ctx.beginPath();
-                        ctx.moveTo(centerX + startRadius * Math.cos(rad), centerY + startRadius * Math.sin(rad));
-                        ctx.lineTo(centerX + radius * Math.cos(rad), centerY + radius * Math.sin(rad));
-                        ctx.stroke();
-                    }
-                }
-            }
-
-            Rectangle {
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.top: parent.top
-                anchors.topMargin: 10
-                width: 0
-                height: 0
-
-                Canvas {
-                    anchors.centerIn: parent
-                    width: 20
-                    height: 20
-                    rotation: _activeVehicle ? -_activeVehicle.roll.value : 0
-
-                    onPaint: {
-                        var ctx = getContext("2d");
-                        ctx.clearRect(0, 0, width, height);
-                        ctx.fillStyle = militaryAccentRed;
-
-                        ctx.beginPath();
-                        ctx.moveTo(width / 2, 0);
-                        ctx.lineTo(width / 2 - 8, height);
-                        ctx.lineTo(width / 2 + 8, height);
-                        ctx.closePath();
-                        ctx.fill();
-                    }
-                }
-            }
-
-            Rectangle {
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.top: parent.top
-                anchors.topMargin: -15
-                width: ScreenTools.defaultFontPixelWidth * 8
-                height: ScreenTools.defaultFontPixelHeight * 1.5
-                color: militaryBgSecondary
-                border.color: militaryAccentBlue
-                border.width: 2
-                radius: 4
-
-                QGCLabel {
-                    anchors.centerIn: parent
-                    text: _activeVehicle ? Math.round(_activeVehicle.heading.value) + "°" : "---°"
-                    font.bold: true
-                    font.family: "Monospace"
-                    color: militaryAccentBlue
-                }
-            }
-
-            QGCLabel {
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.bottom: parent.bottom
-                anchors.bottomMargin: 5
-                text: qsTr("ARTIFICIAL HORIZON")
-                font.pointSize: ScreenTools.smallFontPointSize
-                font.family: "Monospace"
-                color: militaryTextSecondary
-            }
+            property real leftEdgeBottomInset: visible ? width + anchors.margins : 0
+            property real bottomEdgeLeftInset: visible ? height + anchors.margins : 0
         }
         */
+            PipView {
+                id: _pipView
+                anchors.left: parent.left
+                anchors.top: toolbar.bottom
+                anchors.margins: _toolsMargin
+                width: ScreenTools.defaultFontPixelWidth * 60
+                height: ScreenTools.defaultFontPixelHeight * 15
+                item1IsFullSettingsKey: "MainFlyWindowIsMap"
+                item1: mapControl
+                item2: QGroundControl.videoManager.hasVideo ? videoControl : null
+                show: QGroundControl.videoManager.hasVideo &&
+                      !QGroundControl.videoManager.fullScreen &&
+                      (videoControl.pipState.state === videoControl.pipState.pipState ||
+                       mapControl.pipState.state === mapControl.pipState.pipState)
+                z: QGroundControl.zOrderWidgets
+
+                property real leftEdgeBottomInset: visible ? width + anchors.margins : 0
+                    property real bottomEdgeLeftInset: 0  // ← Không còn ở dưới nữa
+
+                    // THÊM BORDER CHO PIP
+                    Rectangle {
+                        anchors.fill: parent
+                        color: "transparent"
+                        border.color: "#00bfff"
+                        border.width: 3
+                        radius: 8
+                        z: 1000  // ← Đè lên trên
+
+                        Rectangle {
+                            anchors.fill: parent
+                            anchors.margins: -4
+                            color: "transparent"
+                            border.color: "#00bfff"
+                            border.width: 1
+                            radius: parent.radius + 2
+                            opacity: 0.3
+                            z: -1
+                        }
+                    }
+            }
+        // WIDGET LAYER - Không còn video feed
         FlyViewWidgetLayer {
             id:                     widgetLayer
             anchors.fill:           parent
@@ -340,12 +190,13 @@ Item {
             isViewer3DOpen:         viewer3DWindow.isOpen
 
             onSetHomeModeToggled: {
-                _root.isSettingHome = !_root.isSettingHome;
+                _root.isSettingHome = !_root.isSettingHome
             }
 
+            // UAV MESSAGE CONTAINER
             Rectangle {
                 id: uavMessageContainer
-                anchors.top: toolbar.bottom
+                anchors.top: parent.top
                 anchors.topMargin: ScreenTools.defaultFontPixelHeight * 0.5
                 anchors.right: parent.right
                 anchors.rightMargin: ScreenTools.defaultFontPixelWidth
@@ -421,8 +272,22 @@ Item {
             }
         }
 
-        FlyViewCustomLayer { id: customOverlay; anchors.fill: widgetLayer; z: _fullItemZorder + 2; parentToolInsets: widgetLayer.totalToolInsets; mapControl: _mapControl; visible: !QGroundControl.videoManager.fullScreen }
-        FlyViewInsetViewer { id: widgetLayerInsetViewer; anchors.fill: parent; z: widgetLayer.z + 1; insetsToView: widgetLayer.totalToolInsets; visible: false }
+        FlyViewCustomLayer {
+            id: customOverlay
+            anchors.fill: widgetLayer
+            z: _fullItemZorder + 2
+            parentToolInsets: widgetLayer.totalToolInsets
+            mapControl: _mapControl
+            visible: !QGroundControl.videoManager.fullScreen
+        }
+
+        FlyViewInsetViewer {
+            id: widgetLayerInsetViewer
+            anchors.fill: parent
+            z: widgetLayer.z + 1
+            insetsToView: widgetLayer.totalToolInsets
+            visible: false
+        }
 
         MouseArea {
             anchors.fill: parent
@@ -430,15 +295,31 @@ Item {
             enabled: _root.isSettingHome
 
             onClicked: (mouse) => {
-                var coord = mapControl.toCoordinate(Qt.point(mouse.x, mouse.y), false);
-                var dialog = setHomeConfirmationDialogComponent.createObject(_root, { "selectedCoordinate": coord });
-                dialog.open();
+                var coord = mapControl.toCoordinate(Qt.point(mouse.x, mouse.y), false)
+                var dialog = setHomeConfirmationDialogComponent.createObject(_root, { "selectedCoordinate": coord })
+                dialog.open()
             }
         }
 
-        GuidedActionsController { id: guidedActionsController; missionController: _missionController; guidedValueSlider: _guidedValueSlider }
-        GuidedValueSlider { id: guidedValueSlider; anchors.right: parent.right; anchors.top: parent.top; anchors.bottom: parent.bottom; z: QGroundControl.zOrderTopMost; visible: false }
-        Viewer3D { id: viewer3DWindow; anchors.fill: parent }
+        GuidedActionsController {
+            id: guidedActionsController
+            missionController: _missionController
+            guidedValueSlider: _guidedValueSlider
+        }
+
+        GuidedValueSlider {
+            id: guidedValueSlider
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            z: QGroundControl.zOrderTopMost
+            visible: false
+        }
+
+        Viewer3D {
+            id: viewer3DWindow
+            anchors.fill: parent
+        }
     }
 
     UTMSPActivationStatusBar {
@@ -496,9 +377,9 @@ Item {
             }
 
             contentItem: ColumnLayout {
-                id:         contentColumn
+                id: contentColumn
                 width: parent.width
-                spacing:    ScreenTools.defaultFontPixelWidth
+                spacing: ScreenTools.defaultFontPixelWidth
 
                 Rectangle {
                     Layout.fillWidth: true
@@ -619,11 +500,13 @@ Item {
             }
 
             onAccepted: {
-                if (_activeVehicle) { _activeVehicle.doSetHome(selectedCoordinate); }
-                _root.isSettingHome = false;
+                if (_activeVehicle) {
+                    _activeVehicle.doSetHome(selectedCoordinate)
+                }
+                _root.isSettingHome = false
             }
             onRejected: {
-                _root.isSettingHome = false;
+                _root.isSettingHome = false
             }
         }
     }

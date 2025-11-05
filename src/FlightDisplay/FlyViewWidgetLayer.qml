@@ -210,7 +210,7 @@ Item {
         onSetHomeModeToggled: _root.setHomeModeToggled()
     }
 
-    // HORIZONTAL TOOLSTRIP - NGANG HÀNG VỚI VIDEO (BỎ NÚT CAMERA)
+    // HORIZONTAL TOOLSTRIP
     Row {
         id:                     horizontalToolStrip
         anchors.horizontalCenter: parent.horizontalCenter
@@ -220,7 +220,6 @@ Item {
         z:                      QGroundControl.zOrderWidgets
         visible:                !QGroundControl.videoManager.fullScreen
 
-        // Military styled button component
         component MilitaryButton: QGCButton {
             property string buttonText: ""
             property string buttonIcon: ""
@@ -320,67 +319,17 @@ Item {
         id: gripperOptions
     }
 
-    //---------- LEFT BAR: VIDEO FEED + 2 METRICS ----------
+    //---------- LEFT BAR: VIDEO/MAP SWAP + 2 METRICS ----------
     Column {
         id: leftPanelContainer
         anchors.left: parent.left
         anchors.top: parent.top
+        anchors.topMargin: ScreenTools.defaultFontPixelHeight * 15 + _layoutMargin * 3  // ← Xuống dưới PiP
         anchors.margins: _layoutMargin
-        width: ScreenTools.defaultFontPixelWidth * 60  // GẤP RƯỠI (40 → 60)
+        width: ScreenTools.defaultFontPixelWidth * 60  // ← Cùng width với PiP
         spacing: _layoutMargin
         z: QGroundControl.zOrderWidgets
 
-        // VIDEO FEED - RỘNG HỚN, THẤP HƠN
-        Rectangle {
-            id: videoFeedContainer
-            width: parent.width
-            height: ScreenTools.defaultFontPixelHeight * 15
-            color: Qt.rgba(0, 0, 0, 0.9)
-            border.color: "#00bfff"
-            border.width: 3
-            radius: 8
-            visible: QGroundControl.videoManager.hasVideo && !QGroundControl.videoManager.fullScreen
-
-            Rectangle {
-                anchors.fill: parent
-                anchors.margins: -4
-                color: "transparent"
-                border.color: "#00bfff"
-                border.width: 1
-                radius: parent.radius + 2
-                opacity: 0.3
-                z: -1
-            }
-
-            QGCLabel {
-                anchors.centerIn: parent
-                text: qsTr("📹 VIDEO FEED\n(Waiting for video)")
-                font.bold: true
-                font.family: "Monospace"
-                color: "#00bfff"
-                horizontalAlignment: Text.AlignHCenter
-                visible: !QGroundControl.videoManager.videoRunning
-            }
-
-            QGCLabel {
-                anchors.left: parent.left
-                anchors.top: parent.top
-                anchors.margins: 5
-                text: qsTr("📹 LIVE")
-                font.bold: true
-                font.family: "Monospace"
-                font.pointSize: ScreenTools.smallFontPointSize
-                color: "#ff0000"
-                visible: QGroundControl.videoManager.videoRunning
-
-                SequentialAnimation on opacity {
-                    running: QGroundControl.videoManager.videoRunning
-                    loops: Animation.Infinite
-                    NumberAnimation { from: 1.0; to: 0.3; duration: 500 }
-                    NumberAnimation { from: 0.3; to: 1.0; duration: 500 }
-                }
-            }
-        }
 
         // 2 METRICS: GIÓ & QUÃNG ĐƯỜNG
         component CompactMetric: Rectangle {
@@ -558,12 +507,11 @@ Item {
         anchors.right: parent.right
         anchors.rightMargin: _layoutMargin
         anchors.top: parent.top
-        // anchors.topMargin: ScreenTools.toolbarHeight * 1.4 + _layoutMargin
         width: ScreenTools.defaultFontPixelWidth * 18
         spacing: _layoutMargin
         z: QGroundControl.zOrderWidgets
 
-        // ARTIFICIAL HORIZON (THAM KHẢO TỪ FLYVIEW)
+        // ARTIFICIAL HORIZON
         Rectangle {
             id: attitudeIndicator
             width: parent.width

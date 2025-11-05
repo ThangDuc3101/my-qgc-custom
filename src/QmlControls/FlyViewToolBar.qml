@@ -142,7 +142,7 @@ Rectangle {
             }
 
             ViewTab {
-                tabText: "FLY VIEW"
+                tabText: "FLY"
                 tabIcon: "✈"
                 isActive: true
                 onClicked: {
@@ -153,7 +153,7 @@ Rectangle {
             }
 
             ViewTab {
-                tabText: "PLAN VIEW"
+                tabText: "PLAN"
                 tabIcon: "📋"
                 isActive: false
                 onClicked: {
