@@ -8,10 +8,10 @@
  ****************************************************************************/
 
 import QtQuick
+import QtQuick.Controls
 
 import QGroundControl
 import QGroundControl.Controls
-
 import QGroundControl.ScreenTools
 
 Item {
@@ -22,6 +22,14 @@ Item {
 
     property int    _track_rec_x:       0
     property int    _track_rec_y:       0
+
+    // Properties cho video stabilization
+    property var    _activeVehicle:     QGroundControl.multiVehicleManager.activeVehicle
+    property real   _rollAngle:         _activeVehicle ? _activeVehicle.roll.rawValue : 0
+    property bool   _stabilizeVideo:    true
+    property real   _pitchAngle:        _activeVehicle ? _activeVehicle.pitch.rawValue : 0
+    property bool   _showHorizon:       true
+    property real _stabilizationStrength: 0.3
 
     PipState {
         id:         videoPipState
@@ -53,13 +61,88 @@ Item {
         onTriggered:  QGroundControl.videoManager.startVideo()
     }
 
-    //-- Video Streaming
-    FlightDisplayViewVideo {
-        id:             videoStreaming
-        anchors.fill:   parent
-        useSmallFont:   _root.pipState.state !== _root.pipState.fullState
-        visible:        QGroundControl.videoManager.isStreamSource
+    //-- Video Streaming với Rotation
+    Item {
+        id: videoContainer
+        anchors.fill: parent
+        visible: QGroundControl.videoManager.isStreamSource
+        clip: true
+
+        // Scale factor để video không bị cắt góc khi xoay
+        property real scaleFactor: {
+            if (!_stabilizeVideo) return 1.0
+            var angleRad = Math.abs(_rollAngle) * Math.PI / 180
+            var cos = Math.cos(angleRad)
+            var sin = Math.sin(angleRad)
+            var scaleX = 1 / (cos + sin * (height/width))
+            var scaleY = 1 / (cos + sin * (width/height))
+            return Math.max(scaleX, scaleY, 1.0)
+        }
+
+        FlightDisplayViewVideo {
+            id:             videoStreaming
+            anchors.centerIn: parent
+            width:          parent.width * videoContainer.scaleFactor
+            height:         parent.height * videoContainer.scaleFactor
+            useSmallFont:   _root.pipState.state !== _root.pipState.fullState
+
+            // Thêm rotation transform
+            transform: Rotation {
+                origin.x: videoStreaming.width / 2
+                origin.y: videoStreaming.height / 2
+                // angle: _stabilizeVideo ? -_rollAngle : 0
+                angle: _stabilizeVideo ? -_rollAngle * _stabilizationStrength : 0
+
+                Behavior on angle {
+                    NumberAnimation {
+                        duration: 50
+                        easing.type: Easing.Linear
+                    }
+                }
+            }
+        }
+
+        // Horizon overlay
+        Item {
+            anchors.fill: parent
+            visible: _showHorizon && _stabilizeVideo
+
+            // Horizon line
+            Rectangle {
+                anchors.centerIn: parent
+                width: parent.width * 0.7
+                height: 2
+                color: "red"
+                opacity: 0.5
+
+                transform: Rotation {
+                    origin.x: width / 2
+                    origin.y: height / 2
+                    angle: _rollAngle
+                }
+            }
+
+            // Center crosshair
+            Item {
+                anchors.centerIn: parent
+                Rectangle {
+                    anchors.centerIn: parent
+                    width: 30
+                    height: 1
+                    color: "#ffff00"
+                    opacity: 0.8
+                }
+                Rectangle {
+                    anchors.centerIn: parent
+                    width: 1
+                    height: 30
+                    color: "#ffff00"
+                    opacity: 0.8
+                }
+            }
+        }
     }
+
     //-- UVC Video (USB Camera or Video Device)
     Loader {
         id:             cameraLoader
@@ -113,14 +196,36 @@ Item {
         property var trackingROI:   null
         property var trackingStatus: trackingStatusComponent.createObject(flyViewVideoMouseArea, {})
 
+        // Helper function để convert mouse coords khi video bị xoay
+        function convertMouseCoords(mouseX, mouseY) {
+            if (!_stabilizeVideo) {
+                return Qt.point(mouseX, mouseY)
+            }
+
+            var centerX = videoStreaming.width / 2
+            var centerY = videoStreaming.height / 2
+            var relX = mouseX - centerX
+            var relY = mouseY - centerY
+
+            var angleRad = _rollAngle * Math.PI / 180
+            var cos = Math.cos(angleRad)
+            var sin = Math.sin(angleRad)
+
+            var rotX = relX * cos - relY * sin
+            var rotY = relX * sin + relY * cos
+
+            return Qt.point(rotX + centerX, rotY + centerY)
+        }
+
         onClicked:       onScreenGimbalController.clickControl()
         onDoubleClicked: QGroundControl.videoManager.fullScreen = !QGroundControl.videoManager.fullScreen
 
         onPressed:(mouse) => {
             onScreenGimbalController.pressControl()
 
-            _track_rec_x = mouse.x
-            _track_rec_y = mouse.y
+            var coords = convertMouseCoords(mouse.x, mouse.y)
+            _track_rec_x = coords.x
+            _track_rec_y = coords.y
 
             //create a new rectangle at the wanted position
             if(videoStreaming._camera) {
@@ -132,6 +237,7 @@ Item {
                 }
             }
         }
+
         onPositionChanged: (mouse) => {
             //on move, update the width of rectangle
             if (trackingROI !== null) {
@@ -149,9 +255,10 @@ Item {
                 }
             }
         }
+
         onReleased: (mouse) => {
             onScreenGimbalController.releaseControl()
-            
+
             //if there is already a selection, delete it
             if (trackingROI !== null) {
                 trackingROI.destroy();
@@ -159,11 +266,13 @@ Item {
 
             if(videoStreaming._camera) {
                 if (videoStreaming._camera.trackingEnabled) {
+                    var coords = convertMouseCoords(mouse.x, mouse.y)
+
                     // order coordinates --> top/left and bottom/right
-                    x0 = Math.min(_track_rec_x, mouse.x)
-                    x1 = Math.max(_track_rec_x, mouse.x)
-                    y0 = Math.min(_track_rec_y, mouse.y)
-                    y1 = Math.max(_track_rec_y, mouse.y)
+                    x0 = Math.min(_track_rec_x, coords.x)
+                    x1 = Math.max(_track_rec_x, coords.x)
+                    y0 = Math.min(_track_rec_y, coords.y)
+                    y1 = Math.max(_track_rec_y, coords.y)
 
                     //calculate offset between video stream rect and background (black stripes)
                     offset_x = (parent.width - videoStreaming.getWidth()) / 2
@@ -182,7 +291,7 @@ Item {
                     y1 = Math.max(Math.min(y1 / videoStreaming.getHeight(), 1.0), 0.0)
 
                     //use point message if rectangle is very small
-                    if (Math.abs(_track_rec_x - mouse.x) < 10 && Math.abs(_track_rec_y - mouse.y) < 10) {
+                    if (Math.abs(_track_rec_x - coords.x) < 10 && Math.abs(_track_rec_y - coords.y) < 10) {
                         var pt  = Qt.point(x0, y0)
                         videoStreaming._camera.startTracking(pt, radius / videoStreaming.getWidth())
                     } else {
@@ -256,5 +365,72 @@ Item {
     ObstacleDistanceOverlayVideo {
         id: obstacleDistance
         showText: pipState.state === pipState.fullState
+    }
+
+    // Control Panel for Video Stabilization
+    Rectangle {
+        anchors.top: parent.top
+        anchors.right: parent.right
+        anchors.margins: 10
+        width: 180
+        height: 100
+        color: Qt.rgba(0, 0, 0, 0.7)
+        radius: 5
+        visible: pipState.state === pipState.fullState
+
+        Column {
+            anchors.centerIn: parent
+            spacing: 5
+
+            // Toggle stabilization
+            Row {
+                spacing: 8
+                QGCLabel {
+                    text: "Stabilize:"
+                    color: "white"
+                    font.pointSize: ScreenTools.smallFontPointSize
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+
+                QGCSwitch {
+                    checked: _stabilizeVideo
+                    onClicked: _stabilizeVideo = !_stabilizeVideo
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+            }
+
+            // Toggle horizon
+            Row {
+                spacing: 8
+                QGCLabel {
+                    text: "Horizon:"
+                    color: "white"
+                    font.pointSize: ScreenTools.smallFontPointSize
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+
+                QGCSwitch {
+                    checked: _showHorizon
+                    onClicked: _showHorizon = !_showHorizon
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+            }
+
+            // Show roll angle
+            QGCLabel {
+                text: "Roll: " + _rollAngle.toFixed(1) + "°"
+                color: "#00ff00"
+                font.family: "Monospace"
+                font.pointSize: ScreenTools.smallFontPointSize
+            }
+
+            // Show pitch angle
+            QGCLabel {
+                text: "Pitch: " + _pitchAngle.toFixed(1) + "°"
+                color: "#00ff00"
+                font.family: "Monospace"
+                font.pointSize: ScreenTools.smallFontPointSize
+            }
+        }
     }
 }

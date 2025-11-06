@@ -20,7 +20,7 @@ Rectangle {
     id:     _root
     width:  parent.width
     height: ScreenTools.toolbarHeight * 1.4
-    color:  Qt.rgba(0.05, 0.05, 0.05, 0.95)
+    color:  Qt.rgba(0.5, 0.5, 0.5, 0.55)
 
     property var    _activeVehicle:     QGroundControl.multiVehicleManager.activeVehicle
     property bool   _communicationLost: _activeVehicle ? _activeVehicle.vehicleLinkManager.communicationLost : false
@@ -73,18 +73,23 @@ Rectangle {
 
         //---------- 1. LOGO (THAY CHO PX4) ----------
         Rectangle {
-            Layout.preferredWidth: ScreenTools.defaultFontPixelHeight * 4
-            Layout.preferredHeight: ScreenTools.defaultFontPixelHeight * 4
+            Layout.preferredWidth: ScreenTools.defaultFontPixelHeight * 3.5
+            Layout.preferredHeight: ScreenTools.defaultFontPixelHeight * 3.5
             Layout.alignment: Qt.AlignVCenter
-            color: Qt.rgba(0, 0.75, 1, 0.15)
-            border.color: "#00bfff"
+            color: Qt.rgba(0.5, 0.5, 0.5, 0.15)
+            border.color: "yellow"
             border.width: 2
             radius: 8
 
-            QGCLabel {
+            Image {
+                id: customLogo
                 anchors.centerIn: parent
-                text: "🚁"
-                font.pointSize: ScreenTools.largeFontPointSize * 2.2
+                width: parent.width * 0.8   // Điều chỉnh kích thước logo
+                height: parent.height * 0.8
+                source: "qrc:/res/QGCLogoFull.svg"  // Đường dẫn đến file SVG của bạn
+                fillMode: Image.PreserveAspectFit
+                mipmap: true
+                smooth: true
             }
 
             MouseArea {
@@ -108,7 +113,7 @@ Rectangle {
 
                 width: ScreenTools.defaultFontPixelWidth * 14
                 height: ScreenTools.defaultFontPixelHeight * 3.5
-                color: isActive ? Qt.rgba(0, 0.75, 1, 0.25) : Qt.rgba(0.1, 0.1, 0.1, 0.6)
+                color: isActive ? Qt.rgba(0, 0.75, 1, 0.25) : Qt.rgba(0.5, 0.5, 0.5, 0.55)
                 border.color: isActive ? "#00ff00" : "#00bfff"
                 border.width: isActive ? 2 : 1
                 radius: 6
@@ -196,8 +201,8 @@ Rectangle {
             Layout.preferredWidth: ScreenTools.defaultFontPixelWidth * 20
             Layout.preferredHeight: ScreenTools.defaultFontPixelHeight * 3.5
             Layout.alignment: Qt.AlignVCenter
-            color: Qt.rgba(0.1, 0.1, 0.1, 0.7)
-            border.color: "#00bfff"
+            color: Qt.rgba(0.5, 0.5, 0.5, 0.35)
+            border.color: "red"
             border.width: 2
             radius: 6
 
@@ -211,17 +216,17 @@ Rectangle {
 
                     QGCLabel {
                         text: "🕐"
-                        font.pointSize: ScreenTools.mediumFontPointSize * 1.2
+                        font.pointSize: ScreenTools.mediumFontPointSize * 1.5
                         anchors.verticalCenter: parent.verticalCenter
                     }
 
                     QGCLabel {
                         id: timeLabel
                         text: Qt.formatTime(new Date(), "hh:mm:ss")
-                        color: "#00bfff"
+                        color: "orange"
                         font.bold: true
                         font.family: "Monospace"
-                        font.pointSize: ScreenTools.defaultFontPointSize * 1.1
+                        font.pointSize: ScreenTools.defaultFontPointSize * 1.3
                         anchors.verticalCenter: parent.verticalCenter
                     }
                 }
@@ -230,9 +235,9 @@ Rectangle {
                     id: dateLabel
                     anchors.horizontalCenter: parent.horizontalCenter
                     text: Qt.formatDate(new Date(), "dd/MM/yyyy")
-                    color: "#888888"
+                    color: "white"
                     font.family: "Monospace"
-                    font.pointSize: ScreenTools.smallFontPointSize * 0.9
+                    font.pointSize: ScreenTools.smallFontPointSize * 1.1
                 }
             }
 
@@ -327,7 +332,7 @@ Rectangle {
             Layout.preferredWidth: ScreenTools.defaultFontPixelWidth * 16
             Layout.preferredHeight: ScreenTools.defaultFontPixelHeight * 3.5
             Layout.alignment: Qt.AlignVCenter
-            color: flightModeMouseArea.containsMouse ? Qt.rgba(0.2, 0.6, 0.9, 0.3) : Qt.rgba(0.1, 0.5, 0.8, 0.2)
+            color: flightModeMouseArea.containsMouse ? Qt.rgba(0.2, 0.6, 0.9, 0.5) : Qt.rgba(0.1, 0.5, 0.8, 0.2)
             border.color: "#00bfff"
             border.width: 2
             radius: 6
@@ -354,7 +359,7 @@ Rectangle {
 
                 QGCLabel {
                     text: "▼"
-                    color: "#00bfff"
+                    color: "white"
                     font.pointSize: ScreenTools.smallFontPointSize
                     anchors.verticalCenter: parent.verticalCenter
                 }
@@ -486,7 +491,7 @@ Rectangle {
 
                 QGCLabel {
                     text: "GPS"
-                    color: "#888888"
+                    color: "white"
                     font.family: "Monospace"
                     font.pointSize: ScreenTools.smallFontPointSize
                     anchors.verticalCenter: parent.verticalCenter
@@ -545,7 +550,7 @@ Rectangle {
                 QGCLabel {
                     text: _activeVehicle ?
                         _activeVehicle.batteries.get(0).voltage.rawValue.toFixed(1) + "V" : ""
-                    color: "#888888"
+                    color: "white"
                     font.family: "Monospace"
                     font.pointSize: ScreenTools.smallFontPointSize
                     anchors.verticalCenter: parent.verticalCenter
@@ -593,7 +598,7 @@ Rectangle {
                     text: {
                         if (currentBoardStatus === "True") return "NGÒI MỞ";
                         else if (currentBoardStatus === "False") return "AN TOÀN";
-                        else return "ĐANG NỐI";
+                        else return "CHƯA K.H";
                     }
                     color: parent.parent.border.color
                     font.bold: true

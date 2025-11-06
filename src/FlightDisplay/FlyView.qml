@@ -119,25 +119,6 @@ Item {
         }
 
         // PIP VIEW - Quản lý swap giữa Map và Video
-        /*
-        PipView {
-            id: _pipView
-            anchors.left: parent.left
-            anchors.bottom: parent.bottom
-            anchors.margins: _toolsMargin
-            item1IsFullSettingsKey: "MainFlyWindowIsMap"
-            item1: mapControl
-            item2: QGroundControl.videoManager.hasVideo ? videoControl : null
-            show: QGroundControl.videoManager.hasVideo &&
-                  !QGroundControl.videoManager.fullScreen &&
-                  (videoControl.pipState.state === videoControl.pipState.pipState ||
-                   mapControl.pipState.state === mapControl.pipState.pipState)
-            z: QGroundControl.zOrderWidgets
-
-            property real leftEdgeBottomInset: visible ? width + anchors.margins : 0
-            property real bottomEdgeLeftInset: visible ? height + anchors.margins : 0
-        }
-        */
             PipView {
                 id: _pipView
                 anchors.left: parent.left
@@ -157,26 +138,26 @@ Item {
                 property real leftEdgeBottomInset: visible ? width + anchors.margins : 0
                     property real bottomEdgeLeftInset: 0  // ← Không còn ở dưới nữa
 
-                    // THÊM BORDER CHO PIP
-                    Rectangle {
-                        anchors.fill: parent
-                        color: "transparent"
-                        border.color: "#00bfff"
-                        border.width: 3
-                        radius: 8
-                        z: 1000  // ← Đè lên trên
+                    // // THÊM BORDER CHO PIP
+                    // Rectangle {
+                    //     anchors.fill: parent
+                    //     color: "transparent"
+                    //     border.color: "#00bfff"
+                    //     border.width: 3
+                    //     radius: 8
+                    //     z: 1000  // ← Đè lên trên
 
-                        Rectangle {
-                            anchors.fill: parent
-                            anchors.margins: -4
-                            color: "transparent"
-                            border.color: "#00bfff"
-                            border.width: 1
-                            radius: parent.radius + 2
-                            opacity: 0.3
-                            z: -1
-                        }
-                    }
+                    //     Rectangle {
+                    //         anchors.fill: parent
+                    //         anchors.margins: -4
+                    //         color: "transparent"
+                    //         border.color: "#00bfff"
+                    //         border.width: 1
+                    //         radius: parent.radius + 2
+                    //         opacity: 0.3
+                    //         z: -1
+                    //     }
+                    // }
             }
         // WIDGET LAYER - Không còn video feed
         FlyViewWidgetLayer {

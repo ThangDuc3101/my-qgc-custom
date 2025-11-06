@@ -228,7 +228,7 @@ Item {
             height: ScreenTools.defaultFontPixelHeight * 3
 
             background: Rectangle {
-                color: Qt.rgba(0.1, 0.1, 0.1, 0.9)
+                color: Qt.rgba(0.5, 0.5, 0.5, 0.55)
                 border.color: parent.hovered ? "#00ff00" : "#00bfff"
                 border.width: 2
                 radius: 6
@@ -259,7 +259,7 @@ Item {
                 QGCLabel {
                     anchors.horizontalCenter: parent.horizontalCenter
                     text: buttonText
-                    color: "#00bfff"
+                    color: "lightyellow"
                     font.bold: true
                     font.family: "Monospace"
                     font.pointSize: ScreenTools.smallFontPointSize
@@ -341,7 +341,7 @@ Item {
 
             width: parent.width
             height: ScreenTools.defaultFontPixelHeight * 3
-            color: Qt.rgba(0.05, 0.05, 0.05, 0.98)
+            color: Qt.rgba(0.5, 0.5, 0.5, 0.55)
             border.color: valueColor
             border.width: 2
             radius: 6
@@ -373,7 +373,7 @@ Item {
 
                     QGCLabel {
                         text: label
-                        color: "#ffffff" // <--- ĐÃ SỬA
+                        color: "#ffffff"
                         font.pointSize: ScreenTools.smallFontPointSize - 1
                         font.family: "Monospace"
                     }
@@ -382,7 +382,7 @@ Item {
                         text: value + (unit !== "" ? " " + unit : "")
                         color: valueColor
                         font.bold: true
-                        font.pointSize: ScreenTools.largeFontPointSize // <--- ĐÃ SỬA
+                        font.pointSize: ScreenTools.largeFontPointSize
                         font.family: "Monospace"
                     }
                 }
@@ -427,7 +427,7 @@ Item {
 
             width: (parent.width - _layoutMargin * 3) / 4
             height: parent.height
-            color: Qt.rgba(0.05, 0.05, 0.05, 0.95)
+            color: Qt.rgba(0.5, 0.5, 0.5, 0.85)
             border.color: valueColor
             border.width: 2
             radius: 6
@@ -443,15 +443,15 @@ Item {
 
                     QGCLabel {
                         text: icon
-                        font.pointSize: ScreenTools.smallFontPointSize
+                        font.pointSize: ScreenTools.mediumFontPointSize
                         visible: icon !== ""
                         anchors.verticalCenter: parent.verticalCenter
                     }
 
                     QGCLabel {
                         text: label
-                        color: "#ffffff" // <--- ĐÃ SỬA
-                        font.pointSize: ScreenTools.smallFontPointSize - 1
+                        color: "#ffffff"
+                        font.pointSize: ScreenTools.mediumFontPointSize
                         font.family: "Monospace"
                         anchors.verticalCenter: parent.verticalCenter
                     }
@@ -462,7 +462,7 @@ Item {
                     text: value + (unit !== "" ? " " + unit : "")
                     color: valueColor
                     font.bold: true
-                    font.pointSize: ScreenTools.largeFontPointSize // <--- ĐÃ SỬA
+                    font.pointSize: ScreenTools.largeFontPointSize
                     font.family: "Monospace"
                 }
             }
@@ -507,7 +507,7 @@ Item {
         anchors.right: parent.right
         anchors.rightMargin: _layoutMargin
         anchors.top: parent.top
-        width: ScreenTools.defaultFontPixelWidth * 18
+        width: ScreenTools.defaultFontPixelWidth * 22
         spacing: _layoutMargin
         z: QGroundControl.zOrderWidgets
 
@@ -516,7 +516,7 @@ Item {
             id: attitudeIndicator
             width: parent.width
             height: width
-            color: Qt.rgba(0, 0, 0, 0.9)
+            color: Qt.rgba(0.5, 0.5, 0.5, 0.55)
             border.color: "#00bfff"
             border.width: 3
             radius: 8
@@ -663,26 +663,6 @@ Item {
                 }
             }
 
-            Rectangle {
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.bottom: parent.bottom
-                anchors.bottomMargin: -ScreenTools.defaultFontPixelHeight * 1.5
-                width: ScreenTools.defaultFontPixelWidth * 15
-                height: ScreenTools.defaultFontPixelHeight * 1.2
-                color: Qt.rgba(0, 0.75, 1, 0.2)
-                border.color: "#00bfff"
-                border.width: 2
-                radius: 4
-
-                QGCLabel {
-                    anchors.centerIn: parent
-                    text: qsTr("ARTIFICIAL HORIZON")
-                    color: "#00bfff"
-                    font.bold: true
-                    font.pointSize: ScreenTools.smallFontPointSize - 2
-                    font.family: "Monospace"
-                }
-            }
         }
 
         // COMPASS
@@ -690,8 +670,8 @@ Item {
             id: compassContainer
             width: parent.width
             height: width
-            color: Qt.rgba(0, 0, 0, 0.95)
-            border.color: "#00bfff"
+            color: Qt.rgba(0.5, 0.5, 0.5, 0.55)
+            border.color: "white"
             border.width: 3
             radius: width / 2
             visible: _activeVehicle !== null
@@ -700,10 +680,10 @@ Item {
                 anchors.fill: parent
                 anchors.margins: -4
                 color: "transparent"
-                border.color: "#00bfff"
+                border.color: "yellow"
                 border.width: 1
                 radius: parent.radius + 2
-                opacity: 0.3
+                opacity: 0.9
                 z: -1
             }
 
@@ -734,7 +714,7 @@ Item {
                     anchors.verticalCenter: parent.verticalCenter
                     x: parent.width - width - 2
                     text: "E"
-                    color: "#00bfff"
+                    color: "lightgreen"
                     font.bold: true
                     font.pointSize: ScreenTools.mediumFontPointSize
                     font.family: "Monospace"
@@ -744,7 +724,7 @@ Item {
                     anchors.horizontalCenter: parent.horizontalCenter
                     y: parent.height - height - 2
                     text: "S"
-                    color: "#00bfff"
+                    color: "lightgreen"
                     font.bold: true
                     font.pointSize: ScreenTools.mediumFontPointSize
                     font.family: "Monospace"
@@ -754,7 +734,7 @@ Item {
                     anchors.verticalCenter: parent.verticalCenter
                     x: 2
                     text: "W"
-                    color: "#00bfff"
+                    color: "lightgreen"
                     font.bold: true
                     font.pointSize: ScreenTools.mediumFontPointSize
                     font.family: "Monospace"
@@ -782,7 +762,7 @@ Item {
                 anchors.centerIn: parent
                 width: parent.width * 0.35
                 height: parent.height * 0.35
-                color: Qt.rgba(0, 0, 0, 0.9)
+                color: Qt.rgba(0.5,0.5,0.5,0.55)
                 border.color: "#00ff00"
                 border.width: 2
                 radius: width / 2
@@ -839,34 +819,13 @@ Item {
                     ctx.stroke();
                 }
             }
-
-            Rectangle {
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.bottom: parent.bottom
-                anchors.bottomMargin: -ScreenTools.defaultFontPixelHeight * 1.8
-                width: ScreenTools.defaultFontPixelWidth * 12
-                height: ScreenTools.defaultFontPixelHeight * 1.5
-                color: Qt.rgba(0, 0.75, 1, 0.2)
-                border.color: "#00bfff"
-                border.width: 2
-                radius: 4
-
-                QGCLabel {
-                    anchors.centerIn: parent
-                    text: qsTr("COMPASS")
-                    color: "#00bfff"
-                    font.bold: true
-                    font.pointSize: ScreenTools.smallFontPointSize
-                    font.family: "Monospace"
-                }
-            }
         }
 
         // PITCH
         Rectangle {
             width: parent.width
             height: ScreenTools.defaultFontPixelHeight * 4
-            color: Qt.rgba(0.05, 0.05, 0.05, 0.98)
+            color: Qt.rgba(0.5, 0.5, 0.5, 0.55)
             border.color: "#00ff00"
             border.width: 2
             radius: 6
@@ -898,8 +857,8 @@ Item {
 
                     QGCLabel {
                         text: "GÓC HƯỚNG"
-                        color: "#888888"
-                        font.pointSize: ScreenTools.smallFontPointSize - 2
+                        color: "white"
+                        font.pointSize: ScreenTools.smallFontPointSize
                         font.family: "Monospace"
                     }
 
@@ -918,7 +877,7 @@ Item {
         Rectangle {
             width: parent.width
             height: ScreenTools.defaultFontPixelHeight * 4
-            color: Qt.rgba(0.05, 0.05, 0.05, 0.98)
+            color: Qt.rgba(0.5, 0.5, 0.5, 0.55)
             border.color: "#00bfff"
             border.width: 2
             radius: 6
@@ -950,8 +909,8 @@ Item {
 
                     QGCLabel {
                         text: "GÓC LIỆNG"
-                        color: "#888888"
-                        font.pointSize: ScreenTools.smallFontPointSize - 2
+                        color: "white"
+                        font.pointSize: ScreenTools.smallFontPointSize
                         font.family: "Monospace"
                     }
 
