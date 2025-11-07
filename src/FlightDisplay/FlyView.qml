@@ -136,28 +136,29 @@ Item {
                 z: QGroundControl.zOrderWidgets
 
                 property real leftEdgeBottomInset: visible ? width + anchors.margins : 0
-                    property real bottomEdgeLeftInset: 0  // ← Không còn ở dưới nữa
+                property real bottomEdgeLeftInset: 0
 
-                    // // THÊM BORDER CHO PIP
-                    // Rectangle {
-                    //     anchors.fill: parent
-                    //     color: "transparent"
-                    //     border.color: "#00bfff"
-                    //     border.width: 3
-                    //     radius: 8
-                    //     z: 1000  // ← Đè lên trên
+                    // THÊM BORDER CHO PIP
+                    Rectangle {
+                        anchors.fill: parent
+                        color: "transparent"
+                        border.color: "#00bfff"
+                        border.width: 3
+                        radius: 8
+                        z: 1000
+                        visible: false
 
-                    //     Rectangle {
-                    //         anchors.fill: parent
-                    //         anchors.margins: -4
-                    //         color: "transparent"
-                    //         border.color: "#00bfff"
-                    //         border.width: 1
-                    //         radius: parent.radius + 2
-                    //         opacity: 0.3
-                    //         z: -1
-                    //     }
-                    // }
+                        Rectangle {
+                            anchors.fill: parent
+                            anchors.margins: -4
+                            color: "transparent"
+                            border.color: "#00bfff"
+                            border.width: 1
+                            radius: parent.radius + 2
+                            opacity: 0.3
+                            z: -1
+                        }
+                    }
             }
         // WIDGET LAYER - Không còn video feed
         FlyViewWidgetLayer {

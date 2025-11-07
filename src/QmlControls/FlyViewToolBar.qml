@@ -84,9 +84,9 @@ Rectangle {
             Image {
                 id: customLogo
                 anchors.centerIn: parent
-                width: parent.width * 0.8   // Điều chỉnh kích thước logo
+                width: parent.width * 0.8
                 height: parent.height * 0.8
-                source: "qrc:/res/QGCLogoFull.svg"  // Đường dẫn đến file SVG của bạn
+                source: "qrc:/res/QGCLogoFull.svg"
                 fillMode: Image.PreserveAspectFit
                 mipmap: true
                 smooth: true
@@ -95,7 +95,7 @@ Rectangle {
             MouseArea {
                 anchors.fill: parent
                 cursorShape: Qt.PointingHandCursor
-                // onClicked: mainWindow.showToolSelectDialog()
+                onClicked: mainWindow.showToolSelectDialog()
             }
         }
 
@@ -147,7 +147,7 @@ Rectangle {
             }
 
             ViewTab {
-                tabText: "FLY"
+                tabText: "BAY"
                 tabIcon: "✈"
                 isActive: true
                 onClicked: {
@@ -158,7 +158,7 @@ Rectangle {
             }
 
             ViewTab {
-                tabText: "PLAN"
+                tabText: "LẬP K.H"
                 tabIcon: "📋"
                 isActive: false
                 onClicked: {
@@ -169,7 +169,7 @@ Rectangle {
             }
 
             ViewTab {
-                tabText: "ANALYZE"
+                tabText: "PH.TÍCH"
                 tabIcon: "📊"
                 isActive: false
                 onClicked: {
@@ -180,7 +180,7 @@ Rectangle {
             }
 
             ViewTab {
-                tabText: "VEHICLE"
+                tabText: "MÁY BAY"
                 tabIcon: "⚙"
                 isActive: false
                 onClicked: {
@@ -303,13 +303,13 @@ Rectangle {
 
                 QGCLabel {
                     text: {
-                        if (!_activeVehicle) return "NO VEHICLE";
-                        if (_communicationLost) return "COMM LOST";
+                        if (!_activeVehicle) return "KO P.TIỆN";
+                        if (_communicationLost) return "MẤT K.NỐI";
                         if (_activeVehicle.armed) {
-                            if (_activeVehicle.flying) return "FLYING";
-                            return "ARMED";
+                            if (_activeVehicle.flying) return "ĐANG BAY";
+                            return "ĐÃ K.ĐỘNG";
                         }
-                        return "DISARMED";
+                        return "TẮT Đ.CƠ";
                     }
                     color: "#ffffff"
                     font.bold: true
@@ -349,7 +349,7 @@ Rectangle {
                 }
 
                 QGCLabel {
-                    text: _activeVehicle ? _activeVehicle.flightMode : "N/A"
+                    text: _activeVehicle ? _activeVehicle.flightMode : "KO XĐ"
                     color: "#00bfff"
                     font.bold: true
                     font.family: "Monospace"
@@ -439,7 +439,7 @@ Rectangle {
 
                 // Cancel button
                 MenuItem {
-                    text: "Cancel"
+                    text: "Hủy bỏ"
                     height: ScreenTools.defaultFontPixelHeight * 2.5
 
                     background: Rectangle {
@@ -448,7 +448,7 @@ Rectangle {
                     }
 
                     contentItem: QGCLabel {
-                        text: "Cancel"
+                        text: "Hủy bỏ"
                         color: parent.hovered ? "#ff0000" : "#888888"
                         font.family: "Monospace"
                         font.pointSize: ScreenTools.defaultFontPointSize
@@ -528,15 +528,17 @@ Rectangle {
             }
 
             Row {
-                anchors.centerIn: parent
+                anchors.verticalCenter: parent.verticalCenter
                 spacing: 6
 
+                // Icon pin
                 QGCLabel {
                     text: "🔋"
                     font.pointSize: ScreenTools.mediumFontPointSize * 1.2
                     anchors.verticalCenter: parent.verticalCenter
                 }
 
+                // Cột phần trăm pin
                 QGCLabel {
                     text: _activeVehicle ?
                         _activeVehicle.batteries.get(0).percentRemaining.rawValue.toFixed(0) + "%" : "N/A"
@@ -547,15 +549,35 @@ Rectangle {
                     anchors.verticalCenter: parent.verticalCenter
                 }
 
-                QGCLabel {
-                    text: _activeVehicle ?
-                        _activeVehicle.batteries.get(0).voltage.rawValue.toFixed(1) + "V" : ""
-                    color: "white"
-                    font.family: "Monospace"
-                    font.pointSize: ScreenTools.smallFontPointSize
+                Column {
+                    spacing: 2
                     anchors.verticalCenter: parent.verticalCenter
+
+                    // Dòng trên: điện áp
+                    QGCLabel {
+                        text: _activeVehicle ?
+                            _activeVehicle.batteries.get(0).voltage.rawValue.toFixed(1) + "V" : ""
+                        color: "white"
+                        font.family: "Monospace"
+                        font.pointSize: ScreenTools.smallFontPointSize
+                        horizontalAlignment: Text.AlignRight
+                        width: 50
+                    }
+
+                    // Dòng dưới: dòng điện
+                    QGCLabel {
+                        text: _activeVehicle && _activeVehicle.batteries.get(0).current
+                            ? _activeVehicle.batteries.get(0).current.rawValue.toFixed(1) + "A"
+                            : ""
+                        color: "white"
+                        font.family: "Monospace"
+                        font.pointSize: ScreenTools.smallFontPointSize * 0.95
+                        horizontalAlignment: Text.AlignRight
+                        width: 50
+                    }
                 }
             }
+
         }
 
         //---------- 10. TRẠNG THÁI NGÒI (RIGHT CORNER) ----------
