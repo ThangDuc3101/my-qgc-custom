@@ -528,15 +528,17 @@ Rectangle {
             }
 
             Row {
-                anchors.centerIn: parent
+                anchors.verticalCenter: parent.verticalCenter
                 spacing: 6
 
+                // Icon pin
                 QGCLabel {
                     text: "🔋"
                     font.pointSize: ScreenTools.mediumFontPointSize * 1.2
                     anchors.verticalCenter: parent.verticalCenter
                 }
 
+                // Cột phần trăm pin
                 QGCLabel {
                     text: _activeVehicle ?
                         _activeVehicle.batteries.get(0).percentRemaining.rawValue.toFixed(0) + "%" : "N/A"
@@ -547,15 +549,35 @@ Rectangle {
                     anchors.verticalCenter: parent.verticalCenter
                 }
 
-                QGCLabel {
-                    text: _activeVehicle ?
-                        _activeVehicle.batteries.get(0).voltage.rawValue.toFixed(1) + "V" : ""
-                    color: "white"
-                    font.family: "Monospace"
-                    font.pointSize: ScreenTools.smallFontPointSize
+                Column {
+                    spacing: 2
                     anchors.verticalCenter: parent.verticalCenter
+
+                    // Dòng trên: điện áp
+                    QGCLabel {
+                        text: _activeVehicle ?
+                            _activeVehicle.batteries.get(0).voltage.rawValue.toFixed(1) + "V" : ""
+                        color: "white"
+                        font.family: "Monospace"
+                        font.pointSize: ScreenTools.smallFontPointSize
+                        horizontalAlignment: Text.AlignRight
+                        width: 50
+                    }
+
+                    // Dòng dưới: dòng điện
+                    QGCLabel {
+                        text: _activeVehicle && _activeVehicle.batteries.get(0).current
+                            ? _activeVehicle.batteries.get(0).current.rawValue.toFixed(1) + "A"
+                            : ""
+                        color: "white"
+                        font.family: "Monospace"
+                        font.pointSize: ScreenTools.smallFontPointSize * 0.95
+                        horizontalAlignment: Text.AlignRight
+                        width: 50
+                    }
                 }
             }
+
         }
 
         //---------- 10. TRẠNG THÁI NGÒI (RIGHT CORNER) ----------

@@ -372,10 +372,10 @@ Item {
                 z: parent.z + 1
                 background: Rectangle {
                     anchors.fill: parent
-                    color: Qt.rgba(0, 0, 0, 0.5)
+                    color: Qt.rgba(0.9, 0.9, 0.9, 0.5)
                     radius: parent.radius
                 }
-                text: leftPanelContainer.showLogo ? "\u{1F441}" : "\u{1F576}" // 👁 hoặc 🕶
+                text: leftPanelContainer.showLogo ? "\u{1F441}" : "\u{1F576}"
                 font.pixelSize: ScreenTools.defaultFontPixelHeight * 1.5
                 onClicked: leftPanelContainer.showLogo = !leftPanelContainer.showLogo
                 ToolTip.text: leftPanelContainer.showLogo ? qsTr("Ẩn ảnh") : qsTr("Hiện ảnh")
@@ -445,7 +445,7 @@ Item {
         }
 
         BottomMetric {
-            label: "TỐC ĐỘ"
+            label: "TỐC ĐỘ BAY"
             icon: "➡"
             value: (_activeVehicle && _activeVehicle.groundSpeed) ? _activeVehicle.groundSpeed.valueString : "--"
             unit: (_activeVehicle && _activeVehicle.groundSpeed) ? _activeVehicle.groundSpeed.units : ""
@@ -453,7 +453,7 @@ Item {
         }
 
         BottomMetric {
-            label: "ĐỘ CAO"
+            label: "ĐỘ CAO ASML"
             icon: "⬆"
             value: (_activeVehicle && _activeVehicle.altitudeAMSL) ? _activeVehicle.altitudeAMSL.valueString : "--"
             unit: (_activeVehicle && _activeVehicle.altitudeRelative) ? _activeVehicle.altitudeRelative.units : ""
@@ -461,7 +461,7 @@ Item {
         }
 
         BottomMetric {
-            label: "MỤC TIÊU"
+            label: "CÁCH MỤC TIÊU"
             icon: "🎯"
             value: _root.distanceToTarget >= 0 ? _root.distanceToTarget.toFixed(0) : "--"
             unit: "m"
