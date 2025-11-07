@@ -268,7 +268,7 @@ Item {
         }
 
         MilitaryButton {
-            buttonText: qsTr("TAKEOFF")
+            buttonText: qsTr("CẤT CÁNH")
             buttonIcon: "🚁"
             visible: _activeVehicle && _activeVehicle.guidedModeSupported && !_activeVehicle.flying
             onClicked: {
@@ -277,7 +277,7 @@ Item {
         }
 
         MilitaryButton {
-            buttonText: qsTr("LAND")
+            buttonText: qsTr("HẠ CÁNH")
             buttonIcon: "🛬"
             visible: _activeVehicle && _activeVehicle.guidedModeSupported && _activeVehicle.flying
             onClicked: {
@@ -295,7 +295,7 @@ Item {
         }
 
         MilitaryButton {
-            buttonText: qsTr("SET HOME")
+            buttonText: qsTr("ĐẶT VTHNV")
             buttonIcon: "📍"
             visible: _activeVehicle
             onClicked: {
@@ -304,7 +304,7 @@ Item {
         }
 
         MilitaryButton {
-            buttonText: qsTr("CHECK")
+            buttonText: qsTr("KIỂM TRA")
             buttonIcon: "✓"
             onClicked: {
                 if (!preFlightChecklistLoader.active) {
@@ -324,86 +324,62 @@ Item {
         id: leftPanelContainer
         anchors.left: parent.left
         anchors.top: parent.top
-        anchors.topMargin: ScreenTools.defaultFontPixelHeight * 15 + _layoutMargin * 3  // ← Xuống dưới PiP
+        anchors.topMargin: ScreenTools.defaultFontPixelHeight * 15 + _layoutMargin * 3
         anchors.margins: _layoutMargin
-        width: ScreenTools.defaultFontPixelWidth * 60  // ← Cùng width với PiP
+        width: ScreenTools.defaultFontPixelWidth * 60
         spacing: _layoutMargin
         z: QGroundControl.zOrderWidgets
 
+        property bool showLogo: true     // trạng thái hiển thị ảnh
 
-        // 2 METRICS: GIÓ & QUÃNG ĐƯỜNG
-        component CompactMetric: Rectangle {
-            property string label: ""
-            property string value: "--"
-            property string unit: ""
-            property color valueColor: "#00ff00"
-            property string icon: ""
+            // Ảnh trong khung
+            Rectangle {
+                id: logoContainer
+                width: parent.width
+                height: width * 0.6
+                anchors.top: parent.top
+                color: Qt.rgba(0.1, 0.1, 0.1, 0.4)
+                radius: 8
+                border.color: "#00bfff"
+                border.width: 2
+                visible: leftPanelContainer.showLogo
 
-            width: parent.width
-            height: ScreenTools.defaultFontPixelHeight * 3
-            color: Qt.rgba(0.5, 0.5, 0.5, 0.55)
-            border.color: valueColor
-            border.width: 2
-            radius: 6
-
-            RowLayout {
-                anchors.fill: parent
-                anchors.margins: 8
-                spacing: 8
-
-                Rectangle {
-                    Layout.preferredWidth: ScreenTools.defaultFontPixelHeight * 2
-                    Layout.fillHeight: true
-                    color: Qt.rgba(0.1, 0.1, 0.1, 0.5)
-                    border.color: valueColor
-                    border.width: 1
-                    radius: 4
-
-                    QGCLabel {
-                        anchors.centerIn: parent
-                        text: icon
-                        font.pointSize: ScreenTools.largeFontPointSize
-                    }
+                Image {
+                    id: logoImage
+                    anchors.centerIn: parent
+                    source: "qrc:/res/QGCLogoBlack.svg"   // <-- thay bằng ảnh bạn cung cấp
+                    fillMode: Image.PreserveAspectFit
+                    smooth: true
+                    width: parent.width * 0.9
+                    height: parent.height * 0.9
                 }
 
-                ColumnLayout {
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    spacing: 2
-
-                    QGCLabel {
-                        text: label
-                        color: "#ffffff"
-                        font.pointSize: ScreenTools.smallFontPointSize - 1
-                        font.family: "Monospace"
-                    }
-
-                    QGCLabel {
-                        text: value + (unit !== "" ? " " + unit : "")
-                        color: valueColor
-                        font.bold: true
-                        font.pointSize: ScreenTools.largeFontPointSize
-                        font.family: "Monospace"
-                    }
+                // Hiệu ứng fade (tuỳ chọn)
+                Behavior on visible {
+                    NumberAnimation { duration: 200 }
                 }
             }
-        }
 
-        CompactMetric {
-            label: "GIÓ"
-            icon: "💨"
-            value: _root.airSpeedFact ? _root.airSpeedFact.valueString : "--"
-            unit: _root.airSpeedFact ? _root.airSpeedFact.units : ""
-            valueColor: "#00bfff"
-        }
-
-        CompactMetric {
-            label: "QUÃNG ĐƯỜNG"
-            icon: "📏"
-            value: (_activeVehicle && _activeVehicle.flightDistance) ? _activeVehicle.flightDistance.valueString : "--"
-            unit: (_activeVehicle && _activeVehicle.flightDistance) ? _activeVehicle.flightDistance.units : ""
-            valueColor: "#00ff00"
-        }
+            // Nút con mắt — luôn hiển thị
+            QGCButton {
+                id: toggleIcon
+                anchors.top: logoContainer.top
+                anchors.left: logoContainer.left
+                anchors.margins: 4
+                width: ScreenTools.defaultFontPixelHeight * 2.2
+                height: width
+                // radius: width / 2
+                z: parent.z + 1
+                background: Rectangle {
+                    anchors.fill: parent
+                    color: Qt.rgba(0, 0, 0, 0.5)
+                    radius: parent.radius
+                }
+                text: leftPanelContainer.showLogo ? "\u{1F441}" : "\u{1F576}" // 👁 hoặc 🕶
+                font.pixelSize: ScreenTools.defaultFontPixelHeight * 1.5
+                onClicked: leftPanelContainer.showLogo = !leftPanelContainer.showLogo
+                ToolTip.text: leftPanelContainer.showLogo ? qsTr("Ẩn ảnh") : qsTr("Hiện ảnh")
+            }
     }
 
     //---------- BOTTOM BAR: 4 MAIN METRICS ----------
@@ -917,6 +893,112 @@ Item {
                     QGCLabel {
                         text: (_root.rollFact ? _root.rollFact.valueString : "--") + " °"
                         color: "#00bfff"
+                        font.bold: true
+                        font.pointSize: ScreenTools.mediumFontPointSize
+                        font.family: "Monospace"
+                    }
+                }
+            }
+        }
+
+        // WIND SPEED
+        Rectangle {
+            width: parent.width
+            height: ScreenTools.defaultFontPixelHeight * 4
+            color: Qt.rgba(0.5, 0.5, 0.5, 0.55)
+            border.color: "#00bfff"
+            border.width: 2
+            radius: 6
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.margins: 8
+                spacing: 8
+
+                Rectangle {
+                    Layout.preferredWidth: ScreenTools.defaultFontPixelHeight * 2.5
+                    Layout.fillHeight: true
+                    color: Qt.rgba(0.1, 0.1, 0.1, 0.5)
+                    border.color: "#00bfff"
+                    border.width: 1
+                    radius: 4
+
+                    QGCLabel {
+                        anchors.centerIn: parent
+                        text: "💨"
+                        font.pointSize: ScreenTools.largeFontPointSize
+                    }
+                }
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    spacing: 2
+
+                    QGCLabel {
+                        text: "TỐC ĐỘ GIÓ"
+                        color: "white"
+                        font.pointSize: ScreenTools.smallFontPointSize
+                        font.family: "Monospace"
+                    }
+
+                    QGCLabel {
+                        text: (_root.airSpeedFact ? _root.airSpeedFact.valueString : "--") +
+                              (_root.airSpeedFact ? " " + _root.airSpeedFact.units : "")
+                        color: "#00bfff"
+                        font.bold: true
+                        font.pointSize: ScreenTools.mediumFontPointSize
+                        font.family: "Monospace"
+                    }
+                }
+            }
+        }
+
+        // FLIGHT DISTANCE
+        Rectangle {
+            width: parent.width
+            height: ScreenTools.defaultFontPixelHeight * 4
+            color: Qt.rgba(0.5, 0.5, 0.5, 0.55)
+            border.color: "#00ff00"
+            border.width: 2
+            radius: 6
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.margins: 8
+                spacing: 8
+
+                Rectangle {
+                    Layout.preferredWidth: ScreenTools.defaultFontPixelHeight * 2.5
+                    Layout.fillHeight: true
+                    color: Qt.rgba(0.1, 0.1, 0.1, 0.5)
+                    border.color: "#00ff00"
+                    border.width: 1
+                    radius: 4
+
+                    QGCLabel {
+                        anchors.centerIn: parent
+                        text: "📏"
+                        font.pointSize: ScreenTools.largeFontPointSize
+                    }
+                }
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    spacing: 2
+
+                    QGCLabel {
+                        text: "QUÃNG ĐƯỜNG"
+                        color: "white"
+                        font.pointSize: ScreenTools.smallFontPointSize
+                        font.family: "Monospace"
+                    }
+
+                    QGCLabel {
+                        text: (_activeVehicle && _activeVehicle.flightDistance ? _activeVehicle.flightDistance.valueString : "--") +
+                              (_activeVehicle && _activeVehicle.flightDistance ? " " + _activeVehicle.flightDistance.units : "")
+                        color: "#00ff00"
                         font.bold: true
                         font.pointSize: ScreenTools.mediumFontPointSize
                         font.family: "Monospace"
