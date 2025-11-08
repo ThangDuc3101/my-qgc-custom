@@ -109,7 +109,7 @@ Item {
             // Horizon line
             Rectangle {
                 anchors.centerIn: parent
-                width: parent.width * 0.7
+                width: parent.width * 0.3
                 height: 2
                 color: "red"
                 opacity: 0.5
@@ -245,7 +245,7 @@ Item {
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
             anchors.leftMargin: parent.width * (militaryHud.isPipMode ? 0.18 : 0.27)
-            width: 50 * militaryHud.scaleFactor
+            width: 30 * militaryHud.scaleFactor
             height: parent.height * 0.3 * militaryHud.scaleFactor
 
             // Background
@@ -301,7 +301,7 @@ Item {
                     var percentage = Math.max(0, Math.min(1, currentSpeed / maxSpeed))
                     return parent.height * (1 - percentage) - height / 2
                 }
-                width: 48 * militaryHud.scaleFactor
+                width: 70 * militaryHud.scaleFactor
                 height: 20 * militaryHud.scaleFactor
 
                 Behavior on y {
@@ -319,8 +319,8 @@ Item {
 
                     QGCLabel {
                         anchors.centerIn: parent
-                        text: _activeVehicle ? Math.round(_activeVehicle.groundSpeed.rawValue * 3.6) : "0"
-                        color: "#ff0000"
+                        text: _activeVehicle ? Math.round(_activeVehicle.groundSpeed.rawValue * 3.6) + "km/h" : "0"
+                        color: "white"
                         font.bold: true
                         font.pointSize: (ScreenTools.mediumFontPointSize - 1) * militaryHud.scaleFactor
                         font.family: "Monospace"
@@ -359,7 +359,7 @@ Item {
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.top: parent.bottom
                 anchors.topMargin: 2 * militaryHud.scaleFactor
-                text: "km/h"
+                text: "VẬN TỐC"
                 color: "#ff0000"
                 font.pointSize: (ScreenTools.mediumFontPointSize - 3) * militaryHud.scaleFactor
                 font.family: "Monospace"
@@ -373,7 +373,7 @@ Item {
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
             anchors.rightMargin: parent.width * (militaryHud.isPipMode ? 0.18 : 0.27)
-            width: 58 * militaryHud.scaleFactor
+            width: 30 * militaryHud.scaleFactor
             height: parent.height * 0.3 * militaryHud.scaleFactor
 
             // Background
@@ -450,7 +450,7 @@ Item {
                         anchors.centerIn: parent
                         text: _activeVehicle && _activeVehicle.altitudeAMSL ?
                               Math.round(_activeVehicle.altitudeAMSL.rawValue) + "m" : "0m"
-                        color: "#ff0000"
+                        color: "white"
                         font.bold: true
                         font.pointSize: (ScreenTools.mediumFontPointSize - 1) * militaryHud.scaleFactor
                         font.family: "Monospace"
