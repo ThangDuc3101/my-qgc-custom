@@ -237,16 +237,6 @@ Item {
                 }
             }
 
-            // Label
-            QGCLabel {
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.top: parent.bottom
-                anchors.topMargin: 2 * militaryHud.scaleFactor
-                text: "ROLL"
-                color: "#ff0000"
-                font.pointSize: (ScreenTools.mediumFontPointSize - 3) * militaryHud.scaleFactor
-                font.family: "Monospace"
-            }
         }
 
         // ===== THANH DỌC TRÁI - TỐC ĐỘ (SLIDING INDICATOR) =====
@@ -254,7 +244,7 @@ Item {
             id: leftSpeedScale
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
-            anchors.leftMargin: parent.width * (militaryHud.isPipMode ? 0.08 : 0.12)
+            anchors.leftMargin: parent.width * (militaryHud.isPipMode ? 0.18 : 0.27)
             width: 50 * militaryHud.scaleFactor
             height: parent.height * 0.3 * militaryHud.scaleFactor
 
@@ -382,7 +372,7 @@ Item {
             id: rightAltitudeScale
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
-            anchors.rightMargin: parent.width * (militaryHud.isPipMode ? 0.08 : 0.12)
+            anchors.rightMargin: parent.width * (militaryHud.isPipMode ? 0.18 : 0.27)
             width: 58 * militaryHud.scaleFactor
             height: parent.height * 0.3 * militaryHud.scaleFactor
 
