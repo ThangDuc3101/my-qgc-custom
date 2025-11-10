@@ -108,19 +108,19 @@ Item {
         property real rightEdgeCenterInset: rightEdgeTopInset
     }
 
-    FlyViewTopRightColumnLayout {
-        id:                 topRightColumnLayout
-        anchors.margins:    _layoutMargin
-        anchors.top:        parent.top
-        anchors.bottom:     parent.bottom
-        anchors.right:      parent.right
-        spacing:            _layoutSpacing
-        visible:           !topRightPanel.visible
+    // FlyViewTopRightColumnLayout {
+    //     id:                 topRightColumnLayout
+    //     anchors.margins:    _layoutMargin
+    //     anchors.top:        parent.top
+    //     anchors.bottom:     parent.bottom
+    //     anchors.right:      parent.right
+    //     spacing:            _layoutSpacing
+    //     visible:           !topRightPanel.visible
 
-        property real topEdgeRightInset:    childrenRect.height + _layoutMargin
-        property real rightEdgeTopInset:    width + _layoutMargin
-        property real rightEdgeCenterInset: rightEdgeTopInset
-    }
+    //     property real topEdgeRightInset:    childrenRect.height + _layoutMargin
+    //     property real rightEdgeTopInset:    width + _layoutMargin
+    //     property real rightEdgeCenterInset: rightEdgeTopInset
+    // }
 
     FlyViewBottomRightRowLayout {
         id:                 bottomRightRowLayout

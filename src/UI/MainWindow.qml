@@ -761,7 +761,7 @@ ApplicationWindow {
             }
 
             onClosing: {
-                visible = false
+                visible = true
                 source = ""
             }
         }
