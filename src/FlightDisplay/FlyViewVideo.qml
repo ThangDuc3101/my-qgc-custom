@@ -31,6 +31,18 @@ Item {
     property bool   _showHorizon:       true
     property real _stabilizationStrength: 0.3
 
+    property real distanceToTarget: {
+        if (_activeVehicle && _missionController && _missionController.visualItems.count > 1) {
+            for (var i = _missionController.visualItems.count - 1; i >= 0; i--) {
+                var item = _missionController.visualItems.get(i);
+                if (item && item.specifiesCoordinate) {
+                    return _activeVehicle.coordinate.distanceTo(item.coordinate);
+                }
+            }
+        }
+        return -1;
+    }
+
     PipState {
         id:         videoPipState
         pipView:    _root.pipView
@@ -496,6 +508,64 @@ Item {
                 visible: !militaryHud.isPipMode
             }
         }
+
+        // ===== THANH ROLL PHÍA DƯỚI (LOWER POSITION) =====
+        Item {
+            id: bottomScale
+            anchors.bottom: parent.bottom
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.bottomMargin: 200
+            width: parent.width * 0.15 * militaryHud.scaleFactor
+            height: 24 * militaryHud.scaleFactor
+            visible: true
+
+            // Background bar
+            Rectangle {
+                anchors.fill: parent
+                color: Qt.rgba(0, 0, 0, 0.25)
+                border.color: "#ff0000"
+                border.width: 1.5 * militaryHud.scaleFactor
+            }
+
+            // Scale marks
+            Row {
+                anchors.centerIn: parent
+                anchors.verticalCenterOffset: 5 * militaryHud.scaleFactor
+                spacing: parent.width / 6
+
+                Repeater {
+                    model: 7
+                    Rectangle {
+                        width: 1 * militaryHud.scaleFactor
+                        height: (index % 3 === 0 ? 10 : 5) * militaryHud.scaleFactor
+                        color: "#ff0000"
+                    }
+                }
+            }
+
+            // Center roll value
+            Rectangle {
+                anchors.centerIn: parent
+                anchors.verticalCenterOffset: -5 * militaryHud.scaleFactor
+                width: (distanceText.width + 10) * militaryHud.scaleFactor
+                height: (distanceText.height + 3) * militaryHud.scaleFactor
+                color: Qt.rgba(0, 0, 0, 0.9)
+                border.color: "#ff0000"
+                border.width: 1.5 * militaryHud.scaleFactor
+
+                QGCLabel {
+                    id: distanceText
+                    anchors.centerIn: parent
+                    text: _root.distanceToTarget >= 0 ? _root.distanceToTarget.toFixed(0) + "m" : "?m"
+                    color: "white"
+                    font.bold: true
+                    font.pointSize: (ScreenTools.mediumFontPointSize - 1) * militaryHud.scaleFactor
+                    font.family: "Monospace"
+                }
+            }
+
+        }
+
 
         // ===== CROSSHAIR (RESPONSIVE) =====
         Item {
