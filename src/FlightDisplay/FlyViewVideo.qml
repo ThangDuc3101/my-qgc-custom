@@ -31,6 +31,18 @@ Item {
     property bool   _showHorizon:       true
     property real _stabilizationStrength: 0.3
 
+    property real distanceToTarget: {
+        if (_activeVehicle && _missionController && _missionController.visualItems.count > 1) {
+            for (var i = _missionController.visualItems.count - 1; i >= 0; i--) {
+                var item = _missionController.visualItems.get(i);
+                if (item && item.specifiesCoordinate) {
+                    return _activeVehicle.coordinate.distanceTo(item.coordinate);
+                }
+            }
+        }
+        return -1;
+    }
+
     PipState {
         id:         videoPipState
         pipView:    _root.pipView
@@ -109,7 +121,7 @@ Item {
             // Horizon line
             Rectangle {
                 anchors.centerIn: parent
-                width: parent.width * 0.7
+                width: parent.width * 0.3
                 height: 2
                 color: "red"
                 opacity: 0.5
@@ -237,16 +249,6 @@ Item {
                 }
             }
 
-            // Label
-            QGCLabel {
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.top: parent.bottom
-                anchors.topMargin: 2 * militaryHud.scaleFactor
-                text: "ROLL"
-                color: "#ff0000"
-                font.pointSize: (ScreenTools.mediumFontPointSize - 3) * militaryHud.scaleFactor
-                font.family: "Monospace"
-            }
         }
 
         // ===== THANH DỌC TRÁI - TỐC ĐỘ (SLIDING INDICATOR) =====
@@ -254,8 +256,8 @@ Item {
             id: leftSpeedScale
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
-            anchors.leftMargin: parent.width * (militaryHud.isPipMode ? 0.08 : 0.12)
-            width: 50 * militaryHud.scaleFactor
+            anchors.leftMargin: parent.width * (militaryHud.isPipMode ? 0.18 : 0.27)
+            width: 30 * militaryHud.scaleFactor
             height: parent.height * 0.3 * militaryHud.scaleFactor
 
             // Background
@@ -311,7 +313,7 @@ Item {
                     var percentage = Math.max(0, Math.min(1, currentSpeed / maxSpeed))
                     return parent.height * (1 - percentage) - height / 2
                 }
-                width: 48 * militaryHud.scaleFactor
+                width: 70 * militaryHud.scaleFactor
                 height: 20 * militaryHud.scaleFactor
 
                 Behavior on y {
@@ -329,8 +331,8 @@ Item {
 
                     QGCLabel {
                         anchors.centerIn: parent
-                        text: _activeVehicle ? Math.round(_activeVehicle.groundSpeed.rawValue * 3.6) : "0"
-                        color: "#ff0000"
+                        text: _activeVehicle ? Math.round(_activeVehicle.groundSpeed.rawValue * 3.6) + "km/h" : "0"
+                        color: "white"
                         font.bold: true
                         font.pointSize: (ScreenTools.mediumFontPointSize - 1) * militaryHud.scaleFactor
                         font.family: "Monospace"
@@ -369,7 +371,7 @@ Item {
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.top: parent.bottom
                 anchors.topMargin: 2 * militaryHud.scaleFactor
-                text: "km/h"
+                text: "VẬN TỐC"
                 color: "#ff0000"
                 font.pointSize: (ScreenTools.mediumFontPointSize - 3) * militaryHud.scaleFactor
                 font.family: "Monospace"
@@ -382,8 +384,8 @@ Item {
             id: rightAltitudeScale
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
-            anchors.rightMargin: parent.width * (militaryHud.isPipMode ? 0.08 : 0.12)
-            width: 58 * militaryHud.scaleFactor
+            anchors.rightMargin: parent.width * (militaryHud.isPipMode ? 0.18 : 0.27)
+            width: 30 * militaryHud.scaleFactor
             height: parent.height * 0.3 * militaryHud.scaleFactor
 
             // Background
@@ -460,7 +462,7 @@ Item {
                         anchors.centerIn: parent
                         text: _activeVehicle && _activeVehicle.altitudeAMSL ?
                               Math.round(_activeVehicle.altitudeAMSL.rawValue) + "m" : "0m"
-                        color: "#ff0000"
+                        color: "white"
                         font.bold: true
                         font.pointSize: (ScreenTools.mediumFontPointSize - 1) * militaryHud.scaleFactor
                         font.family: "Monospace"
@@ -506,6 +508,64 @@ Item {
                 visible: !militaryHud.isPipMode
             }
         }
+
+        // ===== THANH ROLL PHÍA DƯỚI (LOWER POSITION) =====
+        Item {
+            id: bottomScale
+            anchors.bottom: parent.bottom
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.bottomMargin: 200
+            width: parent.width * 0.15 * militaryHud.scaleFactor
+            height: 24 * militaryHud.scaleFactor
+            visible: true
+
+            // Background bar
+            Rectangle {
+                anchors.fill: parent
+                color: Qt.rgba(0, 0, 0, 0.25)
+                border.color: "#ff0000"
+                border.width: 1.5 * militaryHud.scaleFactor
+            }
+
+            // Scale marks
+            Row {
+                anchors.centerIn: parent
+                anchors.verticalCenterOffset: 5 * militaryHud.scaleFactor
+                spacing: parent.width / 6
+
+                Repeater {
+                    model: 7
+                    Rectangle {
+                        width: 1 * militaryHud.scaleFactor
+                        height: (index % 3 === 0 ? 10 : 5) * militaryHud.scaleFactor
+                        color: "#ff0000"
+                    }
+                }
+            }
+
+            // Center roll value
+            Rectangle {
+                anchors.centerIn: parent
+                anchors.verticalCenterOffset: -5 * militaryHud.scaleFactor
+                width: (distanceText.width + 10) * militaryHud.scaleFactor
+                height: (distanceText.height + 3) * militaryHud.scaleFactor
+                color: Qt.rgba(0, 0, 0, 0.9)
+                border.color: "#ff0000"
+                border.width: 1.5 * militaryHud.scaleFactor
+
+                QGCLabel {
+                    id: distanceText
+                    anchors.centerIn: parent
+                    text: _root.distanceToTarget >= 0 ? _root.distanceToTarget.toFixed(0) + "m" : "?m"
+                    color: "white"
+                    font.bold: true
+                    font.pointSize: (ScreenTools.mediumFontPointSize - 1) * militaryHud.scaleFactor
+                    font.family: "Monospace"
+                }
+            }
+
+        }
+
 
         // ===== CROSSHAIR (RESPONSIVE) =====
         Item {
