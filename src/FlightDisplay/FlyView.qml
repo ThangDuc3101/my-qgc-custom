@@ -112,7 +112,7 @@ Item {
             enabled: !viewer3DWindow.isOpen
         }
 
-        // VIDEO - Luôn tồn tại
+        // VIDEO - Luôn tồn tạiflyviewwidgetlayer
         FlyViewVideo {
             id: videoControl
             pipView: _pipView
@@ -160,6 +160,7 @@ Item {
                         }
                     }
             }
+
         // WIDGET LAYER - Không còn video feed
         FlyViewWidgetLayer {
             id:                     widgetLayer
@@ -253,6 +254,7 @@ Item {
                 }
             }
         }
+
 
         FlyViewCustomLayer {
             id: customOverlay

@@ -146,20 +146,20 @@ Rectangle {
                 }
             }
 
-            ViewTab {
-                tabText: "BAY"
-                tabIcon: "✈"
-                isActive: true
-                onClicked: {
-                    if (mainWindow.allowViewSwitch()) {
-                        mainWindow.showFlyView()
-                    }
-                }
-            }
+            // ViewTab {
+            //     tabText: "BAY"
+            //     tabIcon: "✈"
+            //     isActive: true
+            //     onClicked: {
+            //         if (mainWindow.allowViewSwitch()) {
+            //             mainWindow.showFlyView()
+            //         }
+            //     }
+            //}
 
             ViewTab {
                 tabText: "LẬP K.H"
-                tabIcon: "📋"
+                // tabIcon: "📋"
                 isActive: false
                 onClicked: {
                     if (mainWindow.allowViewSwitch()) {
@@ -168,27 +168,27 @@ Rectangle {
                 }
             }
 
-            ViewTab {
-                tabText: "PH.TÍCH"
-                tabIcon: "📊"
-                isActive: false
-                onClicked: {
-                    if (mainWindow.allowViewSwitch()) {
-                        mainWindow.showAnalyzeTool()
-                    }
-                }
-            }
+            // ViewTab {
+            //     tabText: "PH.TÍCH"
+            //     tabIcon: "📊"
+            //     isActive: false
+            //     onClicked: {
+            //         if (mainWindow.allowViewSwitch()) {
+            //             mainWindow.showAnalyzeTool()
+            //         }
+            //     }
+            // }
 
-            ViewTab {
-                tabText: "MÁY BAY"
-                tabIcon: "⚙"
-                isActive: false
-                onClicked: {
-                    if (mainWindow.allowViewSwitch()) {
-                        mainWindow.showVehicleConfig()
-                    }
-                }
-            }
+            // ViewTab {
+            //     tabText: "MÁY BAY"
+            //     tabIcon: "⚙"
+            //     isActive: false
+            //     onClicked: {
+            //         if (mainWindow.allowViewSwitch()) {
+            //             mainWindow.showVehicleConfig()
+            //         }
+            //     }
+            // }
         }
 
         //---------- SPACER LEFT ----------
@@ -214,11 +214,11 @@ Rectangle {
                     anchors.horizontalCenter: parent.horizontalCenter
                     spacing: 6
 
-                    QGCLabel {
-                        text: "🕐"
-                        font.pointSize: ScreenTools.mediumFontPointSize * 1.5
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
+                    // QGCLabel {
+                    //     text: "🕐"
+                    //     font.pointSize: ScreenTools.mediumFontPointSize * 1.5
+                    //     anchors.verticalCenter: parent.verticalCenter
+                    // }
 
                     QGCLabel {
                         id: timeLabel
@@ -342,11 +342,11 @@ Rectangle {
                 anchors.centerIn: parent
                 spacing: 6
 
-                QGCLabel {
-                    text: "🎯"
-                    font.pointSize: ScreenTools.mediumFontPointSize * 1.2
-                    anchors.verticalCenter: parent.verticalCenter
-                }
+                // QGCLabel {
+                //     text: "🎯"
+                //     font.pointSize: ScreenTools.mediumFontPointSize * 1.2
+                //     anchors.verticalCenter: parent.verticalCenter
+                // }
 
                 QGCLabel {
                     text: _activeVehicle ? _activeVehicle.flightMode : "KO XĐ"
@@ -483,11 +483,11 @@ Rectangle {
                 anchors.centerIn: parent
                 spacing: 6
 
-                QGCLabel {
-                    text: "🛰"
-                    font.pointSize: ScreenTools.mediumFontPointSize * 1.2
-                    anchors.verticalCenter: parent.verticalCenter
-                }
+                // QGCLabel {
+                //     text: "🛰"
+                //     font.pointSize: ScreenTools.mediumFontPointSize * 1.2
+                //     anchors.verticalCenter: parent.verticalCenter
+                // }
 
                 QGCLabel {
                     text: "GPS"
@@ -531,12 +531,12 @@ Rectangle {
                 anchors.verticalCenter: parent.verticalCenter
                 spacing: 6
 
-                // Icon pin
-                QGCLabel {
-                    text: "🔋"
-                    font.pointSize: ScreenTools.mediumFontPointSize * 1.2
-                    anchors.verticalCenter: parent.verticalCenter
-                }
+                // // Icon pin
+                // QGCLabel {
+                //     text: "🔋"
+                //     font.pointSize: ScreenTools.mediumFontPointSize * 1.2
+                //     anchors.verticalCenter: parent.verticalCenter
+                // }
 
                 // Cột phần trăm pin
                 QGCLabel {
@@ -602,25 +602,25 @@ Rectangle {
                 anchors.centerIn: parent
                 spacing: 6
 
-                QGCLabel {
-                    text: "⚡"
-                    font.pointSize: ScreenTools.largeFontPointSize * 1.2
-                    color: parent.parent.border.color
-                    anchors.verticalCenter: parent.verticalCenter
+                // QGCLabel {
+                //     text: "⚡"
+                //     font.pointSize: ScreenTools.largeFontPointSize * 1.2
+                //     color: parent.parent.border.color
+                //     anchors.verticalCenter: parent.verticalCenter
 
-                    SequentialAnimation on scale {
-                        running: currentBoardStatus === "True"
-                        loops: Animation.Infinite
-                        NumberAnimation { from: 1.0; to: 1.4; duration: 350 }
-                        NumberAnimation { from: 1.4; to: 1.0; duration: 350 }
-                    }
-                }
+                //     SequentialAnimation on scale {
+                //         running: currentBoardStatus === "True"
+                //         loops: Animation.Infinite
+                //         NumberAnimation { from: 1.0; to: 1.4; duration: 350 }
+                //         NumberAnimation { from: 1.4; to: 1.0; duration: 350 }
+                //     }
+                // }
 
                 QGCLabel {
                     text: {
                         if (currentBoardStatus === "True") return "NGÒI MỞ";
                         else if (currentBoardStatus === "False") return "AN TOÀN";
-                        else return "CHƯA K.H";
+                        else return "CHƯA MỞ NGÒI";
                     }
                     color: parent.parent.border.color
                     font.bold: true
