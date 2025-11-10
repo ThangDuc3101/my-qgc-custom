@@ -318,7 +318,7 @@ Item {
     GripperMenu {
         id: gripperOptions
     }
-
+    /*
     //---------- LEFT BAR: VIDEO/MAP SWAP + 2 METRICS ----------
     Column {
         id: leftPanelContainer
@@ -347,7 +347,7 @@ Item {
                 Image {
                     id: logoImage
                     anchors.centerIn: parent
-                    source: "qrc:/res/QGCLogoBlack.svg"   // <-- thay bằng ảnh bạn cung cấp
+                    source: "qrc:/res/QGCLogoBlack.svg"
                     fillMode: Image.PreserveAspectFit
                     smooth: true
                     width: parent.width * 0.9
@@ -381,6 +381,8 @@ Item {
                 ToolTip.text: leftPanelContainer.showLogo ? qsTr("Ẩn ảnh") : qsTr("Hiện ảnh")
             }
     }
+
+    */
 
     //---------- BOTTOM BAR: 4 MAIN METRICS ----------
     Row {
@@ -490,7 +492,7 @@ Item {
         // ARTIFICIAL HORIZON
         Rectangle {
             id: attitudeIndicator
-            width: parent.width
+            width: parent.width*0.9
             height: width
             color: Qt.rgba(0.5, 0.5, 0.5, 0.55)
             border.color: "#00bfff"
@@ -644,7 +646,7 @@ Item {
         // COMPASS
         Rectangle {
             id: compassContainer
-            width: parent.width
+            width: parent.width*0.9
             height: width
             color: Qt.rgba(0.5, 0.5, 0.5, 0.55)
             border.color: "white"
@@ -796,7 +798,7 @@ Item {
                 }
             }
         }
-
+        /*
         // PITCH
         Rectangle {
             width: parent.width
@@ -901,9 +903,11 @@ Item {
             }
         }
 
+        */
+
         // WIND SPEED
         Rectangle {
-            width: parent.width
+            width: parent.width*0.9
             height: ScreenTools.defaultFontPixelHeight * 4
             color: Qt.rgba(0.5, 0.5, 0.5, 0.55)
             border.color: "#00bfff"
@@ -956,7 +960,7 @@ Item {
 
         // FLIGHT DISTANCE
         Rectangle {
-            width: parent.width
+            width: parent.width*0.9
             height: ScreenTools.defaultFontPixelHeight * 4
             color: Qt.rgba(0.5, 0.5, 0.5, 0.55)
             border.color: "#00ff00"

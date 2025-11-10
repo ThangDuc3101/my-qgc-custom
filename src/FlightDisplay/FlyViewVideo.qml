@@ -193,7 +193,7 @@ Item {
         // Detect if in PiP mode (small size)
         property bool isPipMode: pipState.state === pipState.pipState
         property real scaleFactor: isPipMode ? 0.55 : 1.0
-
+        /*
         // ===== THANH ROLL PHÍA TRÊN (LOWER POSITION) =====
         Item {
             id: topRollScale
@@ -250,6 +250,63 @@ Item {
             }
 
         }
+        */
+        Item {
+            id: topRollScale
+            anchors.top: parent.top
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.topMargin: 120
+            width: parent.width * 0.15 * militaryHud.scaleFactor
+            height: 24 * militaryHud.scaleFactor
+            visible: true
+
+            // Background bar
+            Rectangle {
+                anchors.fill: parent
+                color: Qt.rgba(0, 0, 0, 0.25)
+                border.color: "#ff0000"
+                border.width: 1.5 * militaryHud.scaleFactor
+            }
+
+            // Scale marks
+            Row {
+                anchors.centerIn: parent
+                anchors.verticalCenterOffset: 5 * militaryHud.scaleFactor
+                spacing: parent.width / 6
+
+                Repeater {
+                    model: 7
+                    Rectangle {
+                        width: 1 * militaryHud.scaleFactor
+                        height: (index % 3 === 0 ? 10 : 5) * militaryHud.scaleFactor
+                        color: "#ff0000"
+                    }
+                }
+            }
+
+            // Center roll value
+            Rectangle {
+                anchors.centerIn: parent
+                anchors.verticalCenterOffset: -5 * militaryHud.scaleFactor
+                width: (distanceText.width + 10) * militaryHud.scaleFactor
+                height: (distanceText.height + 3) * militaryHud.scaleFactor
+                color: Qt.rgba(0, 0, 0, 0.9)
+                border.color: "#ff0000"
+                border.width: 1.5 * militaryHud.scaleFactor
+
+                QGCLabel {
+                    id: distanceText
+                    anchors.centerIn: parent
+                    text: _root.distanceToTarget >= 0 ? _root.distanceToTarget.toFixed(0) + "m" : "?m"
+                    color: "white"
+                    font.bold: true
+                    font.pointSize: (ScreenTools.mediumFontPointSize - 1) * militaryHud.scaleFactor
+                    font.family: "Monospace"
+                }
+            }
+
+        }
+
 
         // ===== THANH DỌC TRÁI - TỐC ĐỘ (SLIDING INDICATOR) =====
         Item {
@@ -509,6 +566,7 @@ Item {
             }
         }
 
+        /*
         // ===== THANH ROLL PHÍA DƯỚI (LOWER POSITION) =====
         Item {
             id: bottomScale
@@ -565,7 +623,7 @@ Item {
             }
 
         }
-
+        */
 
         // ===== CROSSHAIR (RESPONSIVE) =====
         Item {
@@ -844,6 +902,7 @@ Item {
         showText: pipState.state === pipState.fullState
     }
 
+    /*
     // Control Panel for Video Stabilization
     Rectangle {
         anchors.top: parent.top
@@ -906,4 +965,5 @@ Item {
             }
         }
     }
+    */
 }
