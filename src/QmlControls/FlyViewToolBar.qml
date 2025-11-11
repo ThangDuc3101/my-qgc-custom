@@ -62,7 +62,7 @@ Rectangle {
         color:          "#00bfff"
         opacity:        0.4
     }
-
+    //
     RowLayout {
         anchors.fill: parent
         anchors.leftMargin: ScreenTools.defaultFontPixelWidth
@@ -120,7 +120,7 @@ Rectangle {
 
                 Row {
                     anchors.centerIn: parent
-                    spacing: 6
+                    spacing: 2
 
                     QGCLabel {
                         text: tabIcon
@@ -192,9 +192,9 @@ Rectangle {
         }
 
         //---------- SPACER LEFT ----------
-        Item {
-            Layout.fillWidth: true
-        }
+        // Item {
+        //     Layout.fillWidth: true
+        // }
 
         //---------- ĐỒNG HỒ (CHÍNH GIỮA) ----------
         Rectangle {
@@ -254,9 +254,9 @@ Rectangle {
         }
 
         //---------- SPACER RIGHT ----------
-        Item {
-            Layout.fillWidth: true
-        }
+        // Item {
+        //     Layout.fillWidth: true
+        // }
 
         //---------- 6. CONNECTION STATUS ----------
         Rectangle {
@@ -639,7 +639,7 @@ Rectangle {
             }
         }
     }
-
+    //
     // Small parameter download progress bar
     Rectangle {
         anchors.bottom: parent.bottom

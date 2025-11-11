@@ -257,7 +257,7 @@ Item {
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.topMargin: 120
             width: parent.width * 0.15 * militaryHud.scaleFactor
-            height: 24 * militaryHud.scaleFactor
+            height: 2 * militaryHud.scaleFactor
             visible: true
 
             // Background bar
@@ -314,7 +314,7 @@ Item {
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
             anchors.leftMargin: parent.width * (militaryHud.isPipMode ? 0.18 : 0.27)
-            width: 30 * militaryHud.scaleFactor
+            width: 3 * militaryHud.scaleFactor
             height: parent.height * 0.3 * militaryHud.scaleFactor
 
             // Background
@@ -423,17 +423,17 @@ Item {
                 }
             }
 
-            // Label
-            QGCLabel {
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.top: parent.bottom
-                anchors.topMargin: 2 * militaryHud.scaleFactor
-                text: "VẬN TỐC"
-                color: "#ff0000"
-                font.pointSize: (ScreenTools.mediumFontPointSize - 3) * militaryHud.scaleFactor
-                font.family: "Monospace"
-                visible: !militaryHud.isPipMode
-            }
+            // // Label
+            // QGCLabel {
+            //     anchors.horizontalCenter: parent.horizontalCenter
+            //     anchors.top: parent.bottom
+            //     anchors.topMargin: 2 * militaryHud.scaleFactor
+            //     text: "VẬN TỐC"
+            //     color: "#ff0000"
+            //     font.pointSize: (ScreenTools.mediumFontPointSize - 3) * militaryHud.scaleFactor
+            //     font.family: "Monospace"
+            //     visible: !militaryHud.isPipMode
+            // }
         }
 
         // ===== THANH DỌC PHẢI - ĐỘ CAO (SLIDING INDICATOR) =====
@@ -442,7 +442,7 @@ Item {
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
             anchors.rightMargin: parent.width * (militaryHud.isPipMode ? 0.18 : 0.27)
-            width: 30 * militaryHud.scaleFactor
+            width: 3 * militaryHud.scaleFactor
             height: parent.height * 0.3 * militaryHud.scaleFactor
 
             // Background
@@ -553,17 +553,17 @@ Item {
                 }
             }
 
-            // Label
-            QGCLabel {
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.top: parent.bottom
-                anchors.topMargin: 2 * militaryHud.scaleFactor
-                text: "AMSL"
-                color: "#ff0000"
-                font.pointSize: (ScreenTools.mediumFontPointSize - 3) * militaryHud.scaleFactor
-                font.family: "Monospace"
-                visible: !militaryHud.isPipMode
-            }
+            // // Label
+            // QGCLabel {
+            //     anchors.horizontalCenter: parent.horizontalCenter
+            //     anchors.top: parent.bottom
+            //     anchors.topMargin: 2 * militaryHud.scaleFactor
+            //     text: "AMSL"
+            //     color: "#ff0000"
+            //     font.pointSize: (ScreenTools.mediumFontPointSize - 3) * militaryHud.scaleFactor
+            //     font.family: "Monospace"
+            //     visible: !militaryHud.isPipMode
+            // }
         }
 
         /*
