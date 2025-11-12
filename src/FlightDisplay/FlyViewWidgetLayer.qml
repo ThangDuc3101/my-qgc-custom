@@ -940,7 +940,7 @@ Item {
                     spacing: 2
 
                     QGCLabel {
-                        text: "TỐC ĐỘ GIÓ"
+                        text: "T.Đ GIÓ"
                         color: "white"
                         font.pointSize: ScreenTools.smallFontPointSize
                         font.family: "Monospace"
@@ -993,7 +993,7 @@ Item {
                     spacing: 2
 
                     QGCLabel {
-                        text: "QUÃNG ĐƯỜNG"
+                        text: "Q.Đ"
                         color: "white"
                         font.pointSize: ScreenTools.smallFontPointSize
                         font.family: "Monospace"
