@@ -509,75 +509,99 @@ Rectangle {
         }
 
         //---------- 9. BATTERY STATUS ----------
-        Rectangle {
+        Item {
             Layout.preferredWidth: ScreenTools.defaultFontPixelWidth * 18
             Layout.preferredHeight: ScreenTools.defaultFontPixelHeight * 3.5
             Layout.alignment: Qt.AlignVCenter
-            color: Qt.rgba(0.2, 0.2, 0.2, 0.3)
-            border.color: getBatteryColor()
-            border.width: 2
-            radius: 6
             visible: _activeVehicle
 
-            function getBatteryColor() {
-                if (!_activeVehicle) return "#888888";
-                var batteryPercent = _activeVehicle.batteries.get(0).percentRemaining.rawValue;
-                if (batteryPercent > 50) return "#00ff00";
-                if (batteryPercent > 20) return "#ffff00";
-                return "#ff0000";
-            }
-
             Row {
-                anchors.verticalCenter: parent.verticalCenter
-                spacing: 6
+                anchors.fill: parent
+                spacing: 4
 
-                // // Icon pin
-                // QGCLabel {
-                //     text: "🔋"
-                //     font.pointSize: ScreenTools.mediumFontPointSize * 1.2
-                //     anchors.verticalCenter: parent.verticalCenter
-                // }
+                Repeater {
+                    model: _activeVehicle ? _activeVehicle.batteries : 0
 
-                // Cột phần trăm pin
-                QGCLabel {
-                    text: _activeVehicle ?
-                        _activeVehicle.batteries.get(0).percentRemaining.rawValue.toFixed(0) + "%" : "N/A"
-                    color: parent.parent.getBatteryColor()
-                    font.bold: true
-                    font.family: "Monospace"
-                    font.pointSize: ScreenTools.defaultFontPointSize * 1.1
-                    anchors.verticalCenter: parent.verticalCenter
-                }
+                    Rectangle {
+                        width: parent.parent.width
+                        height: parent.parent.height
+                        color: Qt.rgba(0.2, 0.2, 0.2, 0.3)
+                        border.color: getBatteryColor()
+                        border.width: 2
+                        radius: 6
 
-                Column {
-                    spacing: 2
-                    anchors.verticalCenter: parent.verticalCenter
+                        // 'object' là battery từ Repeater model
+                        property var battery: object
 
-                    // Dòng trên: điện áp
-                    QGCLabel {
-                        text: _activeVehicle ?
-                            _activeVehicle.batteries.get(0).voltage.rawValue.toFixed(1) + "V" : ""
-                        color: "white"
-                        font.family: "Monospace"
-                        font.pointSize: ScreenTools.smallFontPointSize
-                        horizontalAlignment: Text.AlignRight
-                        width: 50
-                    }
+                        function getBatteryColor() {
+                            if (!battery) return "#888888";
+                            var percent = battery.percentRemaining.rawValue;
+                            if (isNaN(percent)) return "#888888";
+                            if (percent > 50) return "#00ff00";
+                            if (percent > 20) return "#ffff00";
+                            return "#ff0000";
+                        }
 
-                    // Dòng dưới: dòng điện
-                    QGCLabel {
-                        text: _activeVehicle && _activeVehicle.batteries.get(0).current
-                            ? _activeVehicle.batteries.get(0).current.rawValue.toFixed(1) + "A"
-                            : ""
-                        color: "white"
-                        font.family: "Monospace"
-                        font.pointSize: ScreenTools.smallFontPointSize * 0.95
-                        horizontalAlignment: Text.AlignRight
-                        width: 50
+                        Row {
+                            anchors.centerIn: parent
+                            spacing: 6
+
+                            // Phần trăm pin
+                            QGCLabel {
+                                text: {
+                                    if (!battery) return "N/A";
+                                    var percent = battery.percentRemaining.rawValue;
+
+                                    if (isNaN(percent)) {
+                                        // Fallback sang voltage
+                                        var voltage = battery.voltage.rawValue;
+                                        return isNaN(voltage) ? "N/A" : voltage.toFixed(1) + "V";
+                                    }
+                                    return percent > 98.9 ? "100%" : percent.toFixed(0) + "%";
+                                }
+                                color: parent.parent.getBatteryColor()
+                                font.bold: true
+                                font.family: "Monospace"
+                                font.pointSize: ScreenTools.defaultFontPointSize * 1.1
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+
+                            Column {
+                                spacing: 2
+                                anchors.verticalCenter: parent.verticalCenter
+
+                                // Điện áp
+                                QGCLabel {
+                                    text: {
+                                        if (!battery) return "?V";
+                                        var v = battery.voltage.rawValue;
+                                        return isNaN(v) ? "?V" : v.toFixed(1) + "V";
+                                    }
+                                    color: "white"
+                                    font.family: "Monospace"
+                                    font.pointSize: ScreenTools.smallFontPointSize
+                                    horizontalAlignment: Text.AlignRight
+                                    width: 50
+                                }
+
+                                // Dòng điện
+                                QGCLabel {
+                                    text: {
+                                        if (!battery || !battery.current) return "?A";
+                                        var c = battery.current.rawValue;
+                                        return isNaN(c) ? "?A" : c.toFixed(1) + "A";
+                                    }
+                                    color: "white"
+                                    font.family: "Monospace"
+                                    font.pointSize: ScreenTools.smallFontPointSize * 0.95
+                                    horizontalAlignment: Text.AlignRight
+                                    width: 50
+                                }
+                            }
+                        }
                     }
                 }
             }
-
         }
 
         //---------- 10. TRẠNG THÁI NGÒI (RIGHT CORNER) ----------
