@@ -224,11 +224,11 @@ Item {
             property string buttonIcon: ""
 
             width:  ScreenTools.defaultFontPixelWidth * 15
-            height: ScreenTools.defaultFontPixelHeight * 3.0
+            height: ScreenTools.defaultFontPixelHeight * 2.5
 
             background: Rectangle {
                 color: Qt.rgba(0.5, 0.5, 0.5, 0.55)
-                border.color: parent.hovered ? "#00ff00" : ""
+                border.color: parent.hovered ? "#00ff00" : "white"
                 border.width: 3
                 radius: 6
 
@@ -247,13 +247,6 @@ Item {
             contentItem: Column {
                 anchors.centerIn: parent
                 spacing: 2
-
-                QGCLabel {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    text: buttonIcon
-                    font.pointSize: ScreenTools.mediumFontPointSize
-                    visible: buttonIcon !== ""
-                }
 
                 QGCLabel {
                     anchors.horizontalCenter: parent.horizontalCenter
@@ -285,7 +278,7 @@ Item {
         }
 
         MilitaryButton {
-            buttonText: qsTr("RTL")
+            buttonText: qsTr("QUAY VỀ")
             buttonIcon: ""
             visible: _activeVehicle && _activeVehicle.guidedModeSupported
             onClicked: {
@@ -313,6 +306,7 @@ Item {
             }
         }
     }
+
 
     GripperMenu {
         id: gripperOptions
@@ -380,8 +374,386 @@ Item {
                 ToolTip.text: leftPanelContainer.showLogo ? qsTr("Ẩn ảnh") : qsTr("Hiện ảnh")
             }
     }
-
     */
+
+    //---------- LEFT BAR: STATUS INDICATOR (QGC ORIGINAL) ----------
+    //---------- LEFT BAR: STATUS INDICATOR (QGC ORIGINAL) ----------
+    Column {
+        id: leftStatusColumn
+        anchors.left: parent.left
+        anchors.top: parent.top
+        anchors.topMargin: ScreenTools.defaultFontPixelHeight * 15 + _layoutMargin * 3
+        anchors.leftMargin: _layoutMargin
+        spacing: ScreenTools.defaultFontPixelWidth
+        z: QGroundControl.zOrderWidgets
+        width: ScreenTools.defaultFontPixelWidth * 25
+
+        property var    _activeVehicle:     QGroundControl.multiVehicleManager.activeVehicle
+        property var    _vehicleInAir:      _activeVehicle ? _activeVehicle.flying || _activeVehicle.landing : false
+        property bool   _vtolInFWDFlight:   _activeVehicle ? _activeVehicle.vtolInFwdFlight : false
+        property bool   _armed:             _activeVehicle ? _activeVehicle.armed : false
+        property real   _margins:           ScreenTools.defaultFontPixelWidth
+        property real   _spacing:           ScreenTools.defaultFontPixelWidth / 2
+        property bool   _healthAndArmingChecksSupported: _activeVehicle ? _activeVehicle.healthAndArmingCheckReport.supported : false
+        property bool   _communicationLost: _activeVehicle ? _activeVehicle.connectionLost : false
+        property color  _mainStatusBGColor: qgcPal.brandingPurple
+
+        function dropMainStatusIndicator() {
+            let overallStatusComponent = _activeVehicle ? overallStatusIndicatorPage : overallStatusOfflineIndicatorPage
+            mainWindow.showIndicatorDrawer(overallStatusComponent, leftStatusColumn)
+        }
+
+        // Main Status Rectangle - CLICKABLE
+        Rectangle {
+            id: mainStatusRect
+            width: parent.width
+            height: mainStatusLabel.contentHeight + _margins * 2
+            color: leftStatusColumn._mainStatusBGColor
+            opacity: 0.8
+            radius: ScreenTools.defaultFontPixelHeight * 0.25
+            border.color: qgcPal.text
+            border.width: 1
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.margins: leftStatusColumn._margins
+                spacing: leftStatusColumn._spacing
+
+                QGCLabel {
+                    id: mainStatusLabel
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    verticalAlignment: Text.AlignVCenter
+                    text: mainStatusText()
+                    font.pointSize: ScreenTools.mediumFontPointSize
+                    wrapMode: Text.WordWrap
+
+                    property string _commLostText:      qsTr("Mất kết nối")
+                    property string _readyToFlyText:    qsTr("Sẵn sàng bay")
+                    property string _notReadyToFlyText: qsTr("Chưa sẵn sàng")
+                    property string _disconnectedText:  qsTr("Không kết nối")
+                    property string _armedText:         qsTr("Khởi động")
+                    property string _flyingText:        qsTr("Đang bay")
+                    property string _landingText:       qsTr("Đang hạ cánh")
+
+                    function mainStatusText() {
+                        if (_activeVehicle) {
+                            if (leftStatusColumn._communicationLost) {
+                                leftStatusColumn._mainStatusBGColor = qgcPal.colorRed
+                                return mainStatusLabel._commLostText
+                            }
+                            if (_activeVehicle.armed) {
+                                leftStatusColumn._mainStatusBGColor = qgcPal.colorGreen
+
+                                if (leftStatusColumn._healthAndArmingChecksSupported) {
+                                    if (_activeVehicle.healthAndArmingCheckReport.canArm) {
+                                        if (_activeVehicle.healthAndArmingCheckReport.hasWarningsOrErrors) {
+                                            leftStatusColumn._mainStatusBGColor = qgcPal.colorOrange
+                                        }
+                                    } else {
+                                        leftStatusColumn._mainStatusBGColor = qgcPal.colorRed
+                                    }
+                                }
+
+                                if (_activeVehicle.flying) {
+                                    return mainStatusLabel._flyingText
+                                } else if (_activeVehicle.landing) {
+                                    return mainStatusLabel._landingText
+                                } else {
+                                    return mainStatusLabel._armedText
+                                }
+                            } else {
+                                if (leftStatusColumn._healthAndArmingChecksSupported) {
+                                    if (_activeVehicle.healthAndArmingCheckReport.canArm) {
+                                        if (_activeVehicle.healthAndArmingCheckReport.hasWarningsOrErrors) {
+                                            leftStatusColumn._mainStatusBGColor = qgcPal.colorOrange
+                                        } else {
+                                            leftStatusColumn._mainStatusBGColor = qgcPal.colorGreen
+                                        }
+                                        return mainStatusLabel._readyToFlyText
+                                    } else {
+                                        leftStatusColumn._mainStatusBGColor = qgcPal.colorRed
+                                        return mainStatusLabel._notReadyToFlyText
+                                    }
+                                } else if (_activeVehicle.readyToFlyAvailable) {
+                                    if (_activeVehicle.readyToFly) {
+                                        leftStatusColumn._mainStatusBGColor = qgcPal.colorGreen
+                                        return mainStatusLabel._readyToFlyText
+                                    } else {
+                                        leftStatusColumn._mainStatusBGColor = qgcPal.colorOrange
+                                        return mainStatusLabel._notReadyToFlyText
+                                    }
+                                } else {
+                                    if (_activeVehicle.allSensorsHealthy && _activeVehicle.autopilotPlugin.setupComplete) {
+                                        leftStatusColumn._mainStatusBGColor = qgcPal.colorGreen
+                                        return mainStatusLabel._readyToFlyText
+                                    } else {
+                                        leftStatusColumn._mainStatusBGColor = qgcPal.colorOrange
+                                        return mainStatusLabel._notReadyToFlyText
+                                    }
+                                }
+                            }
+                        } else {
+                            leftStatusColumn._mainStatusBGColor = qgcPal.brandingPurple
+                            return mainStatusLabel._disconnectedText
+                        }
+                    }
+                }
+
+                QGCColoredImage {
+                    id: vehicleMessagesIcon
+                    Layout.preferredWidth: ScreenTools.defaultFontPixelWidth * 2
+                    Layout.preferredHeight: ScreenTools.defaultFontPixelWidth * 2
+                    source: "/res/VehicleMessages.png"
+                    color: getIconColor()
+                    sourceSize.width: width
+                    fillMode: Image.PreserveAspectFit
+                    visible: _activeVehicle
+
+                    function getIconColor() {
+                        let iconColor = qgcPal.text
+                        if (_activeVehicle) {
+                            if (_activeVehicle.messageTypeError) {
+                                iconColor = qgcPal.colorRed
+                            } else if (_activeVehicle.messageTypeWarning) {
+                                iconColor = qgcPal.colorOrange
+                            }
+                        }
+                        return iconColor
+                    }
+                }
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                cursorShape: Qt.PointingHandCursor
+                onClicked: {
+                    leftStatusColumn.dropMainStatusIndicator()
+                }
+            }
+        }
+
+        Component {
+            id: overallStatusOfflineIndicatorPage
+
+            MainStatusIndicatorOfflinePage { }
+        }
+
+        Component {
+            id: overallStatusIndicatorPage
+
+            ToolIndicatorPage {
+                showExpand: _activeVehicle && _activeVehicle.mainStatusIndicatorContentItem ? true : false
+                waitForParameters: _activeVehicle && _activeVehicle.mainStatusIndicatorContentItem ? true : false
+                contentComponent: mainStatusContentComponent
+                expandedComponent: mainStatusExpandedComponent
+            }
+        }
+
+        Component {
+            id: mainStatusContentComponent
+
+            ColumnLayout {
+                id: mainLayout
+                spacing: leftStatusColumn._spacing
+
+                QGCButton {
+                    enabled: leftStatusColumn._armed || !leftStatusColumn._healthAndArmingChecksSupported || (_activeVehicle && _activeVehicle.healthAndArmingCheckReport.canArm)
+                    text: leftStatusColumn._armed ? qsTr("Disarm") : (forceArm ? qsTr("Force Arm") : qsTr("Arm"))
+                    Layout.alignment: Qt.AlignLeft
+
+                    property bool forceArm: false
+
+                    onPressAndHold: forceArm = true
+
+                    onClicked: {
+                        if (leftStatusColumn._armed) {
+                            mainWindow.disarmVehicleRequest()
+                        } else {
+                            if (forceArm) {
+                                mainWindow.forceArmVehicleRequest()
+                            } else {
+                                mainWindow.armVehicleRequest()
+                            }
+                        }
+                        forceArm = false
+                        mainWindow.closeIndicatorDrawer()
+                    }
+                }
+
+                SettingsGroupLayout {
+                    heading: qsTr("Vehicle Messages")
+                    visible: !vehicleMessageList.noMessages
+
+                    VehicleMessageList {
+                        id: vehicleMessageList
+                    }
+                }
+
+                SettingsGroupLayout {
+                    heading: qsTr("Trạng thái cảm biến")
+                    visible: _activeVehicle && !leftStatusColumn._healthAndArmingChecksSupported
+
+                    GridLayout {
+                        rowSpacing: leftStatusColumn._spacing
+                        columnSpacing: leftStatusColumn._spacing
+                        columns: 2
+
+                        Repeater {
+                            model: _activeVehicle ? _activeVehicle.sysStatusSensorInfo.sensorNames.length : 0
+
+                            QGCLabel {
+                                text: _activeVehicle.sysStatusSensorInfo.sensorNames[index]
+                            }
+                        }
+
+                        Repeater {
+                            model: _activeVehicle ? _activeVehicle.sysStatusSensorInfo.sensorStatus.length : 0
+
+                            QGCLabel {
+                                text: _activeVehicle.sysStatusSensorInfo.sensorStatus[index]
+                            }
+                        }
+                    }
+                }
+
+                SettingsGroupLayout {
+                    heading: qsTr("Overall Status")
+                    visible: leftStatusColumn._healthAndArmingChecksSupported && _activeVehicle && _activeVehicle.healthAndArmingCheckReport.problemsForCurrentMode.count > 0
+
+                    Repeater {
+                        model: _activeVehicle ? _activeVehicle.healthAndArmingCheckReport.problemsForCurrentMode : null
+                        delegate: listdelegate
+                    }
+                }
+
+                FactPanelController {
+                    id: controller
+                }
+
+                Component {
+                    id: listdelegate
+
+                    Column {
+                        width: parent ? parent.width : 100
+                        spacing: 2
+
+                        Row {
+                            spacing: ScreenTools.defaultFontPixelHeight
+
+                            QGCLabel {
+                                id: message
+                                text: object.message
+                                textFormat: TextEdit.RichText
+                                color: object.severity == 'error' ? qgcPal.colorRed : object.severity == 'warning' ? qgcPal.colorOrange : qgcPal.text
+                                wrapMode: Text.WordWrap
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    onClicked: {
+                                        if (object.description != "")
+                                            object.expanded = !object.expanded
+                                    }
+                                }
+                            }
+
+                            QGCColoredImage {
+                                id: arrowDownIndicator
+                                anchors.verticalCenter: parent.verticalCenter
+                                height: 1.5 * ScreenTools.defaultFontPixelWidth
+                                width: height
+                                source: "/qmlimages/arrow-down.png"
+                                color: qgcPal.text
+                                visible: object.description != ""
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    onClicked: object.expanded = !object.expanded
+                                }
+                            }
+                        }
+
+                        QGCLabel {
+                            id: description
+                            text: object.description
+                            textFormat: TextEdit.RichText
+                            clip: true
+                            visible: object.expanded
+                            wrapMode: Text.WordWrap
+                            width: parent.width
+
+                            property var fact: null
+
+                            onLinkActivated: (link) => {
+                                if (link.startsWith('param://')) {
+                                    var paramName = link.substr(8);
+                                    fact = controller.getParameterFact(-1, paramName, true)
+                                    if (fact != null) {
+                                        paramEditorDialogComponent.createObject(mainWindow).open()
+                                    }
+                                } else {
+                                    Qt.openUrlExternally(link);
+                                }
+                            }
+
+                            Component {
+                                id: paramEditorDialogComponent
+
+                                ParameterEditorDialog {
+                                    title: qsTr("Edit Parameter")
+                                    fact: description.fact
+                                    destroyOnClose: true
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        Component {
+            id: mainStatusExpandedComponent
+
+            ColumnLayout {
+                Layout.preferredWidth: ScreenTools.defaultFontPixelWidth * 60
+                spacing: ScreenTools.defaultFontPixelHeight / 2
+
+                Loader {
+                    source: _activeVehicle && _activeVehicle.mainStatusIndicatorContentItem ? _activeVehicle.mainStatusIndicatorContentItem : ""
+                }
+
+                SettingsGroupLayout {
+                    Layout.fillWidth: true
+                    visible: QGroundControl.corePlugin.showAdvancedUI
+
+                    GridLayout {
+                        columns: 2
+                        rowSpacing: ScreenTools.defaultFontPixelHeight / 2
+                        columnSpacing: ScreenTools.defaultFontPixelWidth * 2
+                        Layout.fillWidth: true
+
+                        QGCLabel { Layout.fillWidth: true; text: qsTr("Vehicle Parameters") }
+                        QGCButton {
+                            text: qsTr("Configure")
+                            onClicked: {
+                                mainWindow.showVehicleConfigParametersPage()
+                                mainWindow.closeIndicatorDrawer()
+                            }
+                        }
+
+                        QGCLabel { Layout.fillWidth: true; text: qsTr("Vehicle Configuration") }
+                        QGCButton {
+                            text: qsTr("Configure")
+                            onClicked: {
+                                mainWindow.showVehicleConfig()
+                                mainWindow.closeIndicatorDrawer()
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     //---------- BOTTOM BAR: 4 MAIN METRICS ----------
     Row {
