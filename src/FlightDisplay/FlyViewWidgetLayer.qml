@@ -191,7 +191,6 @@ Item {
         }
     }
 
-    // ẨN TOOLSTRIP DỌC
     FlyViewToolStrip {
         id:                     toolStrip
         visible:                false
@@ -224,13 +223,13 @@ Item {
             property string buttonText: ""
             property string buttonIcon: ""
 
-            width:  ScreenTools.defaultFontPixelWidth * 10
-            height: ScreenTools.defaultFontPixelHeight * 3
+            width:  ScreenTools.defaultFontPixelWidth * 15
+            height: ScreenTools.defaultFontPixelHeight * 3.0
 
             background: Rectangle {
                 color: Qt.rgba(0.5, 0.5, 0.5, 0.55)
-                border.color: parent.hovered ? "#00ff00" : "#00bfff"
-                border.width: 2
+                border.color: parent.hovered ? "#00ff00" : ""
+                border.width: 3
                 radius: 6
 
                 Rectangle {
@@ -259,17 +258,17 @@ Item {
                 QGCLabel {
                     anchors.horizontalCenter: parent.horizontalCenter
                     text: buttonText
-                    color: "lightyellow"
+                    color: "white"
                     font.bold: true
                     font.family: "Monospace"
-                    font.pointSize: ScreenTools.smallFontPointSize
+                    font.pointSize: ScreenTools.mediumFontPointSize
                 }
             }
         }
 
         MilitaryButton {
             buttonText: qsTr("CẤT CÁNH")
-            buttonIcon: "🚁"
+            buttonIcon: ""
             visible: _activeVehicle && _activeVehicle.guidedModeSupported && !_activeVehicle.flying
             onClicked: {
                 _guidedController.confirmAction(_guidedController.actionTakeoff)
@@ -278,7 +277,7 @@ Item {
 
         MilitaryButton {
             buttonText: qsTr("HẠ CÁNH")
-            buttonIcon: "🛬"
+            buttonIcon: ""
             visible: _activeVehicle && _activeVehicle.guidedModeSupported && _activeVehicle.flying
             onClicked: {
                 _guidedController.confirmAction(_guidedController.actionLand)
@@ -287,7 +286,7 @@ Item {
 
         MilitaryButton {
             buttonText: qsTr("RTL")
-            buttonIcon: "🏠"
+            buttonIcon: ""
             visible: _activeVehicle && _activeVehicle.guidedModeSupported
             onClicked: {
                 _guidedController.confirmAction(_guidedController.actionRTL)
@@ -296,7 +295,7 @@ Item {
 
         MilitaryButton {
             buttonText: qsTr("ĐẶT VTHNV")
-            buttonIcon: "📍"
+            buttonIcon: ""
             visible: _activeVehicle
             onClicked: {
                 _root.setHomeModeToggled()
@@ -305,7 +304,7 @@ Item {
 
         MilitaryButton {
             buttonText: qsTr("KIỂM TRA")
-            buttonIcon: "✓"
+            buttonIcon: ""
             onClicked: {
                 if (!preFlightChecklistLoader.active) {
                     preFlightChecklistLoader.active = true
@@ -400,7 +399,7 @@ Item {
             property string label: ""
             property string value: "--"
             property string unit: ""
-            property color valueColor: "#00ff00"
+            property color valueColor: "white"
             property string icon: ""
 
             width: (parent.width - _layoutMargin * 3) / 4
@@ -428,7 +427,7 @@ Item {
 
                     QGCLabel {
                         text: label
-                        color: "#ffffff"
+                        color: "white"
                         font.pointSize: ScreenTools.mediumFontPointSize
                         font.family: "Monospace"
                         anchors.verticalCenter: parent.verticalCenter
@@ -448,34 +447,34 @@ Item {
 
         BottomMetric {
             label: "TỐC ĐỘ BAY"
-            icon: "➡"
+            icon: ""
             value: (_activeVehicle && _activeVehicle.groundSpeed) ? _activeVehicle.groundSpeed.valueString : "--"
             unit: (_activeVehicle && _activeVehicle.groundSpeed) ? _activeVehicle.groundSpeed.units : ""
-            valueColor: "#00ff00"
+            valueColor: "white"
         }
 
         BottomMetric {
             label: "ĐỘ CAO ASML"
-            icon: "⬆"
+            icon: ""
             value: (_activeVehicle && _activeVehicle.altitudeAMSL) ? _activeVehicle.altitudeAMSL.valueString : "--"
             unit: (_activeVehicle && _activeVehicle.altitudeRelative) ? _activeVehicle.altitudeRelative.units : ""
-            valueColor: "#ffaa00"
+            valueColor: "white"
         }
 
         BottomMetric {
             label: "CÁCH MỤC TIÊU"
-            icon: "🎯"
+            icon: ""
             value: _root.distanceToTarget >= 0 ? _root.distanceToTarget.toFixed(0) : "--"
             unit: "m"
-            valueColor: "#ff00ff"
+            valueColor: "white"
         }
 
         BottomMetric {
             label: "THỜI GIAN BAY"
-            icon: "⏱"
+            icon: ""
             value: _root.flightTimeFact ? _root.flightTimeFact.valueString : "00:00:00"
             unit: ""
-            valueColor: "#00bfff"
+            valueColor: "white"
         }
     }
 
@@ -495,7 +494,7 @@ Item {
             width: parent.width*0.9
             height: width
             color: Qt.rgba(0.5, 0.5, 0.5, 0.55)
-            border.color: "#00bfff"
+            border.color: "white"
             border.width: 3
             radius: 8
 
@@ -503,7 +502,7 @@ Item {
                 anchors.fill: parent
                 anchors.margins: -4
                 color: "transparent"
-                border.color: "#00bfff"
+                border.color: "white"
                 border.width: 1
                 radius: parent.radius + 2
                 opacity: 0.3
@@ -576,7 +575,7 @@ Item {
                                 text: Math.abs(modelData)
                                 font.pointSize: ScreenTools.smallFontPointSize
                                 font.family: "Monospace"
-                                color: "#ffffff"
+                                color: "#d6b41e"
                                 anchors.verticalCenter: parent.verticalCenter
                             }
 
@@ -692,7 +691,7 @@ Item {
                     anchors.verticalCenter: parent.verticalCenter
                     x: parent.width - width - 2
                     text: "E"
-                    color: "lightgreen"
+                    color: "#ffffff"
                     font.bold: true
                     font.pointSize: ScreenTools.mediumFontPointSize
                     font.family: "Monospace"
@@ -702,7 +701,7 @@ Item {
                     anchors.horizontalCenter: parent.horizontalCenter
                     y: parent.height - height - 2
                     text: "S"
-                    color: "lightgreen"
+                    color: "#ffffff"
                     font.bold: true
                     font.pointSize: ScreenTools.mediumFontPointSize
                     font.family: "Monospace"
@@ -712,7 +711,7 @@ Item {
                     anchors.verticalCenter: parent.verticalCenter
                     x: 2
                     text: "W"
-                    color: "lightgreen"
+                    color: "#ffffff"
                     font.bold: true
                     font.pointSize: ScreenTools.mediumFontPointSize
                     font.family: "Monospace"
@@ -729,7 +728,7 @@ Item {
                         y: parent.height / 2 + Math.sin((angle - 90) * Math.PI / 180) * distance - height / 2
                         width: isMajor ? 2 : 1
                         height: isMajor ? 8 : 4
-                        color: "#00bfff"
+                        color: "#ffffff"
                         opacity: isMajor ? 0.8 : 0.4
                         rotation: angle
                     }
@@ -741,7 +740,7 @@ Item {
                 width: parent.width * 0.35
                 height: parent.height * 0.35
                 color: Qt.rgba(0.5,0.5,0.5,0.55)
-                border.color: "#00ff00"
+                border.color: "#ffffff"
                 border.width: 2
                 radius: width / 2
                 z: 100
@@ -753,7 +752,7 @@ Item {
                     QGCLabel {
                         Layout.alignment: Qt.AlignHCenter
                         text: _activeVehicle ? Math.round(_activeVehicle.heading.rawValue).toString() : "---"
-                        color: "#00ff00"
+                        color: "#ffffff"
                         font.bold: true
                         font.pointSize: ScreenTools.largeFontPointSize
                         font.family: "Monospace"
@@ -762,7 +761,7 @@ Item {
                     QGCLabel {
                         Layout.alignment: Qt.AlignHCenter
                         text: "°"
-                        color: "#888888"
+                        color: "#ffffff"
                         font.pointSize: ScreenTools.smallFontPointSize
                         font.family: "Monospace"
                     }
@@ -840,7 +839,7 @@ Item {
                         font.family: "Monospace"
                     }
 
-                    QGCLabel {
+888888                    QGCLabel {
                         text: (_root.pitchFact ? _root.pitchFact.valueString : "--") + " °"
                         color: "#00ff00"
                         font.bold: true
@@ -910,7 +909,7 @@ Item {
             width: parent.width*0.9
             height: ScreenTools.defaultFontPixelHeight * 4
             color: Qt.rgba(0.5, 0.5, 0.5, 0.55)
-            border.color: "#00bfff"
+            border.color: "#ffffff"
             border.width: 2
             radius: 6
 
@@ -919,20 +918,20 @@ Item {
                 anchors.margins: 8
                 spacing: 8
 
-                Rectangle {
-                    Layout.preferredWidth: ScreenTools.defaultFontPixelHeight * 2.5
-                    Layout.fillHeight: true
-                    color: Qt.rgba(0.1, 0.1, 0.1, 0.5)
-                    border.color: "#00bfff"
-                    border.width: 1
-                    radius: 4
+                // Rectangle {
+                //     Layout.preferredWidth: ScreenTools.defaultFontPixelHeight * 2.5
+                //     Layout.fillHeight: true
+                //     color: Qt.rgba(0.1, 0.1, 0.1, 0.5)
+                //     border.color: "#ffffff"
+                //     border.width: 1
+                //     radius: 4
 
-                    QGCLabel {
-                        anchors.centerIn: parent
-                        text: "💨"
-                        font.pointSize: ScreenTools.largeFontPointSize
-                    }
-                }
+                //     // QGCLabel {
+                //     //     anchors.centerIn: parent
+                //     //     text: "💨"
+                //     //     font.pointSize: ScreenTools.largeFontPointSize
+                //     // }
+                // }
 
                 ColumnLayout {
                     Layout.fillWidth: true
@@ -940,16 +939,16 @@ Item {
                     spacing: 2
 
                     QGCLabel {
-                        text: "T.Đ GIÓ"
+                        text: "TỐC ĐỘ GIÓ"
                         color: "white"
-                        font.pointSize: ScreenTools.smallFontPointSize
+                        font.pointSize: ScreenTools.mediumFontPointSize
                         font.family: "Monospace"
                     }
 
                     QGCLabel {
                         text: (_root.airSpeedFact ? _root.airSpeedFact.valueString : "--") +
                               (_root.airSpeedFact ? " " + _root.airSpeedFact.units : "")
-                        color: "#00bfff"
+                        color: "#ffffff"
                         font.bold: true
                         font.pointSize: ScreenTools.mediumFontPointSize
                         font.family: "Monospace"
@@ -963,7 +962,7 @@ Item {
             width: parent.width*0.9
             height: ScreenTools.defaultFontPixelHeight * 4
             color: Qt.rgba(0.5, 0.5, 0.5, 0.55)
-            border.color: "#00ff00"
+            border.color: "#ffffff"
             border.width: 2
             radius: 6
 
@@ -972,20 +971,20 @@ Item {
                 anchors.margins: 8
                 spacing: 8
 
-                Rectangle {
-                    Layout.preferredWidth: ScreenTools.defaultFontPixelHeight * 2.5
-                    Layout.fillHeight: true
-                    color: Qt.rgba(0.1, 0.1, 0.1, 0.5)
-                    border.color: "#00ff00"
-                    border.width: 1
-                    radius: 4
+                // Rectangle {
+                //     Layout.preferredWidth: ScreenTools.defaultFontPixelHeight * 2.5
+                //     Layout.fillHeight: true
+                //     color: Qt.rgba(0.1, 0.1, 0.1, 0.5)
+                //     border.color: "#ffffff"
+                //     border.width: 1
+                //     radius: 4
 
-                    QGCLabel {
-                        anchors.centerIn: parent
-                        text: "📏"
-                        font.pointSize: ScreenTools.largeFontPointSize
-                    }
-                }
+                //     // QGCLabel {
+                //     //     anchors.centerIn: parent
+                //     //     text: "📏"
+                //     //     font.pointSize: ScreenTools.largeFontPointSize
+                //     // }
+                // }
 
                 ColumnLayout {
                     Layout.fillWidth: true
@@ -993,16 +992,16 @@ Item {
                     spacing: 2
 
                     QGCLabel {
-                        text: "Q.Đ"
+                        text: "Q.ĐƯỜNG"
                         color: "white"
-                        font.pointSize: ScreenTools.smallFontPointSize
+                        font.pointSize: ScreenTools.mediumFontPointSize
                         font.family: "Monospace"
                     }
 
                     QGCLabel {
                         text: (_activeVehicle && _activeVehicle.flightDistance ? _activeVehicle.flightDistance.valueString : "--") +
                               (_activeVehicle && _activeVehicle.flightDistance ? " " + _activeVehicle.flightDistance.units : "")
-                        color: "#00ff00"
+                        color: "#ffffff"
                         font.bold: true
                         font.pointSize: ScreenTools.mediumFontPointSize
                         font.family: "Monospace"
