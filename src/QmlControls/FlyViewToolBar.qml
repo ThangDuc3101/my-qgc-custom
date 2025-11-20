@@ -401,50 +401,25 @@ Rectangle {
                 }
             }
         }
-
         //---------- 6. GPS STATUS ----------
-        Rectangle {
-            Layout.preferredWidth: ScreenTools.defaultFontPixelWidth * 13
-            Layout.preferredHeight: ScreenTools.defaultFontPixelHeight * 3.5
-            Layout.alignment: Qt.AlignVCenter
-            color: Qt.rgba(0.1, 0.8, 0.1, 0.15)
-            border.color: getGPSColor()
-            border.width: 2
-            radius: 6
-            visible: _activeVehicle
+                // Sử dụng GPS từ toolIndicators model như QGC gốc
+                Repeater {
+                    model: _activeVehicle ? _activeVehicle.toolIndicators : []
 
-            function getGPSColor() {
-                if (!_activeVehicle) return "#888888";
-                var satCount = _activeVehicle.gps.count.rawValue;
-                if (satCount >= 10) return "#00ff00";
-                if (satCount >= 6) return "#ffff00";
-                return "#ff0000";
-            }
+                    Loader {
+                        Layout.preferredWidth: ScreenTools.defaultFontPixelWidth * 13
+                        Layout.preferredHeight: ScreenTools.defaultFontPixelHeight * 3.5
+                        Layout.alignment: Qt.AlignVCenter
+                        source: modelData
+                        visible: item && item.showIndicator && isGPSIndicator(modelData)
 
-            Row {
-                anchors.centerIn: parent
-                spacing: 6
-
-                QGCLabel {
-                    text: "GPS"
-                    color: "white"
-                    font.family: "Monospace"
-                    font.pointSize: ScreenTools.smallFontPointSize
-                    anchors.verticalCenter: parent.verticalCenter
+                        function isGPSIndicator(path) {
+                            return path.toString().toLowerCase().indexOf("gps") !== -1;
+                        }
+                    }
                 }
 
-                QGCLabel {
-                    text: _activeVehicle ? _activeVehicle.gps.count.rawValue.toString() : "0"
-                    color: "white"
-                    font.bold: true
-                    font.family: "Monospace"
-                    font.pointSize: ScreenTools.defaultFontPointSize * 1.1
-                    anchors.verticalCenter: parent.verticalCenter
-                }
-            }
-        }
-
-        //---------- 7. BATTERY STATUS ----------
+        //---------- 7. BATTERY STATUS - CẢI TIẾN ----------
         Item {
             Layout.preferredWidth: ScreenTools.defaultFontPixelWidth * 18
             Layout.preferredHeight: ScreenTools.defaultFontPixelHeight * 3.5
@@ -477,11 +452,14 @@ Rectangle {
                             return "#ff0000";
                         }
 
-                        Row {
+                        // Layout cân đối với grid thay vì Column/Row lồng nhau
+                        Column {
                             anchors.centerIn: parent
-                            spacing: 6
+                            spacing: 3
 
+                            // Dòng 1: Phần trăm pin (to, đậm)
                             QGCLabel {
+                                anchors.horizontalCenter: parent.horizontalCenter
                                 text: {
                                     if (!battery) return "N/A";
                                     var percent = battery.percentRemaining.rawValue;
@@ -494,13 +472,13 @@ Rectangle {
                                 color: "white"
                                 font.bold: true
                                 font.family: "Monospace"
-                                font.pointSize: ScreenTools.defaultFontPointSize * 1.1
-                                anchors.verticalCenter: parent.verticalCenter
+                                font.pointSize: ScreenTools.defaultFontPointSize * 1.2
                             }
 
-                            Column {
-                                spacing: 2
-                                anchors.verticalCenter: parent.verticalCenter
+                            // Dòng 2: Voltage và Current (nhỏ hơn, cùng size)
+                            Row {
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                spacing: 8
 
                                 QGCLabel {
                                     text: {
@@ -510,9 +488,15 @@ Rectangle {
                                     }
                                     color: "white"
                                     font.family: "Monospace"
-                                    font.pointSize: ScreenTools.smallFontPointSize
-                                    horizontalAlignment: Text.AlignRight
-                                    width: 50
+                                    font.pointSize: ScreenTools.smallFontPointSize * 1.0
+                                    anchors.verticalCenter: parent.verticalCenter
+                                }
+
+                                Rectangle {
+                                    width: 1
+                                    height: 12
+                                    color: "#666666"
+                                    anchors.verticalCenter: parent.verticalCenter
                                 }
 
                                 QGCLabel {
@@ -523,9 +507,8 @@ Rectangle {
                                     }
                                     color: "white"
                                     font.family: "Monospace"
-                                    font.pointSize: ScreenTools.smallFontPointSize * 0.95
-                                    horizontalAlignment: Text.AlignRight
-                                    width: 50
+                                    font.pointSize: ScreenTools.smallFontPointSize * 1.0
+                                    anchors.verticalCenter: parent.verticalCenter
                                 }
                             }
                         }
@@ -533,6 +516,7 @@ Rectangle {
                 }
             }
         }
+
 
         //---------- SPACER - ĐẨY NGÒI SANG PHẢI ----------
         Item {
