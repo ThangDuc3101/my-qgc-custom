@@ -386,7 +386,13 @@ void Vehicle::_commonInit()
 
 Vehicle::~Vehicle()
 {
-    qCDebug(VehicleLog) << "~Vehicle" << this;
+    qCDebug(VehicleLog) << "~Vehicle destructor" << this;
+
+    // Disconnect ALL signals to prevent crashes from stale signal handlers
+    // This is critical for preventing crashes when vehicle is destroyed while
+    // QML bindings or pending network requests are still active
+    disconnect(this, nullptr, nullptr, nullptr);
+    qCDebug(VehicleLog) << "Disconnected all signals in destructor";
 
     delete _missionManager;
     _missionManager = nullptr;
@@ -397,14 +403,34 @@ Vehicle::~Vehicle()
 
 void Vehicle::prepareDelete()
 {
+    qCDebug(VehicleLog) << "Vehicle::prepareDelete() - cleaning up resources";
+    
+    // Abort and cleanup network requests to prevent crashes from pending requests
+    if (_networkManager) {
+        // Disconnect all signals first
+        disconnect(_networkManager, nullptr, this, nullptr);
+        qCDebug(VehicleLog) << "Disconnected network manager signals";
+        
+        // Abort any pending requests to prevent callbacks after vehicle destruction
+        _networkManager->clearAccessCache();
+        qCDebug(VehicleLog) << "Cleared network access cache";
+    }
+    
     // Clean up camera manager to stop all timers and prevent crashes during destruction
     if(_cameraManager) {
         // because of _cameraManager QML bindings check for nullptr won't work in the binding pipeline
         // the dangling pointer access will cause a runtime fault
         auto tmpCameras = _cameraManager;
         _cameraManager = nullptr;
-        delete tmpCameras;
+        
+        // IMPORTANT: Emit signal BEFORE deleting to notify QML bindings
+        // This allows QML to disconnect before the actual deletion
         emit cameraManagerChanged();
+        
+        // Now safe to delete
+        delete tmpCameras;
+        
+        qCDebug(VehicleLog) << "Camera manager cleaned up";
         // Note: Removed qApp->processEvents() to prevent MAVLink crashes during destruction
     }
 }
@@ -4449,6 +4475,12 @@ void Vehicle::_sendRequest(void)
 
 void Vehicle::_requestFinished(QNetworkReply* reply)
 {
+    // Safety check: if reply is null or already being deleted, skip processing
+    if (!reply) {
+        qCWarning(VehicleLog) << "Vehicle::_requestFinished - reply is null";
+        return;
+    }
+    
     QString boardStatus = "Lỗi Mạng";
     QString message = "";
 
@@ -4487,8 +4519,13 @@ void Vehicle::_requestFinished(QNetworkReply* reply)
         qDebug() << "Loi Request:" << reply->errorString();
     }
 
-            // Phát tín hiệu mang dữ liệu về cho QML
-    emit uavInfoReceived(boardStatus, message);
+    // Safety check: only emit if this object is still valid
+    // This prevents crashes if vehicle is deleted while request is pending
+    try {
+        emit uavInfoReceived(boardStatus, message);
+    } catch (const std::exception& e) {
+        qCWarning(VehicleLog) << "Exception in uavInfoReceived emit:" << e.what();
+    }
 
     reply->deleteLater();
 }

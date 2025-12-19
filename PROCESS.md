@@ -149,6 +149,213 @@ property int _telemetryLRSSI:   _activeVehicle ? _activeVehicle.telemetryLRSSI :
 
 ---
 
+## Giai đoạn 6: CRASH-001 Fix (Phase 2 Hotfix)
+
+### 6.1 Vấn đề phát hiện
+**CRASH-001**: App tắt ngay khi Pixhawk reboot hoặc USB disconnect
+- Nguyên nhân ban đầu: Suspected null pointer dereference trong CombinedRSSIIndicator.qml
+- Sau investigation: **ROOT CAUSE từ C++ backend - pending network requests**
+
+### 6.2 Fixes Applied
+
+#### 6.2.1 QML Safety Improvements (CombinedRSSIIndicator.qml)
+✅ **Thêm enabled flag cho Connections**
+```qml
+Connections {
+    target: _activeVehicle
+    enabled: _activeVehicle !== null  // ← CRITICAL FIX
+    ignoreUnknownSignals: true
+    
+    function onRcRSSIChanged(rssi) {
+        try {
+            if (!_activeVehicle) return
+            console.log("[RSSI] RC RSSI changed:", rssi)
+        } catch(e) {
+            console.error("[RSSI] Exception:", e.toString())
+        }
+    }
+}
+```
+
+✅ **Safer property binding với try-catch**
+```qml
+property bool _rcRSSIAvailable: {
+    if (!_activeVehicle || typeof _activeVehicle === 'undefined') return false
+    try {
+        return _activeVehicle.rcRSSI > 0 && _activeVehicle.rcRSSI <= 100
+    } catch(e) {
+        console.error("[RSSI] Error checking RC RSSI:", e)
+        return false
+    }
+}
+```
+
+✅ **Monitor activeVehicleChanged để reset values**
+```qml
+Connections {
+    target: QGroundControl.multiVehicleManager
+    
+    function onActiveVehicleChanged(vehicle) {
+        if (!vehicle) {
+            console.warn("[RSSI] Vehicle disconnected - resetting RSSI values")
+            _rcRSSIValue = 0
+            _telemetryLRSSI = 0
+        }
+    }
+}
+```
+
+#### 6.2.2 FlyViewToolBar.qml Fixes
+✅ **Fix _communicationLost property**
+```qml
+property bool _communicationLost: {
+    if (!_activeVehicle) return false
+    try {
+        if (!_activeVehicle.vehicleLinkManager) return false
+        return _activeVehicle.vehicleLinkManager.communicationLost
+    } catch(e) {
+        console.error("[FlyViewToolBar] Error:", e.toString())
+        return false
+    }
+}
+```
+
+✅ **Fix GPS color function với nested property access**
+```qml
+function getGPSColor() {
+    if (!_activeVehicle) return "#888888"
+    try {
+        if (!_activeVehicle.gps) return "#888888"
+        var satCount = _activeVehicle.gps.count.rawValue
+        if (isNaN(satCount)) return "#888888"
+        if (satCount >= 10) return "#00ff00"
+        if (satCount >= 6) return "#ffff00"
+        return "#ff0000"
+    } catch(e) {
+        console.error("[FlyViewToolBar] Error in getGPSColor:", e.toString())
+        return "#888888"
+    }
+}
+```
+
+✅ **Fix battery indicators with try-catch**
+- getBatteryColor()
+- Battery percent display
+- Voltage display
+- Current display
+
+✅ **Fix loadProgress property binding**
+- Small progress bar
+- Large progress bar
+
+#### 6.2.3 C++ Backend Fixes (Vehicle.cc)
+
+✅ **Disconnect ALL signals in destructor**
+```cpp
+Vehicle::~Vehicle()
+{
+    qCDebug(VehicleLog) << "~Vehicle destructor";
+    
+    // Disconnect ALL signals to prevent crashes from stale handlers
+    disconnect(this, nullptr, nullptr, nullptr);
+    
+    delete _missionManager;
+    delete _autopilotPlugin;
+}
+```
+
+✅ **Abort pending network requests in prepareDelete()**
+```cpp
+void Vehicle::prepareDelete()
+{
+    qCDebug(VehicleLog) << "Vehicle::prepareDelete() - cleaning up resources";
+    
+    // Disconnect network manager
+    if (_networkManager) {
+        disconnect(_networkManager, nullptr, this, nullptr);
+        _networkManager->clearAccessCache();  // ← Abort pending requests
+        qCDebug(VehicleLog) << "Cleared network access cache";
+    }
+    
+    // Clean up camera manager
+    // ...
+}
+```
+
+✅ **Add safety checks in _requestFinished()**
+```cpp
+void Vehicle::_requestFinished(QNetworkReply* reply)
+{
+    if (!reply) {
+        qCWarning(VehicleLog) << "reply is null";
+        return;
+    }
+    
+    // ... parse response ...
+    
+    try {
+        emit uavInfoReceived(boardStatus, message);
+    } catch (const std::exception& e) {
+        qCWarning(VehicleLog) << "Exception in emit:" << e.what();
+    }
+    
+    reply->deleteLater();
+}
+```
+
+### 6.3 Root Cause Analysis
+
+**PRIMARY ISSUE**: Custom commit `72ce11320` added network request handler
+- `_requestFinished()` được connect tới `_networkManager->finished` signal
+- Khi vehicle disconnect, destructor được gọi
+- Nhưng nếu request còn pending, signal fires AFTER destruction
+- QML connections vẫn tham chiếu tới vehicle đã delete → **CRASH**
+
+**Timeline khi vehicle disconnect:**
+1. MultiVehicleManager::_deleteVehiclePhase1() called
+2. Emit vehicleRemoved(vehicle)
+3. Call vehicle->prepareDelete()
+4. Start 20ms timer để QML cleanup
+5. **← Nếu network request completes ở đây, _requestFinished fires**
+6. After 20ms: MultiVehicleManager::_deleteVehiclePhase2()
+7. Finally: Delete vehicle object
+
+**Fixes implemented:**
+1. ✅ Disconnect network manager immediately in prepareDelete()
+2. ✅ Abort pending requests with clearAccessCache()
+3. ✅ Disconnect ALL signals in destructor
+4. ✅ Add null checks and try-catch in _requestFinished()
+5. ✅ Add enabled flag to all QML Connections
+6. ✅ Wrap all property access in try-catch blocks
+
+### 6.4 Status
+- 🔴 **Still crashing** - Multiple fixes attempted, root cause still unidentified
+- Commits applied:
+  1. ✅ `fix(CRASH-001): Implement Phase 2 hotfix - prevent null pointer dereference in RSSI Indicator`
+  2. ✅ `fix(CRASH-001): Expand Phase 2 hotfix to GPS and Battery indicators`
+  3. ✅ `fix(CRASH-001): Fix remaining unsafe vehicle property accesses in FlyViewToolBar`
+  4. ✅ `fix(CRASH-001): Prevent crash from pending network requests during vehicle disconnect`
+  5. ✅ `fix(CRASH-001): Disconnect ALL signals in Vehicle destructor to prevent crash`
+  6. ✅ `fix(CRASH-001): Abort pending network requests in prepareDelete()`
+  7. ✅ `fix(CRASH-001): Ensure camera manager signal emitted BEFORE deletion`
+
+- Remaining investigation needed:
+  - ⚠️ MAVLink message handlers may still be firing after destruction
+  - ⚠️ Link/communication layer cleanup
+  - ⚠️ Parameter manager or other subsystem cleanup
+  - ⚠️ Need to enable debug symbols and use gdb for exact crash location
+  - ⚠️ May need to trace complete vehicle lifecycle with logging
+
+### 6.5 Next Steps (Future)
+- [ ] Build with CMAKE_BUILD_TYPE=Debug to get stack traces
+- [ ] Use gdb to capture exact crash location
+- [ ] Add comprehensive logging to vehicle lifecycle
+- [ ] Trace all signal/slot connections and cleanup order
+- [ ] Compare with upstream QGroundControl for lifecycle patterns
+- [ ] Consider disabling network request feature if it's non-critical
+
+---
+
 ## Commits
 
 1. `docs: thêm SUMMARY.md - phân tích tổng thể dự án`
