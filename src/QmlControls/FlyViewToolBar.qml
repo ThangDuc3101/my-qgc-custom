@@ -15,6 +15,7 @@ import QtQuick.Dialogs
 import QGroundControl
 import QGroundControl.Controls
 import QGroundControl.ScreenTools
+import QGroundControl.Toolbar
 
 Rectangle {
     id:     _root
@@ -70,7 +71,7 @@ Rectangle {
         anchors.rightMargin: ScreenTools.defaultFontPixelWidth * 0.5
         anchors.topMargin: 4
         anchors.bottomMargin: 4
-        spacing: ScreenTools.defaultFontPixelWidth * 0.75
+        spacing: ScreenTools.defaultFontPixelWidth * 1.0
 
         //---------- 1. LOGO ----------
         Rectangle {
@@ -460,6 +461,13 @@ Rectangle {
                         GPSIndicatorPage { }
                     }
                 }
+
+        //---------- 6.5. SIGNAL STRENGTH (RSSI) ----------
+        CombinedRSSIIndicator {
+            Layout.preferredWidth: ScreenTools.defaultFontPixelWidth * 16
+            Layout.preferredHeight: ScreenTools.defaultFontPixelHeight * 3.5
+            Layout.alignment: Qt.AlignVCenter
+        }
 
         //---------- 7. BATTERY STATUS - CẢI TIẾN ----------
         Item {
