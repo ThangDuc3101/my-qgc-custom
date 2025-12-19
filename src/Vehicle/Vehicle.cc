@@ -397,6 +397,14 @@ Vehicle::~Vehicle()
 
 void Vehicle::prepareDelete()
 {
+    qCDebug(VehicleLog) << "Vehicle::prepareDelete() - cleaning up resources";
+    
+    // Disconnect network manager to prevent crashes from pending requests
+    if (_networkManager) {
+        disconnect(_networkManager, nullptr, this, nullptr);
+        qCDebug(VehicleLog) << "Disconnected network manager signals";
+    }
+    
     // Clean up camera manager to stop all timers and prevent crashes during destruction
     if(_cameraManager) {
         // because of _cameraManager QML bindings check for nullptr won't work in the binding pipeline
@@ -4449,6 +4457,12 @@ void Vehicle::_sendRequest(void)
 
 void Vehicle::_requestFinished(QNetworkReply* reply)
 {
+    // Safety check: if reply is null or already being deleted, skip processing
+    if (!reply) {
+        qCWarning(VehicleLog) << "Vehicle::_requestFinished - reply is null";
+        return;
+    }
+    
     QString boardStatus = "Lỗi Mạng";
     QString message = "";
 
@@ -4487,8 +4501,13 @@ void Vehicle::_requestFinished(QNetworkReply* reply)
         qDebug() << "Loi Request:" << reply->errorString();
     }
 
-            // Phát tín hiệu mang dữ liệu về cho QML
-    emit uavInfoReceived(boardStatus, message);
+    // Safety check: only emit if this object is still valid
+    // This prevents crashes if vehicle is deleted while request is pending
+    try {
+        emit uavInfoReceived(boardStatus, message);
+    } catch (const std::exception& e) {
+        qCWarning(VehicleLog) << "Exception in uavInfoReceived emit:" << e.what();
+    }
 
     reply->deleteLater();
 }
