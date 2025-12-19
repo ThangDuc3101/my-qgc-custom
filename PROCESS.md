@@ -329,12 +329,30 @@ void Vehicle::_requestFinished(QNetworkReply* reply)
 6. ✅ Wrap all property access in try-catch blocks
 
 ### 6.4 Status
-- 🔴 **Still crashing** - Need further investigation
-- Possible causes remaining:
-  - Other pending timers/connections not cleaned up
-  - MAVLink message processing during destruction
-  - Gimbal controller or camera manager cleanup
-  - Other components with stale QML bindings
+- 🔴 **Still crashing** - Multiple fixes attempted, root cause still unidentified
+- Commits applied:
+  1. ✅ `fix(CRASH-001): Implement Phase 2 hotfix - prevent null pointer dereference in RSSI Indicator`
+  2. ✅ `fix(CRASH-001): Expand Phase 2 hotfix to GPS and Battery indicators`
+  3. ✅ `fix(CRASH-001): Fix remaining unsafe vehicle property accesses in FlyViewToolBar`
+  4. ✅ `fix(CRASH-001): Prevent crash from pending network requests during vehicle disconnect`
+  5. ✅ `fix(CRASH-001): Disconnect ALL signals in Vehicle destructor to prevent crash`
+  6. ✅ `fix(CRASH-001): Abort pending network requests in prepareDelete()`
+  7. ✅ `fix(CRASH-001): Ensure camera manager signal emitted BEFORE deletion`
+
+- Remaining investigation needed:
+  - ⚠️ MAVLink message handlers may still be firing after destruction
+  - ⚠️ Link/communication layer cleanup
+  - ⚠️ Parameter manager or other subsystem cleanup
+  - ⚠️ Need to enable debug symbols and use gdb for exact crash location
+  - ⚠️ May need to trace complete vehicle lifecycle with logging
+
+### 6.5 Next Steps (Future)
+- [ ] Build with CMAKE_BUILD_TYPE=Debug to get stack traces
+- [ ] Use gdb to capture exact crash location
+- [ ] Add comprehensive logging to vehicle lifecycle
+- [ ] Trace all signal/slot connections and cleanup order
+- [ ] Compare with upstream QGroundControl for lifecycle patterns
+- [ ] Consider disabling network request feature if it's non-critical
 
 ---
 
