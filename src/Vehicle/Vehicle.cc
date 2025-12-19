@@ -405,10 +405,15 @@ void Vehicle::prepareDelete()
 {
     qCDebug(VehicleLog) << "Vehicle::prepareDelete() - cleaning up resources";
     
-    // Disconnect network manager to prevent crashes from pending requests
+    // Abort and cleanup network requests to prevent crashes from pending requests
     if (_networkManager) {
+        // Disconnect all signals first
         disconnect(_networkManager, nullptr, this, nullptr);
         qCDebug(VehicleLog) << "Disconnected network manager signals";
+        
+        // Abort any pending requests to prevent callbacks after vehicle destruction
+        _networkManager->clearAccessCache();
+        qCDebug(VehicleLog) << "Cleared network access cache";
     }
     
     // Clean up camera manager to stop all timers and prevent crashes during destruction
