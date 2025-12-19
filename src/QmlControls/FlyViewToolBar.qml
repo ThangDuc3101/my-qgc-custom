@@ -401,21 +401,63 @@ Rectangle {
                 }
             }
         }
+
         //---------- 6. GPS STATUS ----------
-                // Sử dụng GPS từ toolIndicators model như QGC gốc
-                Repeater {
-                    model: _activeVehicle ? _activeVehicle.toolIndicators : []
+                // Custom GPS button với popup gốc
+                Rectangle {
+                    id: customGPSButton
+                    Layout.preferredWidth: ScreenTools.defaultFontPixelWidth * 13
+                    Layout.preferredHeight: ScreenTools.defaultFontPixelHeight * 3.5
+                    Layout.alignment: Qt.AlignVCenter
+                    color: Qt.rgba(0.1, 0.8, 0.1, 0.15)
+                    border.color: getGPSColor()
+                    border.width: 2
+                    radius: 6
+                    visible: _activeVehicle
 
-                    Loader {
-                        Layout.preferredWidth: ScreenTools.defaultFontPixelWidth * 13
-                        Layout.preferredHeight: ScreenTools.defaultFontPixelHeight * 3.5
-                        Layout.alignment: Qt.AlignVCenter
-                        source: modelData
-                        visible: item && item.showIndicator && isGPSIndicator(modelData)
+                    function getGPSColor() {
+                        if (!_activeVehicle) return "#888888";
+                        var satCount = _activeVehicle.gps.count.rawValue;
+                        if (satCount >= 10) return "#00ff00";
+                        if (satCount >= 6) return "#ffff00";
+                        return "#ff0000";
+                    }
 
-                        function isGPSIndicator(path) {
-                            return path.toString().toLowerCase().indexOf("gps") !== -1;
+                    Row {
+                        anchors.centerIn: parent
+                        spacing: 6
+
+                        QGCLabel {
+                            text: "GPS"
+                            color: "white"
+                            font.family: "Monospace"
+                            font.pointSize: ScreenTools.smallFontPointSize
+                            anchors.verticalCenter: parent.verticalCenter
                         }
+
+                        QGCLabel {
+                            text: _activeVehicle ? _activeVehicle.gps.count.rawValue.toString() : "0"
+                            color: "white"
+                            font.bold: true
+                            font.family: "Monospace"
+                            font.pointSize: ScreenTools.defaultFontPointSize * 1.1
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            // Gọi popup GPS gốc của QGC
+                            mainWindow.showIndicatorDrawer(gpsIndicatorPageComponent, customGPSButton)
+                        }
+                    }
+
+                    // Component cho GPS Indicator Page
+                    Component {
+                        id: gpsIndicatorPageComponent
+                        GPSIndicatorPage { }
                     }
                 }
 
