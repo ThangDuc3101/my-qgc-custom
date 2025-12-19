@@ -422,8 +422,15 @@ void Vehicle::prepareDelete()
         // the dangling pointer access will cause a runtime fault
         auto tmpCameras = _cameraManager;
         _cameraManager = nullptr;
-        delete tmpCameras;
+        
+        // IMPORTANT: Emit signal BEFORE deleting to notify QML bindings
+        // This allows QML to disconnect before the actual deletion
         emit cameraManagerChanged();
+        
+        // Now safe to delete
+        delete tmpCameras;
+        
+        qCDebug(VehicleLog) << "Camera manager cleaned up";
         // Note: Removed qApp->processEvents() to prevent MAVLink crashes during destruction
     }
 }
