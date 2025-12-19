@@ -24,7 +24,16 @@ Rectangle {
     color:  Qt.rgba(0.5, 0.5, 0.5, 0.55)
 
     property var    _activeVehicle:     QGroundControl.multiVehicleManager.activeVehicle
-    property bool   _communicationLost: _activeVehicle ? _activeVehicle.vehicleLinkManager.communicationLost : false
+    property bool   _communicationLost: {
+        if (!_activeVehicle) return false
+        try {
+            if (!_activeVehicle.vehicleLinkManager) return false
+            return _activeVehicle.vehicleLinkManager.communicationLost
+        } catch(e) {
+            console.error("[FlyViewToolBar] Error checking communicationLost:", e.toString())
+            return false
+        }
+    }
     property color  _mainStatusBGColor: qgcPal.brandingPurple
 
     // Data từ FlyViewWidgetLayer để hiển thị trạng thái ngòi
@@ -32,9 +41,17 @@ Rectangle {
 
     Connections {
         target: _activeVehicle
+        enabled: _activeVehicle !== null  // Prevent connection when vehicle is null
         ignoreUnknownSignals: true
+        
         function onUavInfoReceived(boardStatus, message) {
-            _root.currentBoardStatus = boardStatus
+            try {
+                if (_activeVehicle) {  // Double check
+                    _root.currentBoardStatus = boardStatus
+                }
+            } catch(e) {
+                console.error("[FlyViewToolBar] Error in onUavInfoReceived:", e.toString())
+            }
         }
     }
 
@@ -418,10 +435,17 @@ Rectangle {
 
                     function getGPSColor() {
                         if (!_activeVehicle) return "#888888";
-                        var satCount = _activeVehicle.gps.count.rawValue;
-                        if (satCount >= 10) return "#00ff00";
-                        if (satCount >= 6) return "#ffff00";
-                        return "#ff0000";
+                        try {
+                            if (!_activeVehicle.gps) return "#888888";
+                            var satCount = _activeVehicle.gps.count.rawValue;
+                            if (isNaN(satCount)) return "#888888";
+                            if (satCount >= 10) return "#00ff00";
+                            if (satCount >= 6) return "#ffff00";
+                            return "#ff0000";
+                        } catch(e) {
+                            console.error("[FlyViewToolBar] Error in getGPSColor:", e.toString())
+                            return "#888888"
+                        }
                     }
 
                     Row {
@@ -437,7 +461,16 @@ Rectangle {
                         }
 
                         QGCLabel {
-                            text: _activeVehicle ? _activeVehicle.gps.count.rawValue.toString() : "0"
+                            text: {
+                                try {
+                                    if (!_activeVehicle || !_activeVehicle.gps) return "0"
+                                    var count = _activeVehicle.gps.count.rawValue
+                                    return isNaN(count) ? "0" : count.toString()
+                                } catch(e) {
+                                    console.error("[FlyViewToolBar] Error getting GPS count:", e.toString())
+                                    return "0"
+                                }
+                            }
                             color: "white"
                             font.bold: true
                             font.family: "Monospace"
@@ -494,12 +527,17 @@ Rectangle {
                         property var battery: object
 
                         function getBatteryColor() {
-                            if (!battery) return "#888888";
-                            var percent = battery.percentRemaining.rawValue;
-                            if (isNaN(percent)) return "#888888";
-                            if (percent > 50) return "#00ff00";
-                            if (percent > 20) return "#ffff00";
-                            return "#ff0000";
+                            try {
+                                if (!battery || typeof battery === 'undefined') return "#888888";
+                                var percent = battery.percentRemaining.rawValue;
+                                if (isNaN(percent)) return "#888888";
+                                if (percent > 50) return "#00ff00";
+                                if (percent > 20) return "#ffff00";
+                                return "#ff0000";
+                            } catch(e) {
+                                console.error("[FlyViewToolBar] Error in getBatteryColor:", e.toString())
+                                return "#888888"
+                            }
                         }
 
                         // Layout cân đối với grid thay vì Column/Row lồng nhau
@@ -511,13 +549,18 @@ Rectangle {
                             QGCLabel {
                                 anchors.horizontalCenter: parent.horizontalCenter
                                 text: {
-                                    if (!battery) return "N/A";
-                                    var percent = battery.percentRemaining.rawValue;
-                                    if (isNaN(percent)) {
-                                        var voltage = battery.voltage.rawValue;
-                                        return isNaN(voltage) ? "N/A" : voltage.toFixed(1) + "V";
+                                    try {
+                                        if (!battery) return "N/A";
+                                        var percent = battery.percentRemaining.rawValue;
+                                        if (isNaN(percent)) {
+                                            var voltage = battery.voltage.rawValue;
+                                            return isNaN(voltage) ? "N/A" : voltage.toFixed(1) + "V";
+                                        }
+                                        return percent > 98.9 ? "100%" : percent.toFixed(0) + "%";
+                                    } catch(e) {
+                                        console.error("[FlyViewToolBar] Error reading battery percent:", e.toString())
+                                        return "N/A"
                                     }
-                                    return percent > 98.9 ? "100%" : percent.toFixed(0) + "%";
                                 }
                                 color: "white"
                                 font.bold: true
@@ -532,9 +575,14 @@ Rectangle {
 
                                 QGCLabel {
                                     text: {
-                                        if (!battery) return "?V";
-                                        var v = battery.voltage.rawValue;
-                                        return isNaN(v) ? "?V" : v.toFixed(1) + "V";
+                                        try {
+                                            if (!battery) return "?V";
+                                            var v = battery.voltage.rawValue;
+                                            return isNaN(v) ? "?V" : v.toFixed(1) + "V";
+                                        } catch(e) {
+                                            console.error("[FlyViewToolBar] Error reading battery voltage:", e.toString())
+                                            return "?V"
+                                        }
                                     }
                                     color: "white"
                                     font.family: "Monospace"
@@ -551,9 +599,14 @@ Rectangle {
 
                                 QGCLabel {
                                     text: {
-                                        if (!battery || !battery.current) return "?A";
-                                        var c = battery.current.rawValue;
-                                        return isNaN(c) ? "?A" : c.toFixed(1) + "A";
+                                        try {
+                                            if (!battery || !battery.current) return "?A";
+                                            var c = battery.current.rawValue;
+                                            return isNaN(c) ? "?A" : c.toFixed(1) + "A";
+                                        } catch(e) {
+                                            console.error("[FlyViewToolBar] Error reading battery current:", e.toString())
+                                            return "?A"
+                                        }
                                     }
                                     color: "white"
                                     font.family: "Monospace"
@@ -623,7 +676,14 @@ Rectangle {
     Rectangle {
         anchors.bottom: parent.bottom
         height:         _root.height * 0.05
-        width:          _activeVehicle ? _activeVehicle.loadProgress * parent.width : 0
+        width: {
+            try {
+                return _activeVehicle ? _activeVehicle.loadProgress * parent.width : 0
+            } catch(e) {
+                console.error("[FlyViewToolBar] Error reading loadProgress:", e.toString())
+                return 0
+            }
+        }
         color:          "#00ff00"
         visible:        !largeProgressBar.visible
     }
@@ -638,7 +698,14 @@ Rectangle {
         color:          qgcPal.window
         visible:        _showLargeProgress
 
-        property bool _initialDownloadComplete: _activeVehicle ? _activeVehicle.initialConnectComplete : true
+        property bool _initialDownloadComplete: {
+            try {
+                return _activeVehicle ? _activeVehicle.initialConnectComplete : true
+            } catch(e) {
+                console.error("[FlyViewToolBar] Error reading initialConnectComplete:", e.toString())
+                return true
+            }
+        }
         property bool _userHide:                false
         property bool _showLargeProgress:       !_initialDownloadComplete && !_userHide && qgcPal.globalTheme === QGCPalette.Light
 
@@ -650,7 +717,14 @@ Rectangle {
         Rectangle {
             anchors.top:    parent.top
             anchors.bottom: parent.bottom
-            width:          _activeVehicle ? _activeVehicle.loadProgress * parent.width : 0
+            width: {
+                try {
+                    return _activeVehicle ? _activeVehicle.loadProgress * parent.width : 0
+                } catch(e) {
+                    console.error("[FlyViewToolBar] Error reading loadProgress in largeProgressBar:", e.toString())
+                    return 0
+                }
+            }
             color:          "#00ff00"
         }
 

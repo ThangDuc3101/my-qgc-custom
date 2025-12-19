@@ -25,22 +25,91 @@ Item {
     anchors.bottom: parent.bottom
 
     property var  _activeVehicle:       QGroundControl.multiVehicleManager.activeVehicle
-    property bool _rcRSSIAvailable:     _activeVehicle ? (_activeVehicle.rcRSSI > 0 && _activeVehicle.rcRSSI <= 100) : false
-    property bool _hasTelemetry:        _activeVehicle ? (_activeVehicle.telemetryLRSSI !== 0) : false
-    property int  _rcRSSIValue:         _activeVehicle ? _activeVehicle.rcRSSI : 0
-    property int  _telemetryLRSSI:      _activeVehicle ? _activeVehicle.telemetryLRSSI : 0
     
-    // Monitor RSSI changes
+    // Safer property access with explicit null checks
+    property bool _rcRSSIAvailable: {
+        if (!_activeVehicle || typeof _activeVehicle === 'undefined') return false
+        try {
+            return _activeVehicle.rcRSSI > 0 && _activeVehicle.rcRSSI <= 100
+        } catch(e) {
+            console.error("[RSSI] Error checking RC RSSI availability:", e)
+            return false
+        }
+    }
+    
+    property bool _hasTelemetry: {
+        if (!_activeVehicle || typeof _activeVehicle === 'undefined') return false
+        try {
+            return _activeVehicle.telemetryLRSSI !== 0
+        } catch(e) {
+            console.error("[RSSI] Error checking telemetry availability:", e)
+            return false
+        }
+    }
+    
+    property int  _rcRSSIValue: {
+        if (!_activeVehicle || typeof _activeVehicle === 'undefined') return 0
+        try {
+            return _activeVehicle.rcRSSI
+        } catch(e) {
+            console.error("[RSSI] Error reading rcRSSI:", e)
+            return 0
+        }
+    }
+    
+    property int  _telemetryLRSSI: {
+        if (!_activeVehicle || typeof _activeVehicle === 'undefined') return 0
+        try {
+            return _activeVehicle.telemetryLRSSI
+        } catch(e) {
+            console.error("[RSSI] Error reading telemetryLRSSI:", e)
+            return 0
+        }
+    }
+    
+    // Monitor active vehicle changes (for debugging and state management)
+    Connections {
+        target: QGroundControl.multiVehicleManager
+        
+        function onActiveVehicleChanged(vehicle) {
+            if (!vehicle) {
+                console.warn("[RSSI] Vehicle disconnected - resetting RSSI values")
+                control._rcRSSIValue = 0
+                control._telemetryLRSSI = 0
+            } else {
+                console.log("[RSSI] New vehicle connected:", vehicle.id)
+            }
+        }
+    }
+    
+    // Monitor RSSI changes (ENABLED only when vehicle is not null)
     Connections {
         target: _activeVehicle
+        enabled: _activeVehicle !== null  // ← CRITICAL: Disable connection when null
         ignoreUnknownSignals: true
         
         function onRcRSSIChanged(rssi) {
-            console.log("RC RSSI Changed:", rssi)
+            try {
+                if (!_activeVehicle) {
+                    console.warn("[RSSI] _activeVehicle is null in RC RSSI handler - ignoring signal")
+                    return
+                }
+                console.log("[RSSI] RC RSSI changed:", rssi)
+            } catch(e) {
+                console.error("[RSSI] Exception in RC RSSI handler:", e.toString())
+            }
         }
         
         function onTelemetryLRSSIChanged(rssi) {
-            console.log("Telemetry RSSI Changed:", rssi)
+            try {
+                if (!_activeVehicle) {
+                    console.warn("[RSSI] _activeVehicle is null in Telemetry RSSI handler - ignoring signal")
+                    return
+                }
+                console.log("[RSSI] Telemetry RSSI changed:", rssi)
+            } catch(e) {
+                console.error("[RSSI] Exception in Telemetry RSSI handler:", e.toString())
+            }
         }
     }
 
@@ -121,19 +190,31 @@ Item {
                     LabelledLabel {
                         visible: _rcRSSIAvailable
                         label:      qsTr("RC RSSI")
-                        labelText:  _activeVehicle ? (_activeVehicle.rcRSSI + "%") : "N/A"
+                        labelText:  {
+                            try {
+                                return _activeVehicle ? (_activeVehicle.rcRSSI + "%") : "N/A"
+                            } catch(e) {
+                                console.error("[RSSI] Error reading RC RSSI in detail page:", e)
+                                return "N/A"
+                            }
+                        }
                     }
 
                     LabelledLabel {
                         visible: _rcRSSIAvailable
                         label:      qsTr("RC Signal Quality")
                         labelText:  {
-                            if (!_activeVehicle || !_rcRSSIAvailable) return "N/A"
-                            var rssi = _activeVehicle.rcRSSI
-                            if (rssi >= 75) return qsTr("Excellent")
-                            if (rssi >= 50) return qsTr("Good")
-                            if (rssi >= 25) return qsTr("Fair")
-                            return qsTr("Poor")
+                            try {
+                                if (!_activeVehicle || !_rcRSSIAvailable) return "N/A"
+                                var rssi = _activeVehicle.rcRSSI
+                                if (rssi >= 75) return qsTr("Excellent")
+                                if (rssi >= 50) return qsTr("Good")
+                                if (rssi >= 25) return qsTr("Fair")
+                                return qsTr("Poor")
+                            } catch(e) {
+                                console.error("[RSSI] Error determining RC signal quality:", e)
+                                return "N/A"
+                            }
                         }
                     }
 
@@ -149,56 +230,110 @@ Item {
                     LabelledLabel {
                         visible: _hasTelemetry
                         label:      qsTr("Telemetry Local RSSI")
-                        labelText:  _activeVehicle ? (_activeVehicle.telemetryLRSSI + " dBm") : "N/A"
+                        labelText:  {
+                            try {
+                                return _activeVehicle ? (_activeVehicle.telemetryLRSSI + " dBm") : "N/A"
+                            } catch(e) {
+                                console.error("[RSSI] Error reading telemetry local RSSI:", e)
+                                return "N/A"
+                            }
+                        }
                     }
 
                     LabelledLabel {
                         visible: _hasTelemetry
                         label:      qsTr("Telemetry Remote RSSI")
-                        labelText:  _activeVehicle ? (_activeVehicle.telemetryRRSSI + " dBm") : "N/A"
+                        labelText:  {
+                            try {
+                                return _activeVehicle ? (_activeVehicle.telemetryRRSSI + " dBm") : "N/A"
+                            } catch(e) {
+                                console.error("[RSSI] Error reading telemetry remote RSSI:", e)
+                                return "N/A"
+                            }
+                        }
                     }
 
                     LabelledLabel {
                         visible: _hasTelemetry
                         label:      qsTr("Telemetry Signal Quality")
                         labelText:  {
-                            if (!_activeVehicle || !_hasTelemetry) return "N/A"
-                            var rssi = _activeVehicle.telemetryLRSSI
-                            if (rssi >= -70) return qsTr("Excellent")
-                            if (rssi >= -80) return qsTr("Good")
-                            if (rssi >= -90) return qsTr("Fair")
-                            return qsTr("Poor")
+                            try {
+                                if (!_activeVehicle || !_hasTelemetry) return "N/A"
+                                var rssi = _activeVehicle.telemetryLRSSI
+                                if (rssi >= -70) return qsTr("Excellent")
+                                if (rssi >= -80) return qsTr("Good")
+                                if (rssi >= -90) return qsTr("Fair")
+                                return qsTr("Poor")
+                            } catch(e) {
+                                console.error("[RSSI] Error determining telemetry signal quality:", e)
+                                return "N/A"
+                            }
                         }
                     }
 
                     LabelledLabel {
                         visible: _hasTelemetry
                         label:      qsTr("RX Errors")
-                        labelText:  _activeVehicle ? _activeVehicle.telemetryRXErrors.toString() : "N/A"
+                        labelText:  {
+                            try {
+                                return _activeVehicle ? _activeVehicle.telemetryRXErrors.toString() : "N/A"
+                            } catch(e) {
+                                console.error("[RSSI] Error reading RX errors:", e)
+                                return "N/A"
+                            }
+                        }
                     }
 
                     LabelledLabel {
                         visible: _hasTelemetry
                         label:      qsTr("Errors Fixed")
-                        labelText:  _activeVehicle ? _activeVehicle.telemetryFixed.toString() : "N/A"
+                        labelText:  {
+                            try {
+                                return _activeVehicle ? _activeVehicle.telemetryFixed.toString() : "N/A"
+                            } catch(e) {
+                                console.error("[RSSI] Error reading errors fixed:", e)
+                                return "N/A"
+                            }
+                        }
                     }
 
                     LabelledLabel {
                         visible: _hasTelemetry
                         label:      qsTr("Local Noise")
-                        labelText:  _activeVehicle ? (_activeVehicle.telemetryLNoise + " dBm") : "N/A"
+                        labelText:  {
+                            try {
+                                return _activeVehicle ? (_activeVehicle.telemetryLNoise + " dBm") : "N/A"
+                            } catch(e) {
+                                console.error("[RSSI] Error reading local noise:", e)
+                                return "N/A"
+                            }
+                        }
                     }
 
                     LabelledLabel {
                         visible: _hasTelemetry
                         label:      qsTr("Remote Noise")
-                        labelText:  _activeVehicle ? (_activeVehicle.telemetryRNoise + " dBm") : "N/A"
+                        labelText:  {
+                            try {
+                                return _activeVehicle ? (_activeVehicle.telemetryRNoise + " dBm") : "N/A"
+                            } catch(e) {
+                                console.error("[RSSI] Error reading remote noise:", e)
+                                return "N/A"
+                            }
+                        }
                     }
 
                     LabelledLabel {
                         visible: _hasTelemetry
                         label:      qsTr("TX Buffer")
-                        labelText:  _activeVehicle ? _activeVehicle.telemetryTXBuffer.toString() : "N/A"
+                        labelText:  {
+                            try {
+                                return _activeVehicle ? _activeVehicle.telemetryTXBuffer.toString() : "N/A"
+                            } catch(e) {
+                                console.error("[RSSI] Error reading TX buffer:", e)
+                                return "N/A"
+                            }
+                        }
                     }
                 }
             }
