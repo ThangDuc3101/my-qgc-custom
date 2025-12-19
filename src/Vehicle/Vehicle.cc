@@ -386,7 +386,13 @@ void Vehicle::_commonInit()
 
 Vehicle::~Vehicle()
 {
-    qCDebug(VehicleLog) << "~Vehicle" << this;
+    qCDebug(VehicleLog) << "~Vehicle destructor" << this;
+
+    // Disconnect ALL signals to prevent crashes from stale signal handlers
+    // This is critical for preventing crashes when vehicle is destroyed while
+    // QML bindings or pending network requests are still active
+    disconnect(this, nullptr, nullptr, nullptr);
+    qCDebug(VehicleLog) << "Disconnected all signals in destructor";
 
     delete _missionManager;
     _missionManager = nullptr;
