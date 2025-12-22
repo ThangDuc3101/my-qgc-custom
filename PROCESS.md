@@ -406,22 +406,70 @@ disconnect(QGCCorePlugin::instance(), nullptr, this, nullptr);
 - ✅ Timer stopping is complete
 - Created `test_crash_fix.sh` for automated crash testing
 
-### 6.5 Next Steps (Future)
-- [ ] Build with CMAKE_BUILD_TYPE=Debug to get stack traces
-- [ ] Use gdb to capture exact crash location
-- [ ] Add comprehensive logging to vehicle lifecycle
-- [ ] Trace all signal/slot connections and cleanup order
-- [ ] Compare with upstream QGroundControl for lifecycle patterns
-- [ ] Consider disabling network request feature if it's non-critical
+### 6.5 Testing Recommendations
+
+**Recommended Testing Procedure:**
+```bash
+# Build the project
+cd build/Desktop_Qt_6_8_3-Release
+cmake --build . -j4
+
+# Run automated crash tests
+chmod +x ../../test_crash_fix.sh
+../../test_crash_fix.sh
+
+# Manual testing with real hardware:
+# 1. Connect Pixhawk via USB
+# 2. Launch QGroundControl  
+# 3. Reboot Pixhawk while connected (use CLI: reboot command)
+# 4. Verify app does NOT crash
+# 5. Repeat 10+ times
+
+# Monitor logs for cleanup messages:
+tail -f ~/.config/QGroundControl/qgc-vehiclelog.txt | grep -i "prepareDelete\|destructor\|disconnected"
+```
+
+**Expected Behavior After Fix:**
+- ✅ App remains responsive during vehicle reboot
+- ✅ No segmentation fault errors
+- ✅ Clean "prepareDelete" and "destructor" log messages
+- ✅ New vehicle can reconnect immediately after disconnect
+- ✅ RSSI indicator works correctly (no crashes)
+
+### 6.6 Known Limitations & Future Work
+- ⚠️ Some timers may still fire during the 20ms window (prepareDelete → deletion)
+  - Mitigated by: signal disconnections and null checks in handlers
+- ⚠️ Parameter manager cleanup could be improved
+  - Currently relies on Qt parent-child deletion
+- ⚠️ Missing cmake upgrade to 3.25+ for full Debug build support
+  - Workaround: Use release build with extensive logging
+
+### 6.7 Prevention for Future Crashes
+1. **Always stop timers in prepareDelete()** - not just destructors
+2. **Disconnect external signals** - don't rely on Qt parent cleanup alone
+3. **Add enabled flags to QML Connections** - prevent null target access
+4. **Wrap property access in try-catch** - defensive QML programming
+5. **Monitor signal/slot connections** - use QtCreator debugger to verify cleanup
 
 ---
 
 ## Commits
 
+### Feature Implementation (Phases 1-5)
 1. `docs: thêm SUMMARY.md - phân tích tổng thể dự án`
 2. `feat: thêm RSSI indicator vào toolbar - hiển thị chất lượng tín hiệu`
 3. `feat: cải tiến RSSI indicator - căn giữa nội dung và tăng spacing`
 4. `debug: thêm logging để theo dõi RSSI value changes`
+
+### Crash Fix (Phase 6 - CRASH-001)
+5. `fix(CRASH-001): Implement Phase 2 hotfix - prevent null pointer dereference in RSSI Indicator`
+6. `fix(CRASH-001): Expand Phase 2 hotfix to GPS and Battery indicators`
+7. `fix(CRASH-001): Fix remaining unsafe vehicle property accesses in FlyViewToolBar`
+8. `fix(CRASH-001): Prevent crash from pending network requests during vehicle disconnect`
+9. `fix(CRASH-001): Disconnect ALL signals in Vehicle destructor to prevent crash`
+10. `fix(CRASH-001): Abort pending network requests in prepareDelete()`
+11. `fix(CRASH-001): Ensure camera manager signal emitted BEFORE deletion`
+12. `fix(CRASH-001): Phase 6 Final - Stop all timers and disconnect external signals` ⭐ **CURRENT**
 
 ---
 
