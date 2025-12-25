@@ -17,6 +17,9 @@
 //No help, variable specified on the command line.
 CMAKE_BUILD_TYPE:UNINITIALIZED=Debug
 
+//No help, variable specified on the command line.
+CMAKE_CXX_FLAGS:UNINITIALIZED=-g -O0 -fno-omit-frame-pointer
+
 
 ########################
 # INTERNAL cache entries

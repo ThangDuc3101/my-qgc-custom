@@ -270,8 +270,27 @@ void SerialWorker::disconnectFromPort()
         return;
     }
 
-    qCDebug(SerialLinkLog) << "Attempting to close port:" << _port->portName();
+    // On Linux/Qt6, calling close() on a port that has just suffered a ResourceError (Unplug)
+    // can cause a crash because the underlying file descriptor is already gone.
+    // Also, just skipping close() leaves the port in an error state which triggers infinite error loops.
+    // The safest way is to destroy the broken object and creating a fresh one.
+    if (_port->error() == QSerialPort::ResourceError) {
+        qCDebug(SerialLinkLog) << "QSerialPort::ResourceError detected: Recreating port object to prevent crash/loop" << "Thread:" << QThread::currentThreadId();
+        
+        delete _port;
+        _port = new QSerialPort(this);
+
+        // Re-establish signals
+        (void) connect(_port, &QSerialPort::aboutToClose, this, &SerialWorker::_onPortDisconnected);
+        (void) connect(_port, &QSerialPort::readyRead, this, &SerialWorker::_onPortReadyRead);
+        (void) connect(_port, &QSerialPort::errorOccurred, this, &SerialWorker::_onPortErrorOccurred);
+        
+        emit disconnected();
+        return;
+    }
+
     _port->close();
+    qCDebug(SerialLinkLog) << "Port closed:" << _port->portName();
 }
 
 void SerialWorker::writeData(const QByteArray &data)
@@ -325,7 +344,7 @@ void SerialWorker::_onPortConnected()
 
 void SerialWorker::_onPortDisconnected()
 {
-    qCDebug(SerialLinkLog) << "Port disconnected:" << _port->portName();
+    qCDebug(SerialLinkLog) << "Port disconnected:" << _port->portName() << "Thread:" << QThread::currentThreadId();
     _errorEmitted = false;
     emit disconnected();
 }
@@ -355,7 +374,16 @@ void SerialWorker::_onPortErrorOccurred(QSerialPort::SerialPortError portError)
         return;
     case QSerialPort::ResourceError:
         // We get this when a usb cable is unplugged
-        // Fallthrough
+        qCWarning(SerialLinkLog) << "QSerialPort::ResourceError: Port unplugged -" << _port->portName() << "Thread:" << QThread::currentThreadId();
+        // Force disconnect since the device is gone. We cannot rely on AutoConnect
+        // to handle this because the underlying QSerialPort object is now invalid
+        // for operations.
+        qCDebug(SerialLinkLog) << "Forcing disconnectFromPort due to ResourceError";
+        disconnectFromPort();
+        qCDebug(SerialLinkLog) << "Force disconnect complete";
+        // Return here so we don't emit a generic errorOccurred which might confuse UI
+        return;
+        // Fallthrough - REMOVED
     case QSerialPort::PermissionError:
         if (_serialConfig->isAutoConnect()) {
             return;
