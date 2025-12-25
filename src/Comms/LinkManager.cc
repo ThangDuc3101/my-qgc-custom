@@ -231,7 +231,7 @@ void LinkManager::_linkDisconnected()
 
     for (auto it = _rgLinks.begin(); it != _rgLinks.end(); ++it) {
         if (it->get() == link) {
-            qCDebug(LinkManagerLog) << Q_FUNC_INFO << it->get()->linkConfiguration()->name() << it->use_count();
+            qCDebug(LinkManagerLog) << Q_FUNC_INFO << it->get()->linkConfiguration()->name() << it->use_count() << "Removing link from list";
             (void) _rgLinks.erase(it);
             return;
         }
@@ -815,6 +815,9 @@ void LinkManager::_addSerialAutoConnectLink()
 #endif
 
     _filterCompositePorts(portList);
+    
+    // DEBUG TRACE
+    qCDebug(LinkManagerVerboseLog) << "QGCSerialPortInfo::availablePorts() count:" << portList.count() << "Thread:" << QThread::currentThreadId();
 
     QStringList currentPorts;
     for (const QGCSerialPortInfo &portInfo: portList) {
