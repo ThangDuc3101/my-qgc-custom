@@ -12,11 +12,14 @@ target_sources(${CMAKE_PROJECT_NAME}
         LogReplayLinkController.h
         MAVLinkProtocol.cc
         MAVLinkProtocol.h
+        MavlinkCrypto.cc
+        MavlinkCrypto.h
         TCPLink.cc
         TCPLink.h
         UDPLink.cc
         UDPLink.h
 )
+
 
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 

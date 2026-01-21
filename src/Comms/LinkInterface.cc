@@ -14,6 +14,7 @@
 #include "MAVLinkSigning.h"
 #include "SettingsManager.h"
 #include "MavlinkSettings.h"
+#include "MavlinkCrypto.h"
 
 #include <QtQml/QQmlEngine>
 
@@ -107,9 +108,12 @@ void LinkInterface::_freeMavlinkChannel()
 
 void LinkInterface::writeBytesThreadSafe(const char *bytes, int length)
 {
-    const QByteArray data(bytes, length);
-    (void) QMetaObject::invokeMethod(this, "_writeBytes", Qt::AutoConnection, data);
+    // Encrypt data if encryption is enabled
+    const QByteArray originalData(bytes, length);
+    const QByteArray encryptedData = MavlinkCrypto::instance()->encrypt(originalData);
+    (void) QMetaObject::invokeMethod(this, "_writeBytes", Qt::AutoConnection, encryptedData);
 }
+
 
 void LinkInterface::removeVehicleReference()
 {
