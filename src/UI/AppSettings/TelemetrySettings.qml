@@ -115,6 +115,29 @@ SettingsPage {
 
     SettingsGroupLayout {
         Layout.fillWidth:   true
+        heading:            qsTr("MAVLink Encryption")
+        headingDescription: qsTr("XOR-based encryption. Key must match PX4 MAV_CRYPTO_KEY0-7.")
+
+        FactCheckBoxSlider {
+            Layout.fillWidth:   true
+            text:               qsTr("Enable MAVLink Encryption")
+            fact:               _mavlinkSettings.encryptionEnabled
+            visible:            fact.visible
+        }
+
+        LabelledFactTextField {
+            Layout.fillWidth:           true
+            textFieldPreferredWidth:    ScreenTools.defaultFontPixelWidth * 40
+            label:                      qsTr("Encryption Key (hex)")
+            fact:                       _mavlinkSettings.encryptionKey
+            visible:                    fact.visible
+            enabled:                    _mavlinkSettings.encryptionEnabled.rawValue
+        }
+    }
+
+    SettingsGroupLayout {
+
+        Layout.fillWidth:   true
         heading:            qsTr("Logging")
         visible:            !_disableAllDataPersistence
 

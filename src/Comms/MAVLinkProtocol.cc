@@ -1,12 +1,3 @@
-/****************************************************************************
- *
- * (c) 2009-2024 QGROUNDCONTROL PROJECT <http://www.qgroundcontrol.org>
- *
- * QGroundControl is licensed according to the terms in the file
- * COPYING.md in the root of the source code directory.
- *
- ****************************************************************************/
-
 #include "MAVLinkProtocol.h"
 #include "LinkManager.h"
 #include "MultiVehicleManager.h"
@@ -17,6 +8,7 @@
 #include "MavlinkSettings.h"
 #include "AppSettings.h"
 #include "QmlObjectListModel.h"
+#include "MavlinkCrypto.h"
 
 #include <QtCore/qapplicationstatic.h>
 #include <QtCore/QDir>
@@ -110,7 +102,10 @@ void MAVLinkProtocol::receiveBytes(LinkInterface *link, const QByteArray &data)
         return;
     }
 
-    for (const uint8_t &byte: data) {
+    // Decrypt data if encryption is enabled
+    const QByteArray decryptedData = MavlinkCrypto::instance()->decrypt(data);
+
+    for (const uint8_t &byte: decryptedData) {
         const uint8_t mavlinkChannel = link->mavlinkChannel();
         mavlink_message_t message{};
         mavlink_status_t status{};
@@ -132,6 +127,7 @@ void MAVLinkProtocol::receiveBytes(LinkInterface *link, const QByteArray &data)
         }
     }
 }
+
 
 void MAVLinkProtocol::_updateVersion(LinkInterface *link, uint8_t mavlinkChannel)
 {

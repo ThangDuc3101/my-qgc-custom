@@ -34,10 +34,14 @@ public:
     DEFINE_SETTINGFACT(sendGCSHeartbeat)
     DEFINE_SETTINGFACT(gcsMavlinkSystemID)
     DEFINE_SETTINGFACT(requireMatchingMavlinkVersions)
+    DEFINE_SETTINGFACT(encryptionEnabled)
+    DEFINE_SETTINGFACT(encryptionKey)
 
     // Although this is a global setting it only affects ArduPilot vehicle since PX4 automatically starts the stream from the vehicle side
     DEFINE_SETTINGFACT(apmStartMavlinkStreams)
 
 private slots:
     void _mavlink2SigningKeyChanged();
+    void _encryptionSettingsChanged();
 };
+

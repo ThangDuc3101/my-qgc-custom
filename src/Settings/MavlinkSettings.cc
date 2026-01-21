@@ -10,6 +10,7 @@
 
 #include "MavlinkSettings.h"
 #include "LinkManager.h"
+#include "MavlinkCrypto.h"
 
 DECLARE_SETTINGGROUP(Mavlink, "")
 {
@@ -58,7 +59,54 @@ DECLARE_SETTINGSFACT_NO_FUNC(MavlinkSettings, mavlink2SigningKey)
     return _mavlink2SigningKeyFact;
 }
 
+DECLARE_SETTINGSFACT_NO_FUNC(MavlinkSettings, encryptionEnabled)
+{
+    if (!_encryptionEnabledFact) {
+        _encryptionEnabledFact = _createSettingsFact(encryptionEnabledName);
+        connect(_encryptionEnabledFact, &Fact::rawValueChanged, this, &MavlinkSettings::_encryptionSettingsChanged);
+        // Apply initial value
+        MavlinkCrypto::instance()->setEnabled(_encryptionEnabledFact->rawValue().toBool());
+    }
+    return _encryptionEnabledFact;
+}
+
+DECLARE_SETTINGSFACT_NO_FUNC(MavlinkSettings, encryptionKey)
+{
+    if (!_encryptionKeyFact) {
+        _encryptionKeyFact = _createSettingsFact(encryptionKeyName);
+        connect(_encryptionKeyFact, &Fact::rawValueChanged, this, &MavlinkSettings::_encryptionSettingsChanged);
+        // Apply initial value
+        _encryptionSettingsChanged();
+    }
+    return _encryptionKeyFact;
+}
+
 void MavlinkSettings::_mavlink2SigningKeyChanged(void)
 {
     LinkManager::instance()->resetMavlinkSigning();
+}
+
+void MavlinkSettings::_encryptionSettingsChanged(void)
+{
+    // TEMPORARY: During testing with hardcoded key, only control enable/disable
+    // The key is hardcoded in MavlinkCrypto constructor for testing
+    // Uncomment the key code below when switching to production key input
+    
+    /*
+    // Get key from hex string
+    QString keyHex = _encryptionKeyFact ? _encryptionKeyFact->rawValue().toString() : QString();
+    QByteArray key = QByteArray::fromHex(keyHex.toLatin1());
+    
+    // Pad to 32 bytes if necessary
+    if (key.size() < 32) {
+        key.append(QByteArray(32 - key.size(), '\0'));
+    } else if (key.size() > 32) {
+        key = key.left(32);
+    }
+    
+    MavlinkCrypto::instance()->setKey(key);
+    */
+    
+    bool enabled = _encryptionEnabledFact ? _encryptionEnabledFact->rawValue().toBool() : false;
+    MavlinkCrypto::instance()->setEnabled(enabled);
 }
