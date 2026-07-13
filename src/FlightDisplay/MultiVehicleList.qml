@@ -199,6 +199,23 @@ Item {
                             color:                qgcPal.text
                         }
                     }
+
+                    QGCLabel {
+                        text: " | "
+                        font.pointSize:       ScreenTools.largeFontPointSize
+                        color:                qgcPal.text
+                        Layout.alignment:     Qt.AlignHCenter
+                    }
+
+                    QGCButton {
+                        text:                 QGroundControl.multiVehicleManager.activeVehicle === _vehicle ? qsTr("Active") : qsTr("Set Active")
+                        enabled:              _vehicle && QGroundControl.multiVehicleManager.activeVehicle !== _vehicle
+                        Layout.alignment:     Qt.AlignHCenter
+
+                        onClicked: {
+                            QGroundControl.multiVehicleManager.activeVehicle = _vehicle
+                        }
+                    }
                 }
 
                 QGCFlickable {
