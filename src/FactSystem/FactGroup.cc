@@ -10,6 +10,8 @@
 #include "FactGroup.h"
 #include "QGCLoggingCategory.h"
 
+#include <QQmlEngine>
+
 QGC_LOGGING_CATEGORY(FactGroupLog, "qgc.factsystem.factgroup")
 
 FactGroup::FactGroup(int updateRateMsecs, const QString &metaDataFile, QObject *parent, bool ignoreCamelCase)
@@ -98,6 +100,11 @@ Fact *FactGroup::getFact(const QString &name) const
 
     if (_nameToFactMap.contains(camelCaseName)) {
         fact = _nameToFactMap[camelCaseName];
+        // Fact is owned by this FactGroup (parented in ParameterManager); mark it
+        // CppOwnership so QML's JS engine never independently deleteLater()s it,
+        // which would race with/duplicate the normal C++ parent-driven deletion.
+        // Same pattern as FactPanelController::getParameterFact().
+        QQmlEngine::setObjectOwnership(fact, QQmlEngine::CppOwnership);
     } else {
         qCWarning(FactGroupLog) << "Unknown Fact" << camelCaseName;
     }
@@ -112,6 +119,9 @@ FactGroup *FactGroup::getFactGroup(const QString &name) const
 
     if (_nameToFactGroupMap.contains(camelCaseName)) {
         factGroup = _nameToFactGroupMap[camelCaseName];
+        // FactGroup is QObject-derived and reachable from QML; same double-free
+        // risk as Fact — see comment in getFact() above.
+        QQmlEngine::setObjectOwnership(factGroup, QQmlEngine::CppOwnership);
     } else {
         qCWarning(FactGroupLog) << "Unknown FactGroup" << camelCaseName;
     }
