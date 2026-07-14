@@ -668,7 +668,8 @@ Item {
         case actionMVRTL:
             var allVehiclesForRTL = QGroundControl.multiVehicleManager.vehicles
             for (i = 0; i < allVehiclesForRTL.count; i++) {
-                allVehiclesForRTL.get(i).guidedModeRTL(false)
+                var rtlVehicle = allVehiclesForRTL.get(i)
+                rtlVehicle.flightMode = rtlVehicle.rtlFlightMode
             }
             mainWindow.showMessageDialog(mvRTLTitle, qsTr("Đã gửi lệnh RTL tới %1 UAV.").arg(allVehiclesForRTL.count))
             break
