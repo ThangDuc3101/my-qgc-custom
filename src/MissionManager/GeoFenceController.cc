@@ -290,6 +290,10 @@ void GeoFenceController::sendToAllVehicles(void)
             sentCount++;
         }
     }
+    if (sentCount == 0) {
+        qgcApp()->showAppMessage(tr("No vehicles available to send fence."));
+        return;
+    }
     setDirty(false);
     qgcApp()->showAppMessage(tr("Fence sent to %1 vehicle(s).").arg(sentCount));
 }
