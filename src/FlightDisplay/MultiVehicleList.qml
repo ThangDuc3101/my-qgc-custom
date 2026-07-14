@@ -130,10 +130,11 @@ Item {
             height:         innerColumn.height + _margin * 2
             color:          QGroundControl.multiVehicleManager.activeVehicle == _vehicle ? _activeVehicleColor : qgcPal.button
             radius:         _margin
-            border.width:   _vehicle && vehicleSelected(_vehicle.id) ? 2 : 0
-            border.color:   qgcPal.text
+            border.width:   _linkLost ? 3 : (_vehicle && vehicleSelected(_vehicle.id) ? 2 : 0)
+            border.color:   _linkLost ? qgcPal.colorRed : qgcPal.text
 
             property var    _vehicle:   object
+            property bool   _linkLost:  !!(_vehicle && _vehicle.vehicleLinkManager && _vehicle.vehicleLinkManager.communicationLost)
 
             QGCMouseArea {
                 anchors.fill:       parent
@@ -149,6 +150,7 @@ Item {
                     anchors.horizontalCenter:   parent.horizontalCenter
                     anchors.margins:    _margin
                     spacing:            _margin
+                    visible:            !_linkLost
 
                     IntegratedCompassAttitude {
                         id: compassWidget
@@ -200,6 +202,14 @@ Item {
                         }
                     }
 
+                }
+
+                QGCLabel {
+                    anchors.horizontalCenter:  parent.horizontalCenter
+                    visible:                   _linkLost
+                    text:                      qsTr("MẤT LIÊN LẠC")
+                    color:                     qgcPal.colorRed
+                    font.bold:                 true
                 }
 
                 QGCButton {
