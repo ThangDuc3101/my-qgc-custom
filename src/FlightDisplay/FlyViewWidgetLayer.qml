@@ -855,7 +855,8 @@ Item {
         id: rightInstrumentColumn
         anchors.right: parent.right
         anchors.rightMargin: _layoutMargin
-        anchors.top: parent.top
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: _layoutMargin
         width: ScreenTools.defaultFontPixelWidth * 22
         spacing: _layoutMargin
         z: QGroundControl.zOrderWidgets

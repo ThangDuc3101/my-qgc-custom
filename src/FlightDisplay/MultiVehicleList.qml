@@ -199,6 +199,17 @@ Item {
                             color:                qgcPal.text
                         }
                     }
+
+                }
+
+                QGCButton {
+                    anchors.horizontalCenter:  parent.horizontalCenter
+                    text:                      QGroundControl.multiVehicleManager.activeVehicle === _vehicle ? qsTr("Active") : qsTr("Set Active")
+                    enabled:                   _vehicle && QGroundControl.multiVehicleManager.activeVehicle !== _vehicle
+
+                    onClicked: {
+                        QGroundControl.multiVehicleManager.activeVehicle = _vehicle
+                    }
                 }
 
                 QGCFlickable {
