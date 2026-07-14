@@ -22,6 +22,8 @@
 #include "QGCFenceCircle.h"
 #include "QGCFencePolygon.h"
 #include "QGCLoggingCategory.h"
+#include "MultiVehicleManager.h"
+#include "QGCApplication.h"
 
 #include <QtCore/QJsonArray>
 #include <QtCore/QJsonDocument>
@@ -265,6 +267,31 @@ void GeoFenceController::sendToVehicle(void)
         _geoFenceManager->sendToVehicle(_breachReturnPoint, _polygons, _circles);
         setDirty(false);
     }
+}
+
+void GeoFenceController::sendToAllVehicles(void)
+{
+    if (_masterController->offline()) {
+        qCWarning(GeoFenceControllerLog) << "GeoFenceController::sendToAllVehicles called while offline";
+        return;
+    }
+    if (syncInProgress()) {
+        qCWarning(GeoFenceControllerLog) << "GeoFenceController::sendToAllVehicles called while syncInProgress";
+        return;
+    }
+
+    QmlObjectListModel* allVehicles = MultiVehicleManager::instance()->vehicles();
+    int sentCount = 0;
+    for (int i = 0; i < allVehicles->count(); i++) {
+        Vehicle* vehicle = qobject_cast<Vehicle*>(allVehicles->get(i));
+        if (vehicle && vehicle->geoFenceManager()) {
+            qCDebug(GeoFenceControllerLog) << "GeoFenceController::sendToAllVehicles sending to vehicle id" << vehicle->id();
+            vehicle->geoFenceManager()->sendToVehicle(_breachReturnPoint, _polygons, _circles);
+            sentCount++;
+        }
+    }
+    setDirty(false);
+    qgcApp()->showAppMessage(tr("Fence sent to %1 vehicle(s).").arg(sentCount));
 }
 
 bool GeoFenceController::syncInProgress(void) const

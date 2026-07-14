@@ -296,6 +296,22 @@ QGCFlickable {
                         QGCLabel { text: qsTr("Altitude") }
                         FactTextField { fact: myGeoFenceController.breachReturnAltitude }
                     }
+
+                    SectionHeader {
+                        id:             swarmFenceSection
+                        anchors.left:   parent.left
+                        anchors.right:  parent.right
+                        text:           qsTr("Swarm")
+                    }
+
+                    QGCButton {
+                        text:               qsTr("Upload Fence to All Vehicles")
+                        visible:            swarmFenceSection.visible
+                        anchors.left:       parent.left
+                        anchors.right:      parent.right
+                        enabled:            QGroundControl.multiVehicleManager.vehicles.count > 0
+                        onClicked:          myGeoFenceController.sendToAllVehicles()
+                    }
                 }
             }
         }

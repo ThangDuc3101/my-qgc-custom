@@ -78,6 +78,10 @@ class GeoFenceController : public PlanElementController
     QmlObjectListModel* circles                 (void) { return &_circles; }
     QGeoCoordinate      breachReturnPoint       (void) const { return _breachReturnPoint; }
 
+    /// Sends the fence currently loaded in this controller to every connected vehicle,
+    /// not just the one this controller is editing. Used for the shared swarm geofence.
+    Q_INVOKABLE void sendToAllVehicles          (void);
+
     void setBreachReturnPoint   (const QGeoCoordinate& breachReturnPoint);
     bool isEmpty                (void) const;
 
