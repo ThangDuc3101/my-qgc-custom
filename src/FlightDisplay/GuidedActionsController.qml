@@ -39,6 +39,7 @@ Item {
     readonly property string disarmTitle:                   qsTr("Disarm")
     readonly property string mvDisarmTitle:                 qsTr("Disarm (MV)")
     readonly property string rtlTitle:                      qsTr("Quay về")
+    readonly property string mvRTLTitle:                    qsTr("Quay về (MV)")
     readonly property string takeoffTitle:                  qsTr("Cất cánh")
     readonly property string gripperTitle:                  qsTr("Gripper Function")
     readonly property string landTitle:                     qsTr("Hạ cánh")
@@ -127,6 +128,7 @@ Item {
     readonly property int actionMVArm:                      31
     readonly property int actionMVDisarm:                   32
     readonly property int actionChangeLoiterRadius:         33
+    readonly property int actionMVRTL:                      34
 
 
 
@@ -449,6 +451,16 @@ Item {
             confirmDialog.message = mvDisarmMessage
             confirmDialog.hideTrigger = true
             break;
+        case actionMVRTL:
+            var rtlVehicles = QGroundControl.multiVehicleManager.vehicles
+            var rtlSysids = []
+            for (var rtlIdx = 0; rtlIdx < rtlVehicles.count; rtlIdx++) {
+                rtlSysids.push(rtlVehicles.get(rtlIdx).id)
+            }
+            confirmDialog.title = mvRTLTitle
+            confirmDialog.message = qsTr("RTL ngay lập tức cho UAV %1?").arg(rtlSysids.join(", "))
+            confirmDialog.hideTrigger = true
+            break;
         case actionEmergencyStop:
             confirmDialog.title = emergencyStopTitle
             confirmDialog.message = emergencyStopMessage
@@ -652,6 +664,13 @@ Item {
             for (i = 0; i < selectedVehicles.count; i++) {
                 selectedVehicles.get(i).armed = false
             }
+            break
+        case actionMVRTL:
+            var allVehiclesForRTL = QGroundControl.multiVehicleManager.vehicles
+            for (i = 0; i < allVehiclesForRTL.count; i++) {
+                allVehiclesForRTL.get(i).guidedModeRTL(false)
+            }
+            mainWindow.showMessageDialog(mvRTLTitle, qsTr("Đã gửi lệnh RTL tới %1 UAV.").arg(allVehiclesForRTL.count))
             break
         case actionEmergencyStop:
             _activeVehicle.emergencyStop()

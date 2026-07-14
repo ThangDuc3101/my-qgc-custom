@@ -202,6 +202,16 @@ Rectangle {
                                 leftPadding:           0
                                 rightPadding:          0
                             }
+
+                            QGCButton {
+                                text:                  qsTr("RTL All")
+                                enabled:               QGroundControl.multiVehicleManager.vehicles.count > 0
+                                backgroundColor:        qgcPal.colorRed
+                                onClicked:              _guidedController.confirmAction(_guidedController.actionMVRTL)
+                                Layout.preferredWidth: ScreenTools.defaultFontPixelHeight * 3.5
+                                leftPadding:           0
+                                rightPadding:          0
+                            }
                         }
                     }
                 } // Page 1
