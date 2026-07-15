@@ -284,10 +284,10 @@ FlightMap {
         return pairs
     }
 
-    Repeater {
+    MapItemView {
         model: _formationPairs
 
-        MapPolyline {
+        delegate: MapPolyline {
             line.width: 2
             line.color: _formationLinkLost ? "#808080" : "#4FC3F7"
             z:          QGroundControl.zOrderTrajectoryLines
@@ -301,10 +301,10 @@ FlightMap {
         }
     }
 
-    Repeater {
+    MapItemView {
         model: _formationPairs
 
-        MapQuickItem {
+        delegate: MapQuickItem {
             anchorPoint.x:  sourceItem.implicitWidth / 2
             anchorPoint.y:  sourceItem.implicitHeight / 2
             z:              QGroundControl.zOrderTrajectoryLines
