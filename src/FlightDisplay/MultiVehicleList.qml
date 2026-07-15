@@ -171,20 +171,24 @@ Item {
                 onClicked:          toggleSelect(_vehicle.id)
             }
 
-            RowLayout {
+            ColumnLayout {
                 anchors.top:        parent.top
                 anchors.right:      parent.right
                 anchors.margins:    _margin
-                spacing:            _margin
+                spacing:            _margin / 2
 
                 QGCLabel {
                     text:  "🔋 " + ((_vehicle && _vehicle.batteries.count > 0) ? (_vehicle.batteries.get(0).percentRemaining.valueString + "%") : "--")
                     color: qgcPal.text
+                    font.pointSize:   ScreenTools.mediumFontPointSize
+                    Layout.alignment: Qt.AlignRight
                 }
 
                 QGCLabel {
                     text:  "🛰 " + ((_vehicle && _vehicle.gps) ? _vehicle.gps.count.valueString : "--")
                     color: qgcPal.text
+                    font.pointSize:   ScreenTools.mediumFontPointSize
+                    Layout.alignment: Qt.AlignRight
                 }
             }
 
