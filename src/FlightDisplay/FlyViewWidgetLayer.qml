@@ -1014,162 +1014,6 @@ Item {
             }
 
         }
-
-        // COMPASS
-        Rectangle {
-            id: compassContainer
-            width: parent.width*0.9
-            height: width
-            color: Qt.rgba(0.5, 0.5, 0.5, 0.55)
-            border.color: "white"
-            border.width: 3
-            radius: width / 2
-            visible: _activeVehicle !== null
-
-            Rectangle {
-                anchors.fill: parent
-                anchors.margins: -4
-                color: "transparent"
-                border.color: "yellow"
-                border.width: 1
-                radius: parent.radius + 2
-                opacity: 0.9
-                z: -1
-            }
-
-            Item {
-                id: compassRose
-                anchors.fill: parent
-                anchors.margins: 12
-                rotation: _activeVehicle ? -_activeVehicle.heading.rawValue : 0
-
-                Behavior on rotation {
-                    RotationAnimation {
-                        duration: 250
-                        direction: RotationAnimation.Shortest
-                    }
-                }
-
-                QGCLabel {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    y: 2
-                    text: "N"
-                    color: "#ff0000"
-                    font.bold: true
-                    font.pointSize: ScreenTools.mediumFontPointSize
-                    font.family: "Monospace"
-                }
-
-                QGCLabel {
-                    anchors.verticalCenter: parent.verticalCenter
-                    x: parent.width - width - 2
-                    text: "E"
-                    color: "#ffffff"
-                    font.bold: true
-                    font.pointSize: ScreenTools.mediumFontPointSize
-                    font.family: "Monospace"
-                }
-
-                QGCLabel {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    y: parent.height - height - 2
-                    text: "S"
-                    color: "#ffffff"
-                    font.bold: true
-                    font.pointSize: ScreenTools.mediumFontPointSize
-                    font.family: "Monospace"
-                }
-
-                QGCLabel {
-                    anchors.verticalCenter: parent.verticalCenter
-                    x: 2
-                    text: "W"
-                    color: "#ffffff"
-                    font.bold: true
-                    font.pointSize: ScreenTools.mediumFontPointSize
-                    font.family: "Monospace"
-                }
-
-                Repeater {
-                    model: 36
-                    Rectangle {
-                        property real angle: index * 10
-                        property bool isMajor: index % 3 === 0
-                        property real distance: parent.width / 2 - (isMajor ? 8 : 4)
-
-                        x: parent.width / 2 + Math.cos((angle - 90) * Math.PI / 180) * distance - width / 2
-                        y: parent.height / 2 + Math.sin((angle - 90) * Math.PI / 180) * distance - height / 2
-                        width: isMajor ? 2 : 1
-                        height: isMajor ? 8 : 4
-                        color: "#ffffff"
-                        opacity: isMajor ? 0.8 : 0.4
-                        rotation: angle
-                    }
-                }
-            }
-
-            Rectangle {
-                anchors.centerIn: parent
-                width: parent.width * 0.35
-                height: parent.height * 0.35
-                color: Qt.rgba(0.5,0.5,0.5,0.55)
-                border.color: "#ffffff"
-                border.width: 2
-                radius: width / 2
-                z: 100
-
-                ColumnLayout {
-                    anchors.centerIn: parent
-                    spacing: 0
-
-                    QGCLabel {
-                        Layout.alignment: Qt.AlignHCenter
-                        text: _activeVehicle ? Math.round(_activeVehicle.heading.rawValue).toString() : "---"
-                        color: "#ffffff"
-                        font.bold: true
-                        font.pointSize: ScreenTools.largeFontPointSize
-                        font.family: "Monospace"
-                    }
-
-                    QGCLabel {
-                        Layout.alignment: Qt.AlignHCenter
-                        text: "°"
-                        color: "#ffffff"
-                        font.pointSize: ScreenTools.smallFontPointSize
-                        font.family: "Monospace"
-                    }
-                }
-            }
-
-            Canvas {
-                id: northPointer
-                anchors.centerIn: parent
-                width: parent.width
-                height: parent.height
-                z: 50
-
-                onPaint: {
-                    var ctx = getContext("2d");
-                    ctx.reset();
-
-                    var centerX = width / 2;
-                    var centerY = height / 2;
-                    var pointerLength = height / 2 - 14;
-
-                    ctx.beginPath();
-                    ctx.moveTo(centerX, centerY - pointerLength);
-                    ctx.lineTo(centerX - 6, centerY - pointerLength + 12);
-                    ctx.lineTo(centerX + 6, centerY - pointerLength + 12);
-                    ctx.closePath();
-
-                    ctx.fillStyle = "#ff0000";
-                    ctx.fill();
-                    ctx.strokeStyle = "#ffffff";
-                    ctx.lineWidth = 1;
-                    ctx.stroke();
-                }
-            }
-        }
         /*
         // PITCH
         Rectangle {
@@ -1383,6 +1227,167 @@ Item {
             }
         }
     }
+
+    // COMPASS (moved to bottom-left so it doesn't overlap the Multi Vehicle panel)
+        Rectangle {
+            id: compassContainer
+            anchors.left:      parent.left
+            anchors.leftMargin: _layoutMargin
+            anchors.bottom:    parent.bottom
+            anchors.bottomMargin: _layoutMargin
+            width: ScreenTools.defaultFontPixelWidth * 22 * 0.9
+            height: width
+            z: QGroundControl.zOrderWidgets
+            color: Qt.rgba(0.5, 0.5, 0.5, 0.55)
+            border.color: "white"
+            border.width: 3
+            radius: width / 2
+            visible: _activeVehicle !== null
+
+            Rectangle {
+                anchors.fill: parent
+                anchors.margins: -4
+                color: "transparent"
+                border.color: "yellow"
+                border.width: 1
+                radius: parent.radius + 2
+                opacity: 0.9
+                z: -1
+            }
+
+            Item {
+                id: compassRose
+                anchors.fill: parent
+                anchors.margins: 12
+                rotation: _activeVehicle ? -_activeVehicle.heading.rawValue : 0
+
+                Behavior on rotation {
+                    RotationAnimation {
+                        duration: 250
+                        direction: RotationAnimation.Shortest
+                    }
+                }
+
+                QGCLabel {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    y: 2
+                    text: "N"
+                    color: "#ff0000"
+                    font.bold: true
+                    font.pointSize: ScreenTools.mediumFontPointSize
+                    font.family: "Monospace"
+                }
+
+                QGCLabel {
+                    anchors.verticalCenter: parent.verticalCenter
+                    x: parent.width - width - 2
+                    text: "E"
+                    color: "#ffffff"
+                    font.bold: true
+                    font.pointSize: ScreenTools.mediumFontPointSize
+                    font.family: "Monospace"
+                }
+
+                QGCLabel {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    y: parent.height - height - 2
+                    text: "S"
+                    color: "#ffffff"
+                    font.bold: true
+                    font.pointSize: ScreenTools.mediumFontPointSize
+                    font.family: "Monospace"
+                }
+
+                QGCLabel {
+                    anchors.verticalCenter: parent.verticalCenter
+                    x: 2
+                    text: "W"
+                    color: "#ffffff"
+                    font.bold: true
+                    font.pointSize: ScreenTools.mediumFontPointSize
+                    font.family: "Monospace"
+                }
+
+                Repeater {
+                    model: 36
+                    Rectangle {
+                        property real angle: index * 10
+                        property bool isMajor: index % 3 === 0
+                        property real distance: parent.width / 2 - (isMajor ? 8 : 4)
+
+                        x: parent.width / 2 + Math.cos((angle - 90) * Math.PI / 180) * distance - width / 2
+                        y: parent.height / 2 + Math.sin((angle - 90) * Math.PI / 180) * distance - height / 2
+                        width: isMajor ? 2 : 1
+                        height: isMajor ? 8 : 4
+                        color: "#ffffff"
+                        opacity: isMajor ? 0.8 : 0.4
+                        rotation: angle
+                    }
+                }
+            }
+
+            Rectangle {
+                anchors.centerIn: parent
+                width: parent.width * 0.35
+                height: parent.height * 0.35
+                color: Qt.rgba(0.5,0.5,0.5,0.55)
+                border.color: "#ffffff"
+                border.width: 2
+                radius: width / 2
+                z: 100
+
+                ColumnLayout {
+                    anchors.centerIn: parent
+                    spacing: 0
+
+                    QGCLabel {
+                        Layout.alignment: Qt.AlignHCenter
+                        text: _activeVehicle ? Math.round(_activeVehicle.heading.rawValue).toString() : "---"
+                        color: "#ffffff"
+                        font.bold: true
+                        font.pointSize: ScreenTools.largeFontPointSize
+                        font.family: "Monospace"
+                    }
+
+                    QGCLabel {
+                        Layout.alignment: Qt.AlignHCenter
+                        text: "°"
+                        color: "#ffffff"
+                        font.pointSize: ScreenTools.smallFontPointSize
+                        font.family: "Monospace"
+                    }
+                }
+            }
+
+            Canvas {
+                id: northPointer
+                anchors.centerIn: parent
+                width: parent.width
+                height: parent.height
+                z: 50
+
+                onPaint: {
+                    var ctx = getContext("2d");
+                    ctx.reset();
+
+                    var centerX = width / 2;
+                    var centerY = height / 2;
+                    var pointerLength = height / 2 - 14;
+
+                    ctx.beginPath();
+                    ctx.moveTo(centerX, centerY - pointerLength);
+                    ctx.lineTo(centerX - 6, centerY - pointerLength + 12);
+                    ctx.lineTo(centerX + 6, centerY - pointerLength + 12);
+                    ctx.closePath();
+
+                    ctx.fillStyle = "#ff0000";
+                    ctx.fill();
+                    ctx.strokeStyle = "#ffffff";
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                }
+            }
+        }
 
     VehicleWarnings {
         anchors.centerIn: parent
