@@ -266,28 +266,38 @@ Item {
                     }
                 }
 
-                RowLayout {
+                Rectangle {
                     anchors.horizontalCenter:   parent.horizontalCenter
-                    spacing:                    _margin
+                    width:          extraRowLayout.width + _margin * 2
+                    height:         extraRowLayout.height + _margin * 2
+                    color:          qgcPal.window
+                    radius:         ScreenTools.defaultFontPixelWidth / 2
+                    opacity:        0.75
 
-                    QGCLabel {
-                        text:  "▲ " + ((_vehicle && _vehicle.altitudeAMSL) ? (_vehicle.altitudeAMSL.valueString + " " + _vehicle.altitudeAMSL.units) : "--")
-                        color: qgcPal.text
-                    }
+                    RowLayout {
+                        id:                 extraRowLayout
+                        anchors.centerIn:   parent
+                        spacing:            _margin
 
-                    QGCLabel {
-                        text:  "➤ " + ((_vehicle && _vehicle.groundSpeed) ? (_vehicle.groundSpeed.valueString + " " + _vehicle.groundSpeed.units) : "--")
-                        color: qgcPal.text
-                    }
+                        QGCLabel {
+                            text:  "⌖ " + (_cardDistanceToTarget >= 0 ? (_cardDistanceToTarget.toFixed(0) + " m") : "--")
+                            color: qgcPal.text
+                        }
 
-                    QGCLabel {
-                        text:  "⌖ " + (_cardDistanceToTarget >= 0 ? (_cardDistanceToTarget.toFixed(0) + " m") : "--")
-                        color: qgcPal.text
-                    }
+                        QGCLabel {
+                            text:  "⏱ " + (_vehicle && _vehicle.getFact("FlightTime") ? _vehicle.getFact("FlightTime").valueString : "00:00:00")
+                            color: qgcPal.text
+                        }
 
-                    QGCLabel {
-                        text:  "⏱ " + (_vehicle && _vehicle.getFact("FlightTime") ? _vehicle.getFact("FlightTime").valueString : "00:00:00")
-                        color: qgcPal.text
+                        QGCLabel {
+                            text:  "🔋 " + ((_vehicle && _vehicle.batteries.count > 0) ? (_vehicle.batteries.get(0).percentRemaining.valueString + "%") : "--")
+                            color: qgcPal.text
+                        }
+
+                        QGCLabel {
+                            text:  "🛰 " + ((_vehicle && _vehicle.gps) ? _vehicle.gps.count.valueString : "--")
+                            color: qgcPal.text
+                        }
                     }
                 }
             }
