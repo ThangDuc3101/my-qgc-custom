@@ -171,6 +171,23 @@ Item {
                 onClicked:          toggleSelect(_vehicle.id)
             }
 
+            RowLayout {
+                anchors.top:        parent.top
+                anchors.right:      parent.right
+                anchors.margins:    _margin
+                spacing:            _margin
+
+                QGCLabel {
+                    text:  "🔋 " + ((_vehicle && _vehicle.batteries.count > 0) ? (_vehicle.batteries.get(0).percentRemaining.valueString + "%") : "--")
+                    color: qgcPal.text
+                }
+
+                QGCLabel {
+                    text:  "🛰 " + ((_vehicle && _vehicle.gps) ? _vehicle.gps.count.valueString : "--")
+                    color: qgcPal.text
+                }
+            }
+
             Column {
                 id:                         innerColumn
                 anchors.centerIn:           parent
@@ -286,16 +303,6 @@ Item {
 
                         QGCLabel {
                             text:  "⏱ " + (_vehicle && _vehicle.getFact("FlightTime") ? _vehicle.getFact("FlightTime").valueString : "00:00:00")
-                            color: qgcPal.text
-                        }
-
-                        QGCLabel {
-                            text:  "🔋 " + ((_vehicle && _vehicle.batteries.count > 0) ? (_vehicle.batteries.get(0).percentRemaining.valueString + "%") : "--")
-                            color: qgcPal.text
-                        }
-
-                        QGCLabel {
-                            text:  "🛰 " + ((_vehicle && _vehicle.gps) ? _vehicle.gps.count.valueString : "--")
                             color: qgcPal.text
                         }
                     }
