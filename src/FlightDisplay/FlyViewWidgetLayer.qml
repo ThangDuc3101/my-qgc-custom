@@ -1242,13 +1242,8 @@ Item {
         // COMPASS
         Rectangle {
             id: compassContainer
-            anchors.left:      parent.left
-            anchors.leftMargin: _layoutMargin
-            anchors.bottom:    parent.bottom
-            anchors.bottomMargin: _layoutMargin
-            width: ScreenTools.defaultFontPixelWidth * 22 * 0.9
+            width: parent.width*0.9
             height: width
-            z: QGroundControl.zOrderWidgets
             color: Qt.rgba(0.5, 0.5, 0.5, 0.55)
             border.color: "white"
             border.width: 3
