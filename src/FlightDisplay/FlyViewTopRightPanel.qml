@@ -213,6 +213,13 @@ Rectangle {
                                 rightPadding:          0
                             }
                         }
+
+                        QGCCheckBox {
+                            text:              qsTr("Formation Lines")
+                            Layout.alignment:  Qt.AlignHCenter
+                            checked:           globals.showFormationLines
+                            onCheckedChanged:  globals.showFormationLines = checked
+                        }
                     }
                 } // Page 1
 
