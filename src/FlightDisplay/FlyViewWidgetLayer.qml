@@ -860,160 +860,6 @@ Item {
         width: ScreenTools.defaultFontPixelWidth * 22
         spacing: _layoutMargin
         z: QGroundControl.zOrderWidgets
-
-        // ARTIFICIAL HORIZON
-        Rectangle {
-            id: attitudeIndicator
-            width: parent.width*0.9
-            height: width
-            color: Qt.rgba(0.5, 0.5, 0.5, 0.55)
-            border.color: "white"
-            border.width: 3
-            radius: 8
-
-            Rectangle {
-                anchors.fill: parent
-                anchors.margins: -4
-                color: "transparent"
-                border.color: "white"
-                border.width: 1
-                radius: parent.radius + 2
-                opacity: 0.3
-                z: -1
-            }
-
-            Item {
-                id: horizonClip
-                anchors.fill: parent
-                anchors.margins: 10
-                clip: true
-
-                Rectangle {
-                    id: horizon
-                    width: parent.width * 2
-                    height: parent.height * 2
-                    anchors.centerIn: parent
-
-                    rotation: _activeVehicle ? -_activeVehicle.roll.value : 0
-
-                    transform: Translate {
-                        y: _activeVehicle ? _activeVehicle.pitch.value * 2 : 0
-                    }
-
-                    Rectangle {
-                        anchors.top: parent.top
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        height: parent.height / 2
-                        gradient: Gradient {
-                            GradientStop { position: 0.0; color: "#004080" }
-                            GradientStop { position: 1.0; color: "#0066cc" }
-                        }
-                    }
-
-                    Rectangle {
-                        anchors.bottom: parent.bottom
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        height: parent.height / 2
-                        gradient: Gradient {
-                            GradientStop { position: 0.0; color: "#4d3319" }
-                            GradientStop { position: 1.0; color: "#2d1f0f" }
-                        }
-                    }
-
-                    Rectangle {
-                        anchors.centerIn: parent
-                        width: parent.width
-                        height: 2
-                        color: "#ffffff"
-                    }
-
-                    Repeater {
-                        model: [-30, -20, -10, 10, 20, 30]
-
-                        Row {
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            y: parent.height / 2 - modelData * 2
-                            spacing: 5
-
-                            Rectangle {
-                                width: 30
-                                height: 2
-                                color: "#ffffff"
-                                anchors.verticalCenter: parent.verticalCenter
-                            }
-
-                            QGCLabel {
-                                text: Math.abs(modelData)
-                                font.pointSize: ScreenTools.smallFontPointSize
-                                font.family: "Monospace"
-                                color: "#d6b41e"
-                                anchors.verticalCenter: parent.verticalCenter
-                            }
-
-                            Rectangle {
-                                width: 30
-                                height: 2
-                                color: "#ffffff"
-                                anchors.verticalCenter: parent.verticalCenter
-                            }
-                        }
-                    }
-                }
-
-                Item {
-                    anchors.centerIn: parent
-                    width: 80
-                    height: 80
-
-                    Rectangle {
-                        anchors.centerIn: parent
-                        width: 60
-                        height: 3
-                        color: "#ff0000"
-                    }
-
-                    Rectangle {
-                        anchors.centerIn: parent
-                        width: 8
-                        height: 8
-                        radius: 4
-                        color: "#ff0000"
-                        border.color: "#ffffff"
-                        border.width: 1
-                    }
-                }
-            }
-
-            Canvas {
-                id: rollCanvas
-                anchors.fill: parent
-
-                onPaint: {
-                    var ctx = getContext("2d");
-                    ctx.clearRect(0, 0, width, height);
-
-                    var centerX = width / 2;
-                    var centerY = height / 2;
-                    var radius = Math.min(width, height) / 2 - 20;
-
-                    ctx.strokeStyle = "#e0e0e0";
-                    ctx.lineWidth = 2;
-
-                    for (var angle = -60; angle <= 60; angle += 10) {
-                        var rad = (angle - 90) * Math.PI / 180;
-                        var startRadius = radius - (angle % 30 === 0 ? 15 : 10);
-
-                        ctx.beginPath();
-                        ctx.moveTo(centerX + startRadius * Math.cos(rad), centerY + startRadius * Math.sin(rad));
-                        ctx.lineTo(centerX + radius * Math.cos(rad), centerY + radius * Math.sin(rad));
-                        ctx.stroke();
-                    }
-                }
-            }
-
-        }
         /*
         // PITCH
         Rectangle {
@@ -1228,7 +1074,172 @@ Item {
         }
     }
 
-    // COMPASS (moved to bottom-left so it doesn't overlap the Multi Vehicle panel)
+    // ARTIFICIAL HORIZON + COMPASS (moved to bottom-left so this group doesn't overlap the Multi Vehicle panel)
+    Column {
+        id: leftInstrumentColumn
+        anchors.left: parent.left
+        anchors.leftMargin: _layoutMargin
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: _layoutMargin
+        width: ScreenTools.defaultFontPixelWidth * 22
+        spacing: _layoutMargin
+        z: QGroundControl.zOrderWidgets
+
+        // ARTIFICIAL HORIZON
+        Rectangle {
+            id: attitudeIndicator
+            width: parent.width*0.9
+            height: width
+            color: Qt.rgba(0.5, 0.5, 0.5, 0.55)
+            border.color: "white"
+            border.width: 3
+            radius: 8
+
+            Rectangle {
+                anchors.fill: parent
+                anchors.margins: -4
+                color: "transparent"
+                border.color: "white"
+                border.width: 1
+                radius: parent.radius + 2
+                opacity: 0.3
+                z: -1
+            }
+
+            Item {
+                id: horizonClip
+                anchors.fill: parent
+                anchors.margins: 10
+                clip: true
+
+                Rectangle {
+                    id: horizon
+                    width: parent.width * 2
+                    height: parent.height * 2
+                    anchors.centerIn: parent
+
+                    rotation: _activeVehicle ? -_activeVehicle.roll.value : 0
+
+                    transform: Translate {
+                        y: _activeVehicle ? _activeVehicle.pitch.value * 2 : 0
+                    }
+
+                    Rectangle {
+                        anchors.top: parent.top
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        height: parent.height / 2
+                        gradient: Gradient {
+                            GradientStop { position: 0.0; color: "#004080" }
+                            GradientStop { position: 1.0; color: "#0066cc" }
+                        }
+                    }
+
+                    Rectangle {
+                        anchors.bottom: parent.bottom
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        height: parent.height / 2
+                        gradient: Gradient {
+                            GradientStop { position: 0.0; color: "#4d3319" }
+                            GradientStop { position: 1.0; color: "#2d1f0f" }
+                        }
+                    }
+
+                    Rectangle {
+                        anchors.centerIn: parent
+                        width: parent.width
+                        height: 2
+                        color: "#ffffff"
+                    }
+
+                    Repeater {
+                        model: [-30, -20, -10, 10, 20, 30]
+
+                        Row {
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            y: parent.height / 2 - modelData * 2
+                            spacing: 5
+
+                            Rectangle {
+                                width: 30
+                                height: 2
+                                color: "#ffffff"
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+
+                            QGCLabel {
+                                text: Math.abs(modelData)
+                                font.pointSize: ScreenTools.smallFontPointSize
+                                font.family: "Monospace"
+                                color: "#d6b41e"
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+
+                            Rectangle {
+                                width: 30
+                                height: 2
+                                color: "#ffffff"
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+                        }
+                    }
+                }
+
+                Item {
+                    anchors.centerIn: parent
+                    width: 80
+                    height: 80
+
+                    Rectangle {
+                        anchors.centerIn: parent
+                        width: 60
+                        height: 3
+                        color: "#ff0000"
+                    }
+
+                    Rectangle {
+                        anchors.centerIn: parent
+                        width: 8
+                        height: 8
+                        radius: 4
+                        color: "#ff0000"
+                        border.color: "#ffffff"
+                        border.width: 1
+                    }
+                }
+            }
+
+            Canvas {
+                id: rollCanvas
+                anchors.fill: parent
+
+                onPaint: {
+                    var ctx = getContext("2d");
+                    ctx.clearRect(0, 0, width, height);
+
+                    var centerX = width / 2;
+                    var centerY = height / 2;
+                    var radius = Math.min(width, height) / 2 - 20;
+
+                    ctx.strokeStyle = "#e0e0e0";
+                    ctx.lineWidth = 2;
+
+                    for (var angle = -60; angle <= 60; angle += 10) {
+                        var rad = (angle - 90) * Math.PI / 180;
+                        var startRadius = radius - (angle % 30 === 0 ? 15 : 10);
+
+                        ctx.beginPath();
+                        ctx.moveTo(centerX + startRadius * Math.cos(rad), centerY + startRadius * Math.sin(rad));
+                        ctx.lineTo(centerX + radius * Math.cos(rad), centerY + radius * Math.sin(rad));
+                        ctx.stroke();
+                    }
+                }
+            }
+
+        }
+
+        // COMPASS
         Rectangle {
             id: compassContainer
             anchors.left:      parent.left
@@ -1388,6 +1399,7 @@ Item {
                 }
             }
         }
+    }
 
     VehicleWarnings {
         anchors.centerIn: parent
