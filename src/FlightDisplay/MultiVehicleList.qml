@@ -136,6 +136,36 @@ Item {
             property var    _vehicle:   object
             property bool   _linkLost:  !!(_vehicle && _vehicle.vehicleLinkManager && _vehicle.vehicleLinkManager.communicationLost)
 
+            PlanMasterController {
+                id: cardPlanController
+                Component.onCompleted: startStaticActiveVehicle(_vehicle)
+            }
+            property var  _cardMissionController: cardPlanController.missionController
+            property real _cardDistanceToTarget: -1
+
+            function _updateCardDistanceToTarget() {
+                if (_vehicle && _cardMissionController && _cardMissionController.visualItems.count > 1) {
+                    for (var i = _cardMissionController.visualItems.count - 1; i >= 0; i--) {
+                        var item = _cardMissionController.visualItems.get(i)
+                        if (item && item.specifiesCoordinate) {
+                            _cardDistanceToTarget = _vehicle.coordinate.distanceTo(item.coordinate)
+                            return
+                        }
+                    }
+                }
+                _cardDistanceToTarget = -1
+            }
+
+            Timer {
+                id:             _distanceTimer
+                interval:       1500
+                repeat:         true
+                running:        true
+                onTriggered:    _updateCardDistanceToTarget()
+            }
+
+            Component.onCompleted: _updateCardDistanceToTarget()
+
             QGCMouseArea {
                 anchors.fill:       parent
                 onClicked:          toggleSelect(_vehicle.id)
@@ -233,6 +263,31 @@ Item {
                         id:                     control
                         settingsGroup:          factValueGrid.vehicleCardSettingsGroup
                         specificVehicleForCard: _vehicle
+                    }
+                }
+
+                RowLayout {
+                    anchors.horizontalCenter:   parent.horizontalCenter
+                    spacing:                    _margin
+
+                    QGCLabel {
+                        text:  "▲ " + ((_vehicle && _vehicle.altitudeAMSL) ? (_vehicle.altitudeAMSL.valueString + " " + _vehicle.altitudeAMSL.units) : "--")
+                        color: qgcPal.text
+                    }
+
+                    QGCLabel {
+                        text:  "➤ " + ((_vehicle && _vehicle.groundSpeed) ? (_vehicle.groundSpeed.valueString + " " + _vehicle.groundSpeed.units) : "--")
+                        color: qgcPal.text
+                    }
+
+                    QGCLabel {
+                        text:  "⌖ " + (_cardDistanceToTarget >= 0 ? (_cardDistanceToTarget.toFixed(0) + " m") : "--")
+                        color: qgcPal.text
+                    }
+
+                    QGCLabel {
+                        text:  "⏱ " + (_vehicle && _vehicle.getFact("FlightTime") ? _vehicle.getFact("FlightTime").valueString : "00:00:00")
+                        color: qgcPal.text
                     }
                 }
             }
