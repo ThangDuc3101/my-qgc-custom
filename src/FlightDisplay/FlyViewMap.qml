@@ -271,6 +271,71 @@ FlightMap {
         }
     }
 
+    // Formation lines + distance labels between every connected vehicle pair (Sub-project 2)
+    property var _formationPairs: _computeFormationPairs(QGroundControl.multiVehicleManager.vehicles.count)
+
+    function _computeFormationPairs(vehicleCount) {
+        var pairs = []
+        for (var pairIndexA = 0; pairIndexA < vehicleCount; pairIndexA++) {
+            for (var pairIndexB = pairIndexA + 1; pairIndexB < vehicleCount; pairIndexB++) {
+                pairs.push({ indexA: pairIndexA, indexB: pairIndexB })
+            }
+        }
+        return pairs
+    }
+
+    Repeater {
+        model: _formationPairs
+
+        MapPolyline {
+            line.width: 2
+            line.color: _formationLinkLost ? "#808080" : "#4FC3F7"
+            z:          QGroundControl.zOrderTrajectoryLines
+            visible:    globals.showFormationLines && _formationVehicleA && _formationVehicleB
+            path:       (_formationVehicleA && _formationVehicleB) ? [_formationVehicleA.coordinate, _formationVehicleB.coordinate] : []
+
+            property var  _formationVehicleA: QGroundControl.multiVehicleManager.vehicles.get(modelData.indexA)
+            property var  _formationVehicleB: QGroundControl.multiVehicleManager.vehicles.get(modelData.indexB)
+            property bool _formationLinkLost: !!(_formationVehicleA && _formationVehicleA.vehicleLinkManager && _formationVehicleA.vehicleLinkManager.communicationLost) ||
+                                               !!(_formationVehicleB && _formationVehicleB.vehicleLinkManager && _formationVehicleB.vehicleLinkManager.communicationLost)
+        }
+    }
+
+    Repeater {
+        model: _formationPairs
+
+        MapQuickItem {
+            anchorPoint.x:  sourceItem.implicitWidth / 2
+            anchorPoint.y:  sourceItem.implicitHeight / 2
+            z:              QGroundControl.zOrderTrajectoryLines
+            visible:        globals.showFormationLines && _formationVehicleA && _formationVehicleB
+            coordinate:     (_formationVehicleA && _formationVehicleB) ?
+                                QtPositioning.coordinate(
+                                    (_formationVehicleA.coordinate.latitude + _formationVehicleB.coordinate.latitude) / 2,
+                                    (_formationVehicleA.coordinate.longitude + _formationVehicleB.coordinate.longitude) / 2) :
+                                QtPositioning.coordinate()
+
+            property var _formationVehicleA: QGroundControl.multiVehicleManager.vehicles.get(modelData.indexA)
+            property var _formationVehicleB: QGroundControl.multiVehicleManager.vehicles.get(modelData.indexB)
+
+            sourceItem: Rectangle {
+                color:          "#CC102030"
+                radius:         3
+                implicitWidth:  formationDistanceText.implicitWidth + ScreenTools.defaultFontPixelWidth
+                implicitHeight: formationDistanceText.implicitHeight + ScreenTools.defaultFontPixelHeight / 2
+
+                QGCLabel {
+                    id:                 formationDistanceText
+                    anchors.centerIn:   parent
+                    color:              "white"
+                    text:               (_formationVehicleA && _formationVehicleB) ?
+                                            qsTr("%1 m").arg(Math.round(_formationVehicleA.coordinate.distanceTo(_formationVehicleB.coordinate))) :
+                                            ""
+                }
+            }
+        }
+    }
+
     // Add the vehicles to the map
     MapItemView {
         model: QGroundControl.multiVehicleManager.vehicles

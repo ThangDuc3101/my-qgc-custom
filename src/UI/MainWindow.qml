@@ -85,6 +85,9 @@ ApplicationWindow {
 
         // Property to manage RemoteID quick access to settings page
         property bool               commingFromRIDIndicator:        false
+
+        // Formation lines overlay toggle (Sub-project 2) — session-only, not persisted
+        property bool                showFormationLines:             true
     }
 
     /// Default color palette used throughout the UI
